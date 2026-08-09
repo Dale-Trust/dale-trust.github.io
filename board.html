@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dale Trust — Membership at a Glance</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
+<style>
+  :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--gold:#E8B84B;--green:#1E8E5A}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:15px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:20px}
+  .top small{color:#8FC1FF;font-size:12px;display:block}
+  .wrap{max-width:1050px;margin:0 auto;padding:18px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .kpi span{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#7A8AA5;display:block}
+  .kpi b{font-family:'Oswald';font-size:30px;color:var(--ink)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+  .card h2{font-size:14px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:10px}
+  .stamp{font-size:12.5px;color:#7A8AA5;margin:14px 2px}
+  #gate{max-width:420px;margin:60px auto;background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;text-align:center}
+  #gate input{width:100%;padding:11px;border:1.5px solid var(--line);border-radius:9px;font:inherit;margin:12px 0}
+  #gate button{background:var(--royal);color:#fff;border:0;border-radius:9px;padding:12px 24px;font:600 14px 'Oswald';text-transform:uppercase;cursor:pointer}
+  #dash{display:none}
+</style>
+</head>
+<body>
+<div class="top"><h1>Membership at a Glance</h1><small>Dale Supporters Trust &middot; live figures, no personal data on this page</small></div>
+<div class="wrap">
+
+<div id="gate">
+  <h2 style="font-size:17px;margin-bottom:4px">Board access</h2>
+  <p style="font-size:13.5px">Enter the board key (it's in the group description / from Chris).</p>
+  <input id="bkey" type="password" placeholder="Board key">
+  <button onclick="go()">View figures &rarr;</button>
+  <p id="gerr" style="color:#C0392B;font-size:13px;margin-top:8px"></p>
+</div>
+
+<div id="dash">
+  <div class="kpis" id="kpis"></div>
+  <div class="grid">
+    <div class="card"><h2>Membership by type</h2><canvas id="cType"></canvas></div>
+    <div class="card"><h2>New vs renewing</h2><canvas id="cNvr"></canvas></div>
+    <div class="card"><h2>Members by season on record</h2><canvas id="cSeason"></canvas></div>
+    <div class="card"><h2>Newsletter consent</h2><canvas id="cNews"></canvas></div>
+  </div>
+  <p class="stamp" id="stamp"></p>
+</div>
+
+</div>
+<script>
+const ROYAL='#0057A7',NAVY='#0E1F3D',GOLD='#E8B84B',GREEN='#1E8E5A',GREY='#8C9299';
+const $=id=>document.getElementById(id);
+const EP='https://join.daletrust.uk';
+
+async function go(){
+  const key=$('bkey').value.trim();
+  if(!key)return;
+  try{
+    const r=await fetch(EP+'/stats?key='+encodeURIComponent(key));
+    if(!r.ok){$('gerr').textContent='That key was not accepted.';return;}
+    render(await r.json(), key);
+  }catch(e){$('gerr').textContent='Could not reach the server.';}
+}
+
+function render(d, key){
+  $('gate').style.display='none';$('dash').style.display='block';
+  try{sessionStorage.setItem('bk',key);}catch(e){}
+  const t=Object.fromEntries(d.byType.map(x=>[x.k,x.n]));
+  const total=(t.Adult||0)+(t.Exile||0)+(t.Junior||0);
+  const nvr=Object.fromEntries(d.newVsRenewal.map(x=>[x.k,x.n]));
+  const news=Object.fromEntries(d.newsletter.map(x=>[String(x.k),x.n]));
+  const kpi=(l,v)=>$('kpis').insertAdjacentHTML('beforeend','<div class="kpi"><span>'+l+'</span><b>'+v+'</b></div>');
+  kpi('Members 2026/27', total);
+  kpi('Adults', t.Adult||0); kpi('Exiles', t.Exile||0); kpi('Juniors', t.Junior||0);
+  kpi('New this season', nvr.New||0);
+  kpi('Lapsed to win back', d.chase);
+  kpi('Applications awaiting payment', d.pendingApplications);
+  new Chart($('cType'),{type:'doughnut',data:{labels:['Adult','Exile','Junior'],datasets:[{data:[t.Adult||0,t.Exile||0,t.Junior||0],backgroundColor:[ROYAL,GOLD,GREEN]}]},options:{plugins:{legend:{position:'bottom'}}}});
+  new Chart($('cNvr'),{type:'bar',data:{labels:['Renewing','New'],datasets:[{data:[nvr.Rpt||0,nvr.New||0],backgroundColor:[NAVY,ROYAL]}]},options:{plugins:{legend:{display:false}}}});
+  new Chart($('cSeason'),{type:'bar',data:{labels:d.bySeason.map(x=>x.k),datasets:[{data:d.bySeason.map(x=>x.n),backgroundColor:d.bySeason.map(x=>x.k==='2026/27'?ROYAL:GREY)}]},options:{plugins:{legend:{display:false}}}});
+  new Chart($('cNews'),{type:'doughnut',data:{labels:['Opted in','Declined'],datasets:[{data:[news['1']||0,news['0']||0],backgroundColor:[GREEN,GREY]}]},options:{plugins:{legend:{position:'bottom'}}}});
+  $('stamp').textContent='Live from the Trust\u2019s membership database \u00B7 generated '+new Date(d.generated).toLocaleString('en-GB')+' \u00B7 seasons on record grow as history is imported';
+}
+
+// auto-load: ?key= in the URL, or remembered from this session
+const uk=new URLSearchParams(location.search).get('key')||((()=>{try{return sessionStorage.getItem('bk')}catch(e){return null}})());
+if(uk){$('bkey').value=uk;go();}
+</script>
+</body>
+</html>
