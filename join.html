@@ -298,10 +298,11 @@ async function pay(method){
     if(!d.ok){e.style.display='block';e.textContent=d.error||'Something went wrong \u2014 please try again.';return;}
     $('memNo').textContent=d.member_no;
     $('memName').textContent=payload.first_name+' '+payload.last_name+' \u00B7 '+type;
+    const amt = (typeof d.amount==='number') ? d.amount : ((type==='Junior'?0:7.5)+don);
     if(d.pay_url){
-      $('sumLine').innerHTML=`${type} membership reserved${don?` with a \u00A3${don.toFixed(2)} donation \u2014 thank you`:''}. <b>One step left:</b> tap below to pay \u00A3${(d.amount).toFixed(2)} securely with SumUp \u2014 card, Apple Pay or Google Pay, no account needed. Your membership activates when payment completes.`;
+      $('sumLine').innerHTML=`${type} membership reserved${don?` with a \u00A3${don.toFixed(2)} donation \u2014 thank you`:''}. <b>One step left:</b> tap below to pay \u00A3${amt.toFixed(2)} securely with SumUp \u2014 card, Apple Pay or Google Pay, no account needed. Your membership activates when payment completes.`;
       const btn=document.createElement('a');
-      btn.href=d.pay_url; btn.textContent='Pay \u00A3'+(d.amount).toFixed(2)+' now \u2192';
+      btn.href=d.pay_url; btn.textContent='Pay \u00A3'+amt.toFixed(2)+' now \u2192';
       btn.style.cssText='display:inline-block;margin-top:14px;background:#1E8E5A;color:#fff;text-decoration:none;font:600 17px Oswald;text-transform:uppercase;letter-spacing:.06em;padding:15px 30px;border-radius:10px';
       document.querySelector('#success .card').appendChild(btn);
     } else {
