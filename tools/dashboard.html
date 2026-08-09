@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dale Trust — Membership Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--gold:#E8B84B;--green:#1E8E5A;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:15px}
+  h1,h2,h3{font-family:'Oswald',sans-serif;text-transform:uppercase;color:var(--ink)}
+  .top{background:var(--navy);color:#fff;padding:18px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .top h1{color:#fff;font-size:22px;letter-spacing:.03em}
+  .top small{color:#8FC1FF;font-size:12px;letter-spacing:.14em;text-transform:uppercase;display:block}
+  .top .priv{margin-left:auto;font-size:11.5px;color:#B9CCE8;max-width:340px}
+  .wrap{max-width:1200px;margin:0 auto;padding:22px}
+  /* Drop zone */
+  #drop{border:3px dashed var(--royal);border-radius:14px;background:#fff;padding:52px 24px;text-align:center;cursor:pointer;transition:all .15s}
+  #drop.over{background:#E8F1FC;border-color:#1173D4}
+  #drop h2{font-size:26px;margin-bottom:8px}
+  #drop p{font-size:14px}
+  #drop input{display:none}
+  /* KPI cards */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:18px 0}
+  .kpi{background:#fff;border:1px solid var(--line);border-top:4px solid var(--royal);border-radius:10px;padding:14px 16px}
+  .kpi b{font-family:'Oswald';font-size:34px;color:var(--ink);display:block;line-height:1.1}
+  .kpi span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+  .kpi .delta{font-size:12px;font-weight:600;margin-top:2px;display:block}
+  .up{color:var(--green)} .down{color:var(--red)}
+  /* Cards & charts */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px}
+  .card h3{font-size:16px;margin-bottom:10px;border-left:4px solid var(--royal);padding-left:10px}
+  .card.full{grid-column:1/-1}
+  canvas{max-height:280px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{font-family:'Oswald';font-size:12px;letter-spacing:.08em;text-transform:uppercase;text-align:left;color:var(--ink);border-bottom:2px solid var(--royal);padding:6px 8px}
+  td{padding:6px 8px;border-bottom:1px solid var(--line)}
+  tr:nth-child(even) td{background:var(--wash)}
+  .pill{display:inline-block;background:var(--royal);color:#fff;border-radius:100px;padding:2px 10px;font-size:11px;font-weight:600}
+  .warn{background:#FDF3E0;border:1px solid #EAD198;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:10px}
+  #dash{display:none}
+  .foot{margin:26px 0 10px;text-align:center;font-size:12px;color:#7A8AA5}
+  .dl{float:right;background:var(--royal);color:#fff;border:0;border-radius:6px;font:600 11px 'Montserrat';padding:5px 10px;cursor:pointer}
+  .dl:hover{background:#1173D4}
+  .reportbar{display:flex;gap:14px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-bottom:14px;flex-wrap:wrap}
+  .reportbar b{font-family:'Oswald';text-transform:uppercase;color:var(--ink);font-size:14px}
+  .reportbar label{font-size:12.5px;display:flex;gap:6px;align-items:center}
+  .btn-print{background:var(--navy);color:#fff;border:0;border-radius:8px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:10px 18px;cursor:pointer}
+  @media print{
+    body{background:#fff}
+    .top .priv,.reportbar,.dl,.warn,.foot{display:none!important}
+    .top{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .card{break-inside:avoid;border:1px solid #ccc}
+    .kpi{border:1px solid #ccc;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    #lapsedCard{display:none}
+    body.withChase #lapsedCard{display:block}
+  }
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div><h1>Dale Trust — Membership Dashboard</h1><small>Drag the membership spreadsheet on — nothing leaves this computer</small></div>
+  <div class="priv">All analysis happens locally in your browser. The file is never uploaded anywhere. Close the tab and nothing is kept.</div>
+</div>
+<div class="wrap">
+  <div id="drop">
+    <h2>Drop the membership spreadsheet here</h2>
+    <p>…or click to choose the .xlsx file. Works offline once this page has loaded.</p>
+    <input type="file" id="file" accept=".xlsx,.xls">
+  </div>
+
+  <div id="dash">
+    <div class="reportbar">
+      <b>Report</b>
+      <button class="btn-print" onclick="makeReport()">Save as PDF report</button>
+      <button class="btn-print" style="background:var(--royal)" onclick="downloadSummary()">&#11015; Summary PNG</button>
+      <label><input type="checkbox" id="incChase"> Include the renewal chase list (contains personal details &mdash; internal use only)</label>
+      <span style="font-size:12px;color:#7A8AA5">Each chart also has its own PNG download for dropping into documents.</span>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="grid">
+      <div class="card"><h3>Membership by type</h3><canvas id="cType"></canvas></div>
+      <div class="card"><h3>New vs renewing</h3><canvas id="cNew"></canvas></div>
+      <div class="card full"><h3>Season history &mdash; official figures</h3><canvas id="cSeasons"></canvas>
+        <p class="hint" style="margin-top:8px">The red line is members as a share of average home attendance &mdash; it moves with <i>both</i> numbers, so it can hold steady while membership falls (if crowds fall too) or dip while membership holds (if crowds grow). Hover any season for the working.</p></div>
+      <div class="card full" id="lapsedChartCard" style="display:none"><h3>Lapsed by season &mdash; the recoverable members</h3><canvas id="cLapsed"></canvas></div>
+      <div class="card"><h3>Joins by month (current season)</h3><canvas id="cJoins"></canvas></div>
+      <div class="card"><h3>Age profile</h3><canvas id="cAge"></canvas></div>
+      <div class="card"><h3>Join method</h3><canvas id="cMethod"></canvas></div>
+      <div class="card"><h3>Top towns</h3><canvas id="cTowns"></canvas></div>
+      <div class="card full" id="exSec" style="display:none">
+        <h3>Exiles &mdash; overseas &amp; England <button class="dl" onclick="downloadKpis('exKpis','Exiles Summary')">&#11015; PNG</button></h3>
+        <div class="kpis" id="exKpis" style="margin:10px 0"></div>
+        <div class="grid" style="margin-top:4px">
+          <div class="card"><h3>Overseas by country</h3><canvas id="cOverseas"></canvas></div>
+          <div class="card"><h3>England &mdash; counties</h3><canvas id="cCounties"></canvas></div>
+          <div class="card full"><h3>Cities &amp; towns breakdown</h3>
+            <div style="max-height:280px;overflow:auto"><table id="townsTable"></table></div></div>
+        </div>
+      </div>
+      <div class="card full" id="lapsedCard">
+        <h3>Renewal chase list — last season's members not yet in this season <span class="pill" id="lapsedCount"></span></h3>
+        <p style="font-size:13px;margin-bottom:8px">Matched by name + postcode across season tabs. Sorted with Exiles first (email is the only route to them).</p>
+        <div style="max-height:340px;overflow:auto"><table id="lapsedTable"></table></div>
+        <div class="warn">This list stays on this computer. Export nothing — work the list from here, or in the members database itself.</div>
+      </div>
+      <div class="card full"><h3>Data health</h3><div id="health" style="font-size:14px;line-height:1.9"></div></div>
+    </div>
+  </div>
+  <p class="foot">Dale Supporters Trust · built by the Trust for the Trust · data never leaves this device</p>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const drop=$('drop'), fileInput=$('file');
+drop.onclick=()=>fileInput.click();
+['dragover','dragenter'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',ev=>handle(ev.dataTransfer.files[0]));
+fileInput.onchange=()=>handle(fileInput.files[0]);
+
+const norm=s=>String(s??'').trim();
+const low=s=>norm(s).toLowerCase();
+
+function excelDate(v){
+  if(v==null||v==='')return null;
+  if(v instanceof Date)return v;
+  if(typeof v==='number'&&v>20000&&v<60000){const d=new Date(Math.round((v-25569)*86400*1000));return isNaN(d)?null:d;}
+  const s=norm(v);
+  let m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if(m){let y=+m[3];if(y<100)y+=y>50?1900:2000;const d=new Date(y,+m[2]-1,+m[1]);return isNaN(d)?null:d;}
+  const d=new Date(s);return isNaN(d)?null:d;
+}
+
+function findTable(ws){
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  for(let i=0;i<Math.min(rows.length,12);i++){
+    const cells=rows[i].map(low);
+    if(cells.some(c=>c.includes('membership type'))&&cells.some(c=>c.includes('last name'))){
+      const headers=rows[i].map(norm);
+      const out=[]; let skipped=0;
+      for(let j=i+1;j<rows.length;j++){
+        const r=rows[j];
+        if(!r||r.every(c=>norm(c)===''))continue;
+        const o={};headers.forEach((h,k)=>{if(h)o[h]=r[k]});
+        const lnK=Object.keys(o).find(k=>low(k).includes('last name'));
+        const fnK=Object.keys(o).find(k=>low(k).includes('first name'));
+        const ln=lnK?norm(o[lnK]):'', fn=fnK?norm(o[fnK]):'';
+        if(low(ln)==='last name')continue;               // repeated header row
+        if(ln||fn)out.push(o); else skipped++;           // count if either name present
+      }
+      return {headers,rows:out,headerRow:i+1,skipped};
+    }
+  }
+  return null;
+}
+function col(o,frag){const k=Object.keys(o).find(k=>low(k).includes(frag));return k?o[k]:''}
+function mtype(o){const t=low(col(o,'membership type'));if(t.includes('jun'))return 'Junior';if(t.includes('ex'))return 'Exile';if(t.includes('ad'))return 'Adult';return t?t[0].toUpperCase()+t.slice(1):'Unknown'}
+function isNew(o){const v=low(col(o,'new'));return v.startsWith('n')&&!v.startsWith('no')}
+
+function parseHistory(wb){
+  for(const name of wb.SheetNames){
+    const g=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:''});
+    for(let r=0;r<g.length;r++){
+      const cells=(g[r]||[]).map(low);
+      const si=cells.findIndex(c=>c==='season');
+      if(si<0||!cells.some(c=>c==='adult')||!cells.some(c=>c==='total'))continue;
+      const idx={};g[r].forEach((h,k)=>{const t=low(h);
+        if(t==='adult')idx.a=k;if(t==='exile')idx.e=k;if(t==='junior')idx.j=k;
+        if(t==='total')idx.t=k;if(t.includes('att'))idx.att=k;if(t.includes('%'))idx.pct=k;});
+      const rows=[];
+      for(let i=r+1;i<g.length;i++){
+        const row=g[i]||[];const s=norm(row[si]);
+        if(!/^\d{4}\/\d{2}$/.test(s)){if(rows.length)break;else continue;}
+        const num=v=>{const n=parseFloat(String(v).replace(/[,%]/g,''));return isNaN(n)?null:n};
+        let pct=idx.pct!=null?num(row[idx.pct]):null;
+        if(pct!=null&&pct<=1)pct=pct*100;
+        rows.push({season:s,adult:num(row[idx.a])||0,exile:num(row[idx.e])||0,
+                   junior:num(row[idx.j])||0,total:num(row[idx.t])||0,
+                   att:idx.att!=null?num(row[idx.att]):null,pct:pct});
+      }
+      if(rows.length>=3)return rows;
+    }
+  }
+  return null;
+}
+function seasonKey(name){
+  const m=name.match(/(\d{2})\s*[-\/]\s*(\d{2})/);
+  return m?('20'+m[1]+'/'+m[2]):null;
+}
+
+let charts=[];
+function chart(id,cfg){
+  const c=new Chart($(id),cfg);charts.push(c);
+  const card=$(id).closest('.card'), h=card.querySelector('h3');
+  if(h&&!h.querySelector('.dl')){
+    const b=document.createElement('button');b.className='dl';b.textContent='\u2B07 PNG';
+    b.onclick=()=>{
+      const src=$(id);const t=document.createElement('canvas');
+      t.width=src.width;t.height=src.height;
+      const x=t.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,t.width,t.height);x.drawImage(src,0,0);
+      const a=document.createElement('a');a.download='daletrust-'+id.replace(/^c/,'').toLowerCase()+'.png';
+      a.href=t.toDataURL('image/png');a.click();
+    };
+    h.appendChild(b);
+  }
+  return c;
+}
+function readKpis(containerId){
+  return [...document.querySelectorAll('#'+containerId+' .kpi')].map(k=>({
+    label:k.querySelector('span')?.textContent||'',
+    val:k.querySelector('b')?.textContent||'',
+    delta:k.querySelector('.delta')?.textContent||'',
+    up:k.querySelector('.delta')?.classList.contains('up')
+  }));
+}
+function drawSummary(sections, filename){
+  sections=sections.filter(s=>s.cards.length);
+  if(!sections.length)return;
+  const CW=270, CH=185, GAP=18, PAD=44, HEAD=118, SUBH=52, cols=3;
+  let H=HEAD+PAD;
+  sections.forEach(s=>{H+=SUBH+Math.ceil(s.cards.length/cols)*(CH+GAP)+14});
+  H+=PAD-14;
+  const W=PAD*2+cols*CW+(cols-1)*GAP;
+  const cv=document.createElement('canvas');cv.width=W*2;cv.height=H*2;
+  const x=cv.getContext('2d');x.scale(2,2);
+  x.fillStyle='#F2F5F9';x.fillRect(0,0,W,H);
+  x.fillStyle='#0E1F3D';x.fillRect(0,0,W,HEAD);
+  x.fillStyle='#0057A7';x.fillRect(0,HEAD-6,W,6);
+  x.fillStyle='#FFFFFF';x.font="700 30px Oswald, sans-serif";
+  x.fillText('DALE SUPPORTERS TRUST', PAD, 46);
+  x.fillStyle='#8FC1FF';x.font="600 20px Oswald, sans-serif";
+  x.fillText('MEMBERSHIP SUMMARY  \u00B7  '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}), PAD, 82);
+  let y=HEAD+PAD;
+  sections.forEach(s=>{
+    x.fillStyle='#0057A7';x.font="700 22px Oswald, sans-serif";
+    x.fillText(s.title.toUpperCase(), PAD, y+8);
+    x.strokeStyle='#0057A7';x.lineWidth=2;
+    x.beginPath();x.moveTo(PAD+x.measureText(s.title.toUpperCase()).width+14,y+1);x.lineTo(W-PAD,y+1);x.stroke();
+    y+=SUBH-14;
+    s.cards.forEach((c,i)=>{
+      const cx=PAD+(i%cols)*(CW+GAP), cy=y+Math.floor(i/cols)*(CH+GAP);
+      x.fillStyle='#FFFFFF';x.strokeStyle='#DCE3EC';x.lineWidth=1;
+      x.beginPath();x.roundRect(cx,cy,CW,CH,12);x.fill();x.stroke();
+      x.fillStyle='#0057A7';x.beginPath();x.roundRect(cx,cy,CW,7,{upperLeft:12,upperRight:12});x.fill();
+      x.fillStyle='#46536B';x.font="600 14px Montserrat, sans-serif";
+      x.fillText(c.label.toUpperCase(), cx+20, cy+42);
+      x.fillStyle='#10203A';x.font="700 56px Oswald, sans-serif";
+      x.fillText(c.val, cx+20, cy+108);
+      if(c.delta){x.fillStyle=c.up?'#1E8E5A':'#C0392B';x.font="600 15px Montserrat, sans-serif";
+        x.fillText(c.delta, cx+20, cy+142);}
+    });
+    y+=Math.ceil(s.cards.length/cols)*(CH+GAP)+14;
+  });
+  x.fillStyle='#7A8AA5';x.font="500 12px Montserrat, sans-serif";
+  x.fillText('daletrust.co.uk', PAD, H-16);
+  const a=document.createElement('a');
+  a.download=filename;a.href=cv.toDataURL('image/png');a.click();
+}
+function downloadSummary(){
+  drawSummary([
+    {title:'Membership', cards:readKpis('kpis')},
+    {title:'Exiles', cards:readKpis('exKpis')},
+  ],'daletrust-membership-summary.png');
+}
+function downloadKpis(containerId, title){
+  drawSummary([{title:title, cards:readKpis(containerId)}],
+    'daletrust-'+title.toLowerCase().replace(/\s+/g,'-')+'.png');
+}
+function makeReport(){
+  document.body.classList.toggle('withChase', $('incChase').checked);
+  window.print();
+}
+const ROYAL='#0057A7',NAVY='#0E1F3D',GOLD='#E8B84B',ICE='#8FC1FF',GREEN='#1E8E5A';
+
+function parseExiles(wb){
+  const name=wb.SheetNames.find(n=>low(n).includes('exile')); if(!name)return null;
+  const g=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:''});
+  const out={overseas:[],england:[],summary:null,seasons:[]};
+  for(let r=0;r<g.length;r++)for(let c=0;c<(g[r]||[]).length;c++){
+    const v=low(g[r][c]);
+    if(v==='country'&&!out.overseas.length){
+      out.seasons=[];
+      for(const x of g[r].slice(c+1)){const t=norm(x);if(/\d{4}\/\d{2}/.test(t))out.seasons.push(t);else break;}
+      for(let i=r+1;i<g.length;i++){const row=g[i]||[];if(!norm(row[c]))break;
+        out.overseas.push({name:norm(row[c]),vals:out.seasons.map((_,k)=>+row[c+1+k]||0)});}
+    }
+    if(v==='counties'&&!out.england.length){
+      let tc=-1;g[r].forEach((h,k)=>{if(low(h).includes('towns'))tc=k});
+      for(let i=r+1;i<g.length;i++){const row=g[i]||[];if(!norm(row[c]))break;
+        out.england.push({name:norm(row[c]),count:+row[c+1]||0,towns:tc>=0?norm(row[tc]):''});}
+    }
+    if(v==='overseas'&&!out.summary){
+      const nums=x=>(g[x]||[]).map(y=>+y).filter(y=>!isNaN(y)&&y>0);
+      const ov=nums(r),en=nums(r+1),tot=nums(r+2);
+      if(ov.length&&en.length&&tot.length)out.summary={overseas:ov,england:en,total:tot};
+    }
+  }
+  return (out.overseas.length||out.england.length||out.summary)?out:null;
+}
+function renderExiles(wb){
+  const e=parseExiles(wb); const sec=$('exSec'); if(!e){sec.style.display='none';return}
+  sec.style.display='block';
+  const k=$('exKpis');k.innerHTML='';
+  const kpi=(label,arr)=>{
+    if(!arr)return;
+    const cur=arr[0],prev=arr[1];
+    const d=prev!=null?`<span class="delta ${cur>=prev?'up':'down'}">${cur-prev>=0?'+':''}${cur-prev} vs last season</span>`:'';
+    k.insertAdjacentHTML('beforeend',`<div class="kpi"><span>${label}</span><b>${cur}</b>${d}</div>`);
+  };
+  if(e.summary){kpi('Overseas exiles',e.summary.overseas);kpi('England exiles',e.summary.england);kpi('Total exiles',e.summary.total);}
+  if(e.overseas.length){
+    const top=e.overseas.slice().sort((a,b)=>b.vals[0]-a.vals[0]).slice(0,10);
+    const ds=[{label:e.seasons[0]||'Now',data:top.map(o=>o.vals[0]),backgroundColor:ROYAL}];
+    if(e.seasons[1])ds.push({label:e.seasons[1],data:top.map(o=>o.vals[1]||0),backgroundColor:'#B9CCE8'});
+    chart('cOverseas',{type:'bar',data:{labels:top.map(o=>o.name),datasets:ds},options:{indexAxis:'y',plugins:{legend:{position:'bottom'}}}});
+  }
+  if(e.england.length){
+    const top=e.england.slice().sort((a,b)=>b.count-a.count).slice(0,10);
+    chart('cCounties',{type:'bar',data:{labels:top.map(o=>o.name),datasets:[{data:top.map(o=>o.count),backgroundColor:GOLD}]},options:{indexAxis:'y',plugins:{legend:{display:false}}}});
+    $('townsTable').innerHTML='<tr><th>County</th><th>Members</th><th>Cities / towns</th></tr>'+
+      e.england.map(o=>`<tr><td>${o.name}</td><td>${o.count}</td><td>${o.towns}</td></tr>`).join('');
+  }
+}
+function handle(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{analyse(XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true}))}
+    catch(err){alert('Could not read that file: '+err.message)}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function analyse(wb){
+  charts.forEach(c=>c.destroy());charts=[];
+  // find all member tables per sheet
+  const tables={};
+  wb.SheetNames.forEach(n=>{const t=findTable(wb.Sheets[n]);if(t)tables[n]=t});
+  // classify: current = tab with highest season key that isn't cancelled; seasons map
+  const lapsedTabs=Object.keys(tables).filter(n=>low(n).includes('lapsed')).sort((a,b)=>(seasonKey(a)||'')<(seasonKey(b)||'')?-1:1);
+  const seasonTabs=Object.keys(tables).filter(n=>seasonKey(n)&&!low(n).includes('cancel')&&!low(n).includes('lapsed'));
+  seasonTabs.sort((a,b)=>seasonKey(a)<seasonKey(b)?-1:1);
+  const currentTab=seasonTabs[seasonTabs.length-1];
+  if(!currentTab){alert('No membership table found — looking for a sheet with MEMBERSHIP TYPE and LAST NAME headers.');return}
+  const prevTab=seasonTabs[seasonTabs.length-2];
+  const cur=tables[currentTab].rows, prev=prevTab?tables[prevTab].rows:[];
+  const cancelledTab=Object.keys(tables).find(n=>low(n).includes('cancel'));
+
+  // KPIs
+  const types={Adult:0,Exile:0,Junior:0,Unknown:0};
+  cur.forEach(o=>types[mtype(o)]=(types[mtype(o)]||0)+1);
+  const newN=cur.filter(isNew).length;
+  const history=parseHistory(wb);
+  const histPrev=history?history.filter(h=>h.total&&h.season!==seasonKey(currentTab)).slice(-1)[0]:null;
+  const prevTotal=histPrev?histPrev.total:prev.length;
+  const target=1000;
+  const k=$('kpis');k.innerHTML='';
+  const kpi=(label,val,extra='')=>k.insertAdjacentHTML('beforeend',
+    `<div class="kpi"><span>${label}</span><b>${val}</b>${extra}</div>`);
+  const deltaHTML=prevTotal?`<span class="delta ${cur.length>=prevTotal?'up':'down'}">${cur.length-prevTotal>=0?'+':''}${cur.length-prevTotal} vs ${histPrev?histPrev.season:seasonKey(prevTab)}</span>`:'';
+  kpi(seasonKey(currentTab)+' members',cur.length,deltaHTML);
+  kpi('Adults',types.Adult||0);kpi('Exiles',types.Exile||0);kpi('Juniors',types.Junior||0);
+  kpi('New this season',newN);
+  kpi('To 1,000 target',Math.max(0,target-cur.length),`<span class="delta">${Math.round(cur.length/target*100)}% there</span>`);
+
+  chart('cType',{type:'doughnut',data:{labels:['Adult','Exile','Junior'],datasets:[{data:[types.Adult,types.Exile,types.Junior],backgroundColor:[ROYAL,GOLD,GREEN]}]},options:{plugins:{legend:{position:'bottom'}}}});
+  chart('cNew',{type:'bar',data:{labels:['Renewing','New'],datasets:[{data:[cur.length-newN,newN],backgroundColor:[NAVY,ROYAL]}]},options:{plugins:{legend:{display:false}}}});
+
+  // seasons history from every season tab
+  const sLabels=seasonTabs.map(seasonKey);
+  if(history){
+    chart('cSeasons',{type:'bar',data:{labels:history.map(h=>h.season),datasets:[
+      {label:'Adult',data:history.map(h=>h.adult),backgroundColor:ROYAL,stack:'m',order:2},
+      {label:'Exile',data:history.map(h=>h.exile),backgroundColor:GOLD,stack:'m',order:2},
+      {label:'Junior',data:history.map(h=>h.junior),backgroundColor:GREEN,stack:'m',order:2},
+      {label:'Members as % of avg home attendance',type:'line',data:history.map(h=>h.pct),yAxisID:'y1',
+       borderColor:'#C0392B',backgroundColor:'#C0392B',tension:.3,pointRadius:2,order:1}]},
+      options:{interaction:{mode:'index',intersect:false},
+        scales:{x:{stacked:true},y:{stacked:true},
+        y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}}},
+        plugins:{legend:{position:'bottom'},
+          tooltip:{callbacks:{footer:items=>{
+            const h=history[items[0].dataIndex];
+            const out=['Total members: '+h.total.toLocaleString()];
+            if(h.att)out.push('Avg home attendance: '+Math.round(h.att).toLocaleString());
+            if(h.pct!=null&&h.att)out.push('= '+Math.round(h.pct)+'% of the home crowd');
+            return out;}}}}}});
+  } else {
+    const per=t=>{const c={Adult:0,Exile:0,Junior:0,Other:0};
+      tables[t].rows.forEach(o=>{const m=mtype(o);(c[m]!=null)?c[m]++:c.Other++;});return c};
+    const sc=seasonTabs.map(per);
+    chart('cSeasons',{type:'bar',data:{labels:sLabels,datasets:[
+      {label:'Adult',data:sc.map(c=>c.Adult),backgroundColor:ROYAL},
+      {label:'Exile',data:sc.map(c=>c.Exile),backgroundColor:GOLD},
+      {label:'Junior',data:sc.map(c=>c.Junior),backgroundColor:GREEN},
+      {label:'Other',data:sc.map(c=>c.Other),backgroundColor:'#8C9299'}]},
+      options:{scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
+  }
+
+  if(lapsedTabs.length){
+    $('lapsedChartCard').style.display='block';
+    const ll=lapsedTabs.map(t=>seasonKey(t)||t), ld=lapsedTabs.map(t=>tables[t].rows.length);
+    chart('cLapsed',{type:'bar',data:{labels:ll,datasets:[{label:'Lapsed members',data:ld,backgroundColor:'#C0392B'}]},
+      options:{plugins:{legend:{display:false},
+        tooltip:{callbacks:{footer:items=>'At \u00A37.50 each: \u00A3'+(items[0].raw*7.5).toFixed(2)+'/yr if won back'}}}}});
+  }
+  // joins by month
+  const months={};
+  cur.forEach(o=>{const d=excelDate(col(o,'date joined'));if(d){const key=d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'});months[key]=(months[key]||0)+1}});
+  const mk=Object.keys(months);
+  chart('cJoins',{type:'bar',data:{labels:mk,datasets:[{data:mk.map(m=>months[m]),backgroundColor:ROYAL}]},options:{plugins:{legend:{display:false}}}});
+
+  // age profile
+  const bands={'Under 15':0,'15–17':0,'18–39':0,'40–59':0,'60+':0,'Unknown':0};
+  cur.forEach(o=>{
+    let a=parseInt(col(o,'age'));
+    if(isNaN(a)){const d=excelDate(col(o,'dob'));if(d)a=Math.floor((Date.now()-d)/31557600000)}
+    if(isNaN(a)||a==null)bands['Unknown']++;
+    else if(a<15)bands['Under 15']++;else if(a<18)bands['15–17']++;else if(a<40)bands['18–39']++;else if(a<60)bands['40–59']++;else bands['60+']++;
+  });
+  chart('cAge',{type:'bar',data:{labels:Object.keys(bands),datasets:[{data:Object.values(bands),backgroundColor:NAVY}]},options:{plugins:{legend:{display:false}}}});
+
+  // method
+  const meth={};cur.forEach(o=>{const m=norm(col(o,'method'))||'—';meth[m]=(meth[m]||0)+1});
+  const me=Object.entries(meth).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  chart('cMethod',{type:'bar',data:{labels:me.map(x=>x[0]),datasets:[{data:me.map(x=>x[1]),backgroundColor:ROYAL}]},options:{indexAxis:'y',plugins:{legend:{display:false}}}});
+
+  // towns
+  const towns={};cur.forEach(o=>{const t=norm(col(o,'town'));if(t)towns[t]=(towns[t]||0)+1});
+  const tw=Object.entries(towns).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  chart('cTowns',{type:'bar',data:{labels:tw.map(x=>x[0]),datasets:[{data:tw.map(x=>x[1]),backgroundColor:GOLD}]},options:{indexAxis:'y',plugins:{legend:{display:false}}}});
+
+  // lapsed chase list
+  const keyOf=o=>(low(col(o,'first name'))+'|'+low(col(o,'last name'))+'|'+low(col(o,'post code')).replace(/\s/g,''));
+  const curKeys=new Set(cur.map(keyOf));
+  let lapsedSource=prev, srcNote='';
+  if(!prev.length&&lapsedTabs.length){
+    lapsedSource=tables[lapsedTabs[lapsedTabs.length-1]].rows;
+    srcNote=' (from tab: '+lapsedTabs[lapsedTabs.length-1]+')';
+  }
+  const lapsed=lapsedSource.filter(o=>!curKeys.has(keyOf(o)));
+  const lh=document.querySelector('#lapsedCard h3');
+  if(lh)lh.firstChild.textContent='Renewal chase list'+srcNote+' — not yet in '+seasonKey(currentTab)+' ';
+  lapsed.sort((a,b)=>(mtype(a)==='Exile'?-1:1)-(mtype(b)==='Exile'?-1:1));
+  $('lapsedCount').textContent=lapsed.length+' to chase';
+  const tbl=$('lapsedTable');
+  tbl.innerHTML='<tr><th>Name</th><th>Type</th><th>Town</th><th>Email</th><th>Mobile</th></tr>'+
+    lapsed.map(o=>`<tr><td>${norm(col(o,'first name'))} ${norm(col(o,'last name'))}</td><td>${mtype(o)}</td><td>${norm(col(o,'town'))}</td><td>${norm(col(o,'email'))}</td><td>${norm(col(o,'mobile'))}</td></tr>`).join('');
+
+  // data health
+  const noEmail=cur.filter(o=>!norm(col(o,'email'))).length;
+  const noDOB=cur.filter(o=>!excelDate(col(o,'dob'))&&isNaN(parseInt(col(o,'age')))).length;
+  const noNews=cur.filter(o=>!norm(col(o,'newsletter'))).length;
+  const dupes=cur.length-new Set(cur.map(keyOf)).size;
+  const cancelled=cancelledTab?tables[cancelledTab].rows.length:'n/a';
+  const diag=Object.entries(tables).map(([n,t])=>{
+    const c={Adult:0,Exile:0,Junior:0,other:{}};
+    t.rows.forEach(o=>{const m=mtype(o);
+      if(c[m]!=null)c[m]++;else{const raw=norm(col(o,'membership type'))||'(blank)';c.other[raw]=(c.other[raw]||0)+1;}});
+    const oth=Object.entries(c.other).map(([k,v])=>`${k}: ${v}`).join(', ');
+    const tag=low(n).includes('lapsed')?' <span class="pill" style="background:#8C9299">lapsed list</span>':'';
+    return `\u2022 <b>${n}</b>${tag}: <b>${t.rows.length}</b> total \u2014 Adult ${c.Adult}, Exile ${c.Exile}, Junior ${c.Junior}`+
+      (oth?`, <b>other types: ${oth}</b>`:'')+
+      ` (header row ${t.headerRow}${t.skipped?`, ${t.skipped} skipped \u2014 no name`:''})`;
+  }).join('<br>');
+  $('health').innerHTML=
+    `<b>${noEmail}</b> members have no email address (unreachable digitally)<br>`+
+    `<b>${noDOB}</b> have no age or date of birth (matters for under-18 card rules)<br>`+
+    `<b>${noNews}</b> have no newsletter preference recorded (GDPR consent gap)<br>`+
+    `<b>${dupes}</b> possible duplicate entries (same name + postcode)<br>`+
+    `<b>${cancelled}</b> rows on the Cancelled tab<br><br><b>Per-tab counts (check these against each tab's own totals):</b><br>${diag}`;
+
+  renderExiles(wb);
+  drop.style.display='none';$('dash').style.display='block';
+}
+</script>
+</body>
+</html>

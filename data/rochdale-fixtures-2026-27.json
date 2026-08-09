@@ -1,0 +1,410 @@
+[
+  {
+    "competition": "Pre-Season",
+    "datetime": "Tue Jul 14 2026, 7:45pm",
+    "home": "FC United",
+    "away": "Rochdale",
+    "score": "2-0",
+    "venue": "A"
+  },
+  {
+    "competition": "Pre-Season (Spain)",
+    "datetime": "Sun Jul 19 2026, 10.30am local time",
+    "home": "Rochdale",
+    "away": "Al-Rayyan",
+    "score": "3-3",
+    "venue": "H"
+  },
+  {
+    "competition": "Pre-Season",
+    "datetime": "Sat Jul 25 2026, 3:00pm",
+    "home": "Rochdale",
+    "away": "Farnham Town",
+    "score": "2-2",
+    "venue": "H"
+  },
+  {
+    "competition": "Pre-Season",
+    "datetime": "Tue Jul 28 2026, 7:45pm",
+    "home": "Rochdale",
+    "away": "FC Halifax Town",
+    "score": "2-3",
+    "venue": "H"
+  },
+  {
+    "competition": "Carabao Cup Prelim",
+    "datetime": "Sat Aug 1 2026, 3:00pm",
+    "home": "Tranmere Rovers",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Aug 15 2026, 12:30pm",
+    "home": "Newport County",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Aug 22 2026, 3:00pm",
+    "home": "Rochdale",
+    "away": "Crawley Town",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Aug 29 2026, 3:00pm",
+    "home": "Colchester United",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Tue Sep 1 2026, 7:45pm",
+    "home": "Rochdale",
+    "away": "Shrewsbury Town",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Sep 5 2026, 3:00pm",
+    "home": "Rochdale",
+    "away": "Gillingham",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Sep 12 2026, 3:00pm",
+    "home": "Walsall",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Sep 19 2026, 12:30pm",
+    "home": "Rochdale",
+    "away": "Oldham Athletic",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Sep 26 2026, 3:00pm",
+    "home": "Fleetwood Town",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Oct 3 2026, 3:00pm",
+    "home": "Rochdale",
+    "away": "Swindon Town",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Oct 10 2026, 3:00pm",
+    "home": "Tranmere Rovers",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Oct 17 2026, 3:00pm",
+    "home": "Crewe Alexandra",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Tue Oct 20 2026, 7:45pm",
+    "home": "Rochdale",
+    "away": "Grimsby Town",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Oct 24 2026, 3:00pm",
+    "home": "Rochdale",
+    "away": "Accrington Stanley",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Oct 31 2026, 3:00pm",
+    "home": "Port Vale",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Nov 14 2026, 3:00pm",
+    "home": "Rochdale",
+    "away": "York City",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Nov 21 2026, 3:00pm",
+    "home": "Northampton Town",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Nov 28 2026, 3:00pm",
+    "home": "Rochdale",
+    "away": "Barnet",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Tue Dec 1 2026, 7:45pm",
+    "home": "Cheltenham Town",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Dec 12 2026, 3:00pm",
+    "home": "Exeter City",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Dec 19 2026, 3:00pm",
+    "home": "Rochdale",
+    "away": "Bristol Rovers",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Dec 26 2026, 3:00pm",
+    "home": "Rotherham United",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Tue Dec 29 2026, 7:45pm",
+    "home": "Rochdale",
+    "away": "Salford City",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Fri Jan 1 2027, 3:00pm",
+    "home": "Rochdale",
+    "away": "Chesterfield",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Jan 9 2027, 3:00pm",
+    "home": "Bristol Rovers",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Jan 16 2027, 3:00pm",
+    "home": "Rochdale",
+    "away": "Crewe Alexandra",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Tue Jan 19 2027, 7:45pm",
+    "home": "Grimsby Town",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Jan 23 2027, 3:00pm",
+    "home": "Accrington Stanley",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Jan 30 2027, 3:00pm",
+    "home": "Rochdale",
+    "away": "Port Vale",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Feb 6 2027, 3:00pm",
+    "home": "Rochdale",
+    "away": "Colchester United",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Tue Feb 9 2027, 7:45pm",
+    "home": "Shrewsbury Town",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Feb 13 2027, 3:00pm",
+    "home": "Gillingham",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Feb 20 2027, 3:00pm",
+    "home": "Rochdale",
+    "away": "Walsall",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Feb 27 2027, 3:00pm",
+    "home": "York City",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Mar 6 2027, 3:00pm",
+    "home": "Rochdale",
+    "away": "Newport County",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Mar 13 2027, 3:00pm",
+    "home": "Crawley Town",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Mar 20 2027, 3:00pm",
+    "home": "Rochdale",
+    "away": "Northampton Town",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Fri  Mar 26 2027, 3:00pm",
+    "home": "Chesterfield",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Mon Mar 29 2027, 3:00pm",
+    "home": "Rochdale",
+    "away": "Rotherham United",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Apr 3 2027, 3:00pm",
+    "home": "Salford City",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Apr 10 2027, 3:00pm",
+    "home": "Rochdale",
+    "away": "Exeter City",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Tue Apr 13 2027, 7:45pm",
+    "home": "Rochdale",
+    "away": "Tranmere Rovers",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Apr 17 2027, 3:00pm",
+    "home": "Oldham Athletic",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat Apr 24 2027, 7:45pm",
+    "home": "Rochdale",
+    "away": "Fleetwood Town",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Tue Apr 27 2027, 7:45pm",
+    "home": "Swindon Town",
+    "away": "Rochdale",
+    "score": null,
+    "venue": "A"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat May 1 2027, 3:00pm",
+    "home": "Rochdale",
+    "away": "Barnet",
+    "score": null,
+    "venue": "H"
+  },
+  {
+    "competition": "Sky Bet League Two",
+    "datetime": "Sat May 8 2027, 3:00pm",
+    "home": "Rochdale",
+    "away": "Cheltenham Town",
+    "score": null,
+    "venue": "H"
+  }
+]
