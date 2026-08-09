@@ -131,11 +131,25 @@ drop.ondrop=e=>{e.preventDefault();drop.classList.remove('on');const f=e.dataTra
 function load(f){
   const r=new FileReader();
   r.onload=()=>{
-    const data=parseCSV(r.result);
+    let text=r.result;
+    // delimiter sniff: Excel regional exports sometimes use ; or tabs
+    const first=text.split(/\r?\n/)[0]||'';
+    const best=[[',',(first.match(/,/g)||[]).length],[';',(first.match(/;/g)||[]).length],['\t',(first.match(/\t/g)||[]).length]].sort((a,b)=>b[1]-a[1])[0][0];
+    if(best!==',') text=text.split(best).join(',');
+    const data=parseCSV(text);
     if(data.length<2){$('loaded').innerHTML='<span class="bad">Could not read that file — is it a CSV?</span>';return;}
-    headers=data[0].map(s=>s.trim());
-    rows=data.slice(1).map(cols=>{const o={};headers.forEach((h,i)=>o[h]=(cols[i]||'').trim());return o;});
-    $('loaded').innerHTML='<span class="ok">Loaded: '+rows.length+' rows, '+headers.length+' columns.</span> Nothing has been uploaded yet.';
+    // header-row detection: score the first 12 rows against known field names
+    const vocab=FIELDS.flatMap(f=>f[2]);
+    let hi=0, hscore=-1;
+    for(let i=0;i<Math.min(12,data.length-1);i++){
+      const s=data[i].reduce((a,c)=>a+(vocab.some(v=>(c||'').toLowerCase().includes(v))?1:0),0);
+      if(s>hscore){hscore=s;hi=i;}
+    }
+    headers=data[hi].map(s=>s.trim());
+    rows=data.slice(hi+1).filter(cols=>cols.some(c=>(c||'').trim()!=='')).map(cols=>{const o={};headers.forEach((hh,i)=>o[hh]=(cols[i]||'').trim());return o;});
+    const hdrList=headers.filter(Boolean).slice(0,10).join(' \u00B7 ');
+    $('loaded').innerHTML='<span class="ok">Loaded: '+rows.length+' rows.</span> Headers found on row '+(hi+1)+': <small>'+hdrList+(headers.length>10?' \u2026':'')+'</small>'+
+      (hscore<3?'<br><span class="bad">Warning: these don\u2019t look like member columns \u2014 was the right tab selected when you saved the CSV?</span>':'');
     buildMaps(); preview();
     $('mapPanel').style.display='block';
   };
