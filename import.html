@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dale Trust — Member Import</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .top{background:var(--navy);color:#fff;padding:16px 22px}
+  .top h1{font-size:20px}
+  .top small{color:#8FC1FF;font-size:12px}
+  .wrap{max-width:980px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{font-size:15px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:10px 0 4px}
+  input,select{width:100%;padding:9px 11px;border:1.5px solid var(--line);border-radius:8px;font:inherit;color:var(--ink);background:#fff}
+  .drop{border:2px dashed var(--royal);border-radius:12px;padding:34px;text-align:center;cursor:pointer;background:#F7FAFF}
+  .drop.on{background:#E8F1FC}
+  .maps{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+  .go{background:var(--green);color:#fff;border:0;border-radius:9px;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.07em;padding:13px 26px;cursor:pointer;margin-top:14px}
+  .go:disabled{background:#9FB4CC;cursor:not-allowed}
+  .bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:12px;display:none}
+  .bar i{display:block;height:100%;width:0;background:var(--royal);transition:width .2s}
+  .report{margin-top:12px;font-size:14px}
+  .ok{color:var(--green);font-weight:700}.bad{color:var(--red);font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px}
+  th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+  th{font-size:11px;text-transform:uppercase;color:#7A8AA5}
+  .note{background:#FDF6E3;border:1px solid #EAD198;border-radius:10px;padding:12px 14px;font-size:13px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="top"><h1>Member Import</h1><small>Spreadsheet &rarr; the Trust's database. Data goes straight from this browser to the Trust's own server &mdash; nowhere else.</small></div>
+<div class="wrap">
+
+<p class="note"><b>Before you run this:</b> agree the numbering rule with Scott (members are numbered in the order they appear after sorting &mdash; sort the CSV by Date Joined first if numbering should follow joining order), and make sure you're importing <b>current paid-up members only</b> &mdash; lapsed members are the campaign list, not the register.</p>
+
+<div class="panel">
+  <h2>1 &middot; Connection</h2>
+  <label>Worker address</label>
+  <input id="endpoint" value="https://join.daletrust.uk">
+  <label>Admin key</label>
+  <input id="adminkey" type="password" placeholder="Paste from Bitwarden — never save it in this file">
+</div>
+
+<div class="panel">
+  <h2>2 &middot; The spreadsheet (CSV)</h2>
+  <div class="drop" id="drop" onclick="document.getElementById('file').click()">Drop Scott's CSV here, or click to choose<br><small>Export the sheet as CSV first (File &rarr; Save As &rarr; CSV)</small></div>
+  <input type="file" id="file" accept=".csv,text/csv" style="display:none">
+  <div id="loaded" style="margin-top:10px"></div>
+</div>
+
+<div class="panel" id="mapPanel" style="display:none">
+  <h2>3 &middot; Match the columns</h2>
+  <p style="font-size:13px;margin-bottom:10px">Best guesses are pre-selected from the column names &mdash; check each one. Fields left as "&mdash; none &mdash;" import blank.</p>
+  <div class="maps" id="maps"></div>
+  <label style="margin-top:14px">Membership type comes from</label>
+  <select id="typemode">
+    <option value="column">A column in the sheet (mapped above)</option>
+    <option value="Adult">Everyone in this file is Adult</option>
+    <option value="Exile">Everyone in this file is Exile</option>
+    <option value="Junior">Everyone in this file is Junior</option>
+  </select>
+  <button class="go" id="run" onclick="runImport()">Import members &rarr;</button>
+  <div class="bar" id="bar"><i id="fill"></i></div>
+  <div class="report" id="report"></div>
+</div>
+
+<div class="panel">
+  <h2>Preview (first 5 rows as they will import)</h2>
+  <div id="preview"><small>Load a CSV to preview.</small></div>
+</div>
+
+</div>
+<script>
+const $=id=>document.getElementById(id);
+let headers=[], rows=[];
+
+// quote-aware CSV parser
+function parseCSV(text){
+  const out=[]; let row=[], cur='', q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){
+      if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; }
+      else cur+=ch;
+    } else {
+      if(ch==='"') q=true;
+      else if(ch===','){ row.push(cur); cur=''; }
+      else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&text[i+1]==='\n')i++; row.push(cur); cur=''; if(row.some(c=>c!=='')) out.push(row); row=[]; }
+      else cur+=ch;
+    }
+  }
+  row.push(cur); if(row.some(c=>c!=='')) out.push(row);
+  return out;
+}
+
+const FIELDS=[
+  ['first_name','First name',['first name','firstname','first','forename']],
+  ['last_name','Surname',['surname','last name','lastname','last','family']],
+  ['dob','Date of birth',['date of birth','dob','birth']],
+  ['email','Email',['email']],
+  ['mobile','Mobile / phone',['mobile','phone','telephone','tel']],
+  ['address1','Address 1',['address 1','address1','address line 1','address']],
+  ['address2','Address 2',['address 2','address2','address line 2']],
+  ['town','Town',['town','city']],
+  ['postcode','Postcode',['post code','postcode','post']],
+  ['membership_type','Membership type',['type','membership','category']],
+  ['date_joined','Date joined',['date joined','joined','join date','date']],
+  ['newsletter_optin','Newsletter opt-in',['newsletter','news','opt']],
+  ['member_no','Existing member number (if any)',['member no','member number','number','membership no']],
+];
+
+function guess(names){
+  return h=>{
+    const low=h.toLowerCase();
+    return names.some(n=>low.includes(n));
+  };
+}
+
+$('file').onchange=e=>{ const f=e.target.files[0]; if(f) load(f); };
+const drop=$('drop');
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('on');};
+drop.ondragleave=()=>drop.classList.remove('on');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('on');const f=e.dataTransfer.files[0];if(f)load(f);};
+
+function load(f){
+  const r=new FileReader();
+  r.onload=()=>{
+    const data=parseCSV(r.result);
+    if(data.length<2){$('loaded').innerHTML='<span class="bad">Could not read that file — is it a CSV?</span>';return;}
+    headers=data[0].map(s=>s.trim());
+    rows=data.slice(1).map(cols=>{const o={};headers.forEach((h,i)=>o[h]=(cols[i]||'').trim());return o;});
+    $('loaded').innerHTML='<span class="ok">Loaded: '+rows.length+' rows, '+headers.length+' columns.</span> Nothing has been uploaded yet.';
+    buildMaps(); preview();
+    $('mapPanel').style.display='block';
+  };
+  r.readAsText(f);
+}
+
+function buildMaps(){
+  $('maps').innerHTML=FIELDS.map(([key,label,names])=>{
+    const g=headers.find(guess(names))||'';
+    const opts=['<option value="">&mdash; none &mdash;</option>'].concat(
+      headers.map(h=>'<option '+(h===g?'selected':'')+'>'+h.replace(/</g,'&lt;')+'</option>'));
+    return '<div><label>'+label+'</label><select data-key="'+key+'">'+opts.join('')+'</select></div>';
+  }).join('');
+  document.querySelectorAll('#maps select').forEach(s=>s.onchange=preview);
+  $('typemode').onchange=preview;
+}
+
+function normType(v){
+  const s=(v||'').toLowerCase();
+  if(s.includes('jun')||s.includes('u16')||s.includes('child'))return 'Junior';
+  if(s.includes('ex'))return 'Exile';
+  if(s.includes('adult')||s.includes('full')||s.includes('senior')||s.includes('std')||s.includes('standard'))return 'Adult';
+  return '';
+}
+function normDate(v){
+  if(!v)return null;
+  const m=v.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(m){let y=m[3].length===2?('20'+m[3]):m[3];return y+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');}
+  const d=new Date(v); return isNaN(d)?null:d.toISOString().slice(0,10);
+}
+function normBool(v){const s=(v||'').toLowerCase();return s==='yes'||s==='y'||s==='true'||s==='1';}
+
+function mapping(){
+  const m={};
+  document.querySelectorAll('#maps select').forEach(s=>{if(s.value)m[s.dataset.key]=s.value;});
+  return m;
+}
+function transform(r,m){
+  const g=k=>m[k]?r[m[k]]:'';
+  const tm=$('typemode').value;
+  const t = tm==='column' ? normType(g('membership_type')) : tm;
+  return {
+    first_name:g('first_name'), last_name:g('last_name'),
+    dob:normDate(g('dob')), email:g('email'), mobile:g('mobile'),
+    address1:g('address1'), address2:g('address2'), town:g('town'),
+    postcode:g('postcode'), membership_type:t,
+    date_joined:normDate(g('date_joined')), newsletter_optin:normBool(g('newsletter_optin')),
+    member_no:g('member_no')||null,
+    payment_status:'desk',
+  };
+}
+
+function preview(){
+  if(!rows.length)return;
+  const m=mapping();
+  const sample=rows.slice(0,5).map(r=>transform(r,m));
+  const cols=['first_name','last_name','membership_type','dob','email','town','postcode','date_joined'];
+  $('preview').innerHTML='<table><tr>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr>'+
+    sample.map(s=>'<tr>'+cols.map(c=>'<td>'+((s[c]??'')||'<span style="color:#C0392B">blank</span>')+'</td>').join('')+'</tr>').join('')+'</table>';
+}
+
+async function runImport(){
+  const key=$('adminkey').value.trim(), ep=$('endpoint').value.trim().replace(/\/$/,'');
+  if(!key){alert('Paste the admin key first.');return;}
+  const m=mapping();
+  const all=rows.map(r=>transform(r,m)).filter(r=>r.first_name&&r.last_name&&r.membership_type);
+  const dropped=rows.length-all.length;
+  if(!all.length){alert('No importable rows — check the column matching (name and type are required).');return;}
+  if(!confirm('Import '+all.length+' members into the live database'+(dropped?' ('+dropped+' rows lack name/type and will be skipped)':'')+'?'))return;
+  $('run').disabled=true;$('bar').style.display='block';
+  let imported=0,skipped=0,errs=[];
+  const CHUNK=40;
+  for(let i=0;i<all.length;i+=CHUNK){
+    const batch=all.slice(i,i+CHUNK);
+    try{
+      const res=await fetch(ep+'/import?key='+encodeURIComponent(key),{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(batch)});
+      const d=await res.json();
+      if(!d.ok){errs.push(d.error||('HTTP '+res.status));break;}
+      imported+=d.imported;skipped+=d.skipped;errs.push(...(d.errors||[]));
+    }catch(e){errs.push(e.message);break;}
+    $('fill').style.width=Math.round(100*Math.min(i+CHUNK,all.length)/all.length)+'%';
+  }
+  $('report').innerHTML='<span class="ok">Imported: '+imported+'</span> &middot; Skipped (already present or incomplete): '+(skipped+dropped)+
+    (errs.length?'<br><span class="bad">Issues:</span> '+errs.slice(0,8).join('; '):'');
+  $('run').disabled=false;
+}
+</script>
+</body>
+</html>
