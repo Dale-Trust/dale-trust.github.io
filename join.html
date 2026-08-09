@@ -172,10 +172,10 @@
 <!-- success -->
 <div class="wrap" id="success">
   <div class="card" style="border-top:5px solid var(--green)">
-    <h2 style="border-left-color:var(--green)">Welcome to the Trust! 🎉</h2>
+    <h2 style="border-left-color:var(--green)" id="successH">Welcome to the Trust! 🎉</h2>
     <p id="sumLine" style="font-size:15px"></p>
     <div class="member-card">
-      <small>Dale Supporters Trust &middot; Member 2026/27</small>
+      <small id="cardLabel">Dale Supporters Trust &middot; Member 2026/27</small>
       <div class="no" id="memNo">DT-2026-0000</div>
       <div style="margin-top:6px;font-size:14px" id="memName"></div>
       
@@ -300,7 +300,9 @@ async function pay(method){
     $('memName').textContent=payload.first_name+' '+payload.last_name+' \u00B7 '+type;
     const amt = (typeof d.amount==='number') ? d.amount : ((type==='Junior'?0:7.5)+don);
     if(d.pay_url){
-      $('sumLine').innerHTML=`${type} membership reserved${don?` with a \u00A3${don.toFixed(2)} donation \u2014 thank you`:''}. <b>One step left:</b> tap below to pay \u00A3${amt.toFixed(2)} securely with SumUp \u2014 card, Apple Pay or Google Pay, no account needed. Your membership activates when payment completes.`;
+      $('successH').textContent='Almost there \u2014 one step left';
+      $('cardLabel').textContent='Dale Supporters Trust \u00B7 Membership reserved \u2014 activates on payment';
+      $('sumLine').innerHTML=`${type} membership <b>reserved \u2014 not yet active</b>${don?` with a \u00A3${don.toFixed(2)} donation \u2014 thank you`:''}. <b>One step left:</b> tap below to pay \u00A3${amt.toFixed(2)} securely with SumUp \u2014 card, Apple Pay or Google Pay, no account needed. Your membership activates when payment completes.`;
       const btn=document.createElement('a');
       btn.href=d.pay_url; btn.textContent='Pay \u00A3'+amt.toFixed(2)+' now \u2192';
       btn.style.cssText='display:inline-block;margin-top:14px;background:#1E8E5A;color:#fff;text-decoration:none;font:600 17px Oswald;text-transform:uppercase;letter-spacing:.06em;padding:15px 30px;border-radius:10px';
