@@ -81,7 +81,7 @@
 </style>
 </head>
 <body>
-<div class="demo">Design prototype — payments are simulated. No money moves, nothing is stored.</div>
+<div class="demo" id="modeBanner">The new way to join the Dale Trust — two minutes, no PayPal account.</div>
 <header>
   <h1>Join the Dale Trust</h1>
   <p>Membership 2026/27 &middot; one form, two minutes, no PayPal account needed</p>
@@ -160,6 +160,7 @@
 
   <div class="card">
     <h2>6 &middot; Payment</h2>
+    <div id="captcha" style="margin-bottom:14px"></div>
     <div class="paybtns">
       <button type="button" class="paybtn apple" onclick="pay('Apple Pay')">&#63743; Pay</button>
       <button type="button" class="paybtn gpay" onclick="pay('Google Pay')"><span class="gdot"></span> Pay with Google</button>
@@ -246,8 +247,18 @@ function refresh(){
 }
 refresh();
 
-function pay(method){
-  // validation
+// ---- switch-ons ----
+const PAY_ENDPOINT = '';          // set to the Worker URL to go live
+const TURNSTILE_SITE_KEY = '';    // set to the Turnstile site key to enable the human check
+
+if (TURNSTILE_SITE_KEY) {
+  const s = document.createElement('script');
+  s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=_tsReady';
+  s.async = true; document.head.appendChild(s);
+  window._tsReady = () => turnstile.render('#captcha', { sitekey: TURNSTILE_SITE_KEY, theme: 'light' });
+}
+
+async function pay(method){
   const errs=[];
   const need=(id,name)=>{const v=$(id).value.trim();$(id).classList.toggle('err',!v);if(!v)errs.push(name);return v};
   need('fn','first name');need('ln','last name');
@@ -257,14 +268,47 @@ function pay(method){
   if(!$('gdpr').checked)errs.push('the privacy agreement tick');
   const e=$('errs');
   if(errs.length){e.style.display='block';e.textContent='Still needed: '+errs.join(', ')+'.';e.scrollIntoView({behavior:'smooth',block:'center'});return;}
+  let token='';
+  if(TURNSTILE_SITE_KEY){
+    token=(window.turnstile&&turnstile.getResponse())||'';
+    if(!token){e.style.display='block';e.textContent='Please complete the quick human check above the payment buttons.';e.scrollIntoView({behavior:'smooth',block:'center'});return;}
+  }
+  if(!PAY_ENDPOINT){
+    e.style.display='block';
+    e.innerHTML='<b>Online payment switches on very shortly.</b> Until then you can join at the Trust Desk on matchdays \u2014 everything here is exactly what\u2019s coming.';
+    e.scrollIntoView({behavior:'smooth',block:'center'});return;
+  }
   e.style.display='none';
-  // simulate success
-  const no='DT-2026-'+String(Math.floor(1000+Math.random()*9000));
-  $('memNo').textContent=no;
-  $('memName').textContent=$('fn').value.trim()+' '+$('ln').value.trim()+' \u00B7 '+type;
-  $('sumLine').innerHTML=`${type} membership confirmed${don?` with a \u00A3${don.toFixed(2)} donation \u2014 thank you`:''}${price+don>0?` \u00B7 paid by ${method}`:''}${$('auto').checked?' \u00B7 auto-renewal on':''}.`;
-  $('form').style.display='none';$('bar').style.display='none';
-  $('success').style.display='block';window.scrollTo({top:0,behavior:'smooth'});
+  const payload={
+    first_name:$('fn').value.trim(), last_name:$('ln').value.trim(),
+    dob:$('dob').value||null, email:$('email').value.trim(), mobile:$('mob').value.trim()||null,
+    address1:$('ad1').value.trim(), address2:$('ad2').value.trim()||null,
+    town:$('town').value.trim(), postcode:$('pc').value.trim(),
+    membership_type:type, donation:don,
+    exile_transport_share: type==='Exile' ? (document.querySelector('#shareSeg .sel')?.dataset.v||'No') : null,
+    newsletter:$('news').checked, auto_renew:$('auto').checked,
+    gdpr_consent:$('gdpr').checked, turnstile_token:token, method
+  };
+  try{
+    const r=await fetch(PAY_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(!d.ok){e.style.display='block';e.textContent=d.error||'Something went wrong \u2014 please try again.';return;}
+    $('memNo').textContent=d.member_no;
+    $('memName').textContent=payload.first_name+' '+payload.last_name+' \u00B7 '+type;
+    if(d.pay_url){
+      $('sumLine').innerHTML=`${type} membership reserved${don?` with a \u00A3${don.toFixed(2)} donation \u2014 thank you`:''}. <b>One step left:</b> tap below to pay \u00A3${(d.amount).toFixed(2)} securely with SumUp \u2014 card, Apple Pay or Google Pay, no account needed. Your membership activates when payment completes.`;
+      const btn=document.createElement('a');
+      btn.href=d.pay_url; btn.textContent='Pay \u00A3'+(d.amount).toFixed(2)+' now \u2192';
+      btn.style.cssText='display:inline-block;margin-top:14px;background:#1E8E5A;color:#fff;text-decoration:none;font:600 17px Oswald;text-transform:uppercase;letter-spacing:.06em;padding:15px 30px;border-radius:10px';
+      document.querySelector('#success .card').appendChild(btn);
+    } else {
+      $('sumLine').textContent=`${type} membership confirmed \u2014 free for juniors. Welcome to the Trust!`;
+    }
+    $('form').style.display='none';$('bar').style.display='none';
+    $('success').style.display='block';window.scrollTo({top:0,behavior:'smooth'});
+  }catch(err){
+    e.style.display='block';e.textContent='Connection problem \u2014 please try again.';
+  }
 }
 </script>
 </body>
