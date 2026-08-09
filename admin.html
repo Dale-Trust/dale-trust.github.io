@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dale Trust — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2,h3{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .top{background:var(--navy);color:#fff;padding:16px 22px;display:flex;align-items:center;gap:12px}
+  .top h1{font-size:19px}
+  .top small{color:#8FC1FF;font-size:12px;display:block}
+  .top .who{margin-left:auto;text-align:right;font-size:13px;color:#C7D6EC}
+  .top .who a{color:#8FC1FF;font-size:12px}
+  .wrap{max-width:980px;margin:0 auto;padding:20px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
+  .card h2{font-size:15px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  input{padding:11px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);width:100%}
+  button{background:var(--royal);color:#fff;border:0;border-radius:9px;padding:12px 22px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+  button:hover{background:var(--bright)}
+  #login{max-width:420px;margin:50px auto;text-align:center}
+  #login input{margin:12px 0}
+  .msg{font-size:13.5px;margin-top:10px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+  .tile{background:#fff;border:1px solid var(--line);border-left:5px solid var(--royal);border-radius:12px;padding:18px;text-decoration:none;color:var(--body);display:block}
+  .tile:hover{border-left-color:var(--bright);box-shadow:0 8px 20px rgba(4,30,66,.08)}
+  .tile b{font-family:'Oswald';text-transform:uppercase;color:var(--ink);display:block;font-size:15px;margin-bottom:4px}
+  .tile small{font-size:12.5px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+  th{font-size:11px;text-transform:uppercase;color:#7A8AA5}
+  td input[type=checkbox]{width:auto}
+  .addrow{display:grid;grid-template-columns:1.2fr 1.5fr 1fr auto;gap:10px;margin-top:12px}
+  @media(max-width:700px){.addrow{grid-template-columns:1fr}}
+  .pill{font-size:11px;font-weight:700;padding:2px 10px;border-radius:100px;background:#E8F1FC;color:var(--royal)}
+  #app,#officersCard{display:none}
+</style>
+</head>
+<body>
+<div class="top">
+  <div><h1>Dale Trust Admin</h1><small>One login &middot; your tools &middot; no passwords</small></div>
+  <div class="who" id="who"></div>
+</div>
+<div class="wrap">
+
+<div id="login" class="card">
+  <h2 style="border:0;padding:0;font-size:18px">Sign in</h2>
+  <p style="font-size:13.5px;margin-top:6px">Enter your officer email — we'll send you a one-tap sign-in link. No password to remember, ever.</p>
+  <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
+  <button onclick="requestLink()">Email me a sign-in link</button>
+  <p class="msg" id="lmsg"></p>
+</div>
+
+<div id="app">
+  <div class="tiles" id="tiles"></div>
+
+  <div class="card" id="officersCard">
+    <h2>Officers &amp; access</h2>
+    <p style="font-size:13px;margin-bottom:10px">Tick what each officer can reach. Changes apply the next time they load a tool.</p>
+    <table id="offTable"><thead><tr><th>Name</th><th>Email</th><th>Members</th><th>Posts</th><th>Board figures</th><th>Admin</th><th></th></tr></thead><tbody></tbody></table>
+    <div class="addrow">
+      <input id="nName" placeholder="Name">
+      <input id="nEmail" placeholder="Email">
+      <input id="nTitle" placeholder="Role (e.g. Membership)">
+      <button onclick="addOfficer()">Add officer</button>
+    </div>
+    <p class="msg" id="omsg"></p>
+  </div>
+</div>
+
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null, me=null;
+try{session=localStorage.getItem('dt_session');}catch(e){}
+
+const HDRS=()=>({'Content-Type':'application/json', ...(session?{'Authorization':'Bearer '+session}:{})});
+
+async function requestLink(){
+  const email=$('email').value.trim();
+  if(!email)return;
+  const body={email};
+  // first-ever-officer bootstrap: ?setup=ADMINKEY in the URL enrols you as admin
+  const setup=new URLSearchParams(location.search).get('setup');
+  if(setup){body.setup_key=setup;body.name=prompt('Your full name (first-time setup):')||'Admin';}
+  await fetch(EP+'/auth/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  $('lmsg').innerHTML='<span style="color:var(--green);font-weight:600">Check your email</span> — if that address belongs to a Trust officer, a sign-in link is on its way. It expires in 15 minutes.';
+}
+
+async function verifyFromHash(){
+  const m=location.hash.match(/login=([a-f0-9]{64})/);
+  if(!m)return false;
+  history.replaceState(null,'',location.pathname);
+  const r=await fetch(EP+'/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:m[1]})});
+  const d=await r.json();
+  if(!d.ok){$('lmsg').innerHTML='<span style="color:var(--red)">'+d.error+'</span>';return false;}
+  session=d.session; me=d.officer;
+  try{localStorage.setItem('dt_session',session);}catch(e){}
+  return true;
+}
+
+async function whoami(){
+  if(!session)return false;
+  const r=await fetch(EP+'/auth/me',{headers:HDRS()});
+  if(!r.ok)return false;
+  const d=await r.json();
+  if(!d.ok)return false;
+  me=d.officer;return true;
+}
+
+function show(){
+  $('login').style.display='none';$('app').style.display='block';
+  $('who').innerHTML='<b>'+me.name+'</b>'+(me.role_title?' \u00B7 '+me.role_title:'')+'<br><a href="#" onclick="logout()">Sign out</a>';
+  const t=$('tiles');t.innerHTML='';
+  const tile=(href,title,desc)=>t.insertAdjacentHTML('beforeend','<a class="tile" href="'+href+'"><b>'+title+'</b><small>'+desc+'</small></a>');
+  if(me.can_members){
+    tile('dashboard.html','Membership dashboard','Live register analysis \u2014 drop the sheet, press Connect');
+    tile('import.html','Member import','Load spreadsheet tabs into the database');
+  }
+  if(me.can_posts) tile('compose.html','Post composer','Write once \u2014 publish or schedule in the Trust style');
+  if(me.can_board) tile('board.html','Board figures','Membership at a glance \u2014 live, no personal data');
+  tile('coach-poster.html','Coach poster maker','Matchday travel posters in four fields');
+  if(me.is_admin){$('officersCard').style.display='block';loadOfficers();}
+}
+
+async function loadOfficers(){
+  const r=await fetch(EP+'/auth/officers',{headers:HDRS()});
+  const d=await r.json();
+  if(!d.ok)return;
+  const tb=document.querySelector('#offTable tbody');tb.innerHTML='';
+  d.officers.filter(o=>o.active).forEach(o=>{
+    tb.insertAdjacentHTML('beforeend',
+    `<tr data-id="${o.id}">
+      <td><b>${o.name}</b>${o.role_title?'<br><span class="pill">'+o.role_title+'</span>':''}</td>
+      <td>${o.email}</td>
+      <td><input type="checkbox" ${o.can_members?'checked':''} data-k="can_members"></td>
+      <td><input type="checkbox" ${o.can_posts?'checked':''} data-k="can_posts"></td>
+      <td><input type="checkbox" ${o.can_board?'checked':''} data-k="can_board"></td>
+      <td><input type="checkbox" ${o.is_admin?'checked':''} data-k="is_admin"></td>
+      <td><button style="background:none;color:var(--red);padding:4px" onclick="removeOfficer(${o.id},'${o.name.replace(/'/g,"\\'")}')">remove</button></td>
+    </tr>`);
+  });
+  tb.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.onchange=e=>{
+    const tr=e.target.closest('tr');
+    const g=k=>tr.querySelector('[data-k='+k+']').checked;
+    saveOfficer(+tr.dataset.id,{is_admin:g('is_admin'),can_members:g('can_members'),can_posts:g('can_posts'),can_board:g('can_board')});
+  });
+}
+async function saveOfficer(id,flags){
+  const r=await fetch(EP+'/auth/officers',{method:'POST',headers:HDRS(),body:JSON.stringify({update_id:id,...flags})});
+  const d=await r.json();
+  $('omsg').innerHTML=d.ok?'<span style="color:var(--green)">Saved.</span>':'<span style="color:var(--red)">'+ (d.error||'Failed') +'</span>';
+}
+async function addOfficer(){
+  const name=$('nName').value.trim(),email=$('nEmail').value.trim(),title=$('nTitle').value.trim();
+  if(!name||!email){alert('Name and email needed.');return;}
+  const r=await fetch(EP+'/auth/officers',{method:'POST',headers:HDRS(),body:JSON.stringify({name,email,role_title:title,can_board:true})});
+  const d=await r.json();
+  if(d.ok){$('nName').value='';$('nEmail').value='';$('nTitle').value='';loadOfficers();
+    $('omsg').innerHTML='<span style="color:var(--green)">Added \u2014 they can now sign in with their email (board figures by default; tick more as needed).</span>';}
+  else $('omsg').innerHTML='<span style="color:var(--red)">'+(d.error||'Failed')+'</span>';
+}
+async function removeOfficer(id,name){
+  if(!confirm('Remove '+name+"'s access? Their sign-in stops working immediately."))return;
+  await fetch(EP+'/auth/officers',{method:'POST',headers:HDRS(),body:JSON.stringify({remove_id:id})});
+  loadOfficers();
+}
+function logout(){try{localStorage.removeItem('dt_session');}catch(e){}location.reload();}
+
+(async()=>{
+  if(await verifyFromHash()){show();return;}
+  if(await whoami()){show();return;}
+})();
+</script>
+</body>
+</html>
