@@ -289,7 +289,12 @@ async function pay(method){
   };
   try{
     const r=await fetch(PAY_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const d=await r.json();
+    const raw=await r.text();
+    let d; try{ d=JSON.parse(raw); }catch(_){
+      e.style.display='block';
+      e.textContent='Server replied ('+r.status+'): '+raw.slice(0,160);
+      return;
+    }
     if(!d.ok){e.style.display='block';e.textContent=d.error||'Something went wrong \u2014 please try again.';return;}
     $('memNo').textContent=d.member_no;
     $('memName').textContent=payload.first_name+' '+payload.last_name+' \u00B7 '+type;
@@ -305,7 +310,7 @@ async function pay(method){
     $('form').style.display='none';$('bar').style.display='none';
     $('success').style.display='block';window.scrollTo({top:0,behavior:'smooth'});
   }catch(err){
-    e.style.display='block';e.textContent='Connection problem \u2014 please try again.';
+    e.style.display='block';e.textContent='Could not reach the server \u2014 '+(err&&err.message||err)+'. Please try again.';
   }
 }
 </script>
