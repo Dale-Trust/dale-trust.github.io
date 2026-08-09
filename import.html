@@ -58,6 +58,14 @@
   <h2>3 &middot; Match the columns</h2>
   <p style="font-size:13px;margin-bottom:10px">Best guesses are pre-selected from the column names &mdash; check each one. Fields left as "&mdash; none &mdash;" import blank.</p>
   <div class="maps" id="maps"></div>
+  <label style="margin-top:14px">This file is the tab for&hellip;</label>
+  <select id="seasonSel">
+    <option value="2026/27|desk">2026-27 Membership (current season)</option>
+    <option value="2025/26|paid">Last season 2025-26</option>
+    <option value="2024/25|paid">Lapsed 2024-25</option>
+    <option value="2023/24|paid">Lapsed 2023-24</option>
+    <option value="2025/26|cancelled">Cancelled tab</option>
+  </select>
   <label style="margin-top:14px">Membership type comes from</label>
   <select id="typemode">
     <option value="column">A column in the sheet (mapped above)</option>
@@ -100,19 +108,31 @@ function parseCSV(text){
 }
 
 const FIELDS=[
-  ['first_name','First name',['first name','firstname','first','forename']],
-  ['last_name','Surname',['surname','last name','lastname','last','family']],
-  ['dob','Date of birth',['date of birth','dob','birth']],
+  ['first_name','First name',['first name','firstname','forename']],
+  ['last_name','Surname',['surname','last name','lastname']],
+  ['membership_type','Membership type',['membership type','type','category']],
+  ['new_or_renewal','New / repeat',['new/rpt','new /rpt','rpt']],
+  ['gender','Gender',['gender','sex']],
+  ['dob','Date of birth',['dob','date of birth','birth']],
   ['email','Email',['email']],
-  ['mobile','Mobile / phone',['mobile','phone','telephone','tel']],
-  ['address1','Address 1',['address 1','address1','address line 1','address']],
+  ['mobile','Mobile',['mobile']],
+  ['home_tel','Home phone',['home tel','home phone','landline']],
+  ['address1','Address 1',['address 1','address1','address line 1']],
   ['address2','Address 2',['address 2','address2','address line 2']],
   ['town','Town',['town','city']],
-  ['postcode','Postcode',['post code','postcode','post']],
-  ['membership_type','Membership type',['type','membership','category']],
-  ['date_joined','Date joined',['date joined','joined','join date','date']],
-  ['newsletter_optin','Newsletter opt-in',['newsletter','news','opt']],
-  ['member_no','Existing member number (if any)',['member no','member number','number','membership no']],
+  ['county','County',['county']],
+  ['postcode','Postcode',['post code','postcode']],
+  ['country','Country (exiles)',['country']],
+  ['exile_transport_share','Exile contact / transport share',['exile contact','exile']],
+  ['date_joined','Date joined',['date joined','joined','join date']],
+  ['annual_fee','Annual fee',['annual']],
+  ['donation','Donation',['donation']],
+  ['payment_method','Payment method',['method']],
+  ['letter_confirmed','Letter confirmed',['letter']],
+  ['newsletter_optin','Newsletter opt-in',['newsletter']],
+  ['misc','Misc',['misc']],
+  ['comments','Comments',['additional comments','comments','additional']],
+  ['member_no','Existing member number (if any)',['member no','member number','membership no']],
 ];
 
 function guess(names){
@@ -191,14 +211,26 @@ function transform(r,m){
   const g=k=>m[k]?r[m[k]]:'';
   const tm=$('typemode').value;
   const t = tm==='column' ? normType(g('membership_type')) : tm;
+  const [season,status]=document.getElementById('seasonSel').value.split('|');
+  const nr=(g('new_or_renewal')||'').toLowerCase();
+  const ex=(g('exile_transport_share')||'').toLowerCase();
   return {
     first_name:g('first_name'), last_name:g('last_name'),
-    dob:normDate(g('dob')), email:g('email'), mobile:g('mobile'),
+    membership_type:t, season, payment_status:status,
+    new_or_renewal: nr? (nr.startsWith('n')?'New':'Rpt') : null,
+    gender:g('gender')||null,
+    dob:normDate(g('dob')), email:g('email'), mobile:g('mobile'), home_tel:g('home_tel'),
     address1:g('address1'), address2:g('address2'), town:g('town'),
-    postcode:g('postcode'), membership_type:t,
-    date_joined:normDate(g('date_joined')), newsletter_optin:normBool(g('newsletter_optin')),
+    county:g('county'), postcode:g('postcode'), country:g('country'),
+    exile_transport_share: ex? (ex.startsWith('y')?'Yes':'No') : null,
+    date_joined:normDate(g('date_joined')),
+    annual_fee:g('annual_fee').replace(/[\u00A3,]/g,'')||null,
+    donation:(g('donation')||'').replace(/[\u00A3,]/g,''),
+    payment_method:g('payment_method')||null,
+    letter_confirmed:g('letter_confirmed')||null,
+    newsletter_optin:normBool(g('newsletter_optin')),
+    misc:g('misc')||null, comments:g('comments')||null,
     member_no:g('member_no')||null,
-    payment_status:'desk',
   };
 }
 
@@ -206,7 +238,7 @@ function preview(){
   if(!rows.length)return;
   const m=mapping();
   const sample=rows.slice(0,5).map(r=>transform(r,m));
-  const cols=['first_name','last_name','membership_type','dob','email','town','postcode','date_joined'];
+  const cols=['first_name','last_name','membership_type','season','gender','dob','email','county','postcode','date_joined'];
   $('preview').innerHTML='<table><tr>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr>'+
     sample.map(s=>'<tr>'+cols.map(c=>'<td>'+((s[c]??'')||'<span style="color:#C0392B">blank</span>')+'</td>').join('')+'</tr>').join('')+'</table>';
 }
@@ -218,7 +250,7 @@ async function runImport(){
   const all=rows.map(r=>transform(r,m)).filter(r=>r.first_name&&r.last_name&&r.membership_type);
   const dropped=rows.length-all.length;
   if(!all.length){alert('No importable rows — check the column matching (name and type are required).');return;}
-  if(!confirm('Import '+all.length+' members into the live database'+(dropped?' ('+dropped+' rows lack name/type and will be skipped)':'')+'?'))return;
+  if(!confirm('Import '+all.length+' rows as '+document.getElementById('seasonSel').selectedOptions[0].text+' into the live database'+(dropped?' ('+dropped+' rows lack name/type and will be skipped)':'')+'?'))return;
   $('run').disabled=true;$('bar').style.display='block';
   let imported=0,skipped=0,errs=[];
   const CHUNK=40;
