@@ -132,6 +132,7 @@ drop.onclick=()=>fileInput.click();
 drop.addEventListener('drop',ev=>handle(ev.dataTransfer.files[0]));
 fileInput.onchange=()=>handle(fileInput.files[0]);
 
+let lastWb=null;
 const norm=s=>String(s??'').trim();
 const low=s=>norm(s).toLowerCase();
 
@@ -343,23 +344,33 @@ async function loadLive(){
     const r=await fetch(ep+'/export?key='+encodeURIComponent(key));
     if(!r.ok){alert('Server said '+r.status+' \u2014 check the key.');return;}
     const csv=await r.text();
-    const wb=XLSX.read(csv,{type:'string'});
-    const name='2026-27 Members (live)';
-    wb.Sheets[name]=wb.Sheets[wb.SheetNames[0]];
-    wb.SheetNames=[name];
+    const raw=XLSX.read(csv,{type:'string'});
+    const liveSheet=raw.Sheets[raw.SheetNames[0]];
+    let wb, merged=false;
+    if(lastWb){
+      // replace the current-season tab in the dropped workbook with the live register
+      wb={SheetNames:[...lastWb.SheetNames],Sheets:{...lastWb.Sheets}};
+      const seasonNames=wb.SheetNames.filter(n=>seasonKey(n)&&!low(n).includes('lapsed')&&!low(n).includes('cancel'));
+      seasonNames.sort((a,b)=>seasonKey(a)<seasonKey(b)?-1:1);
+      const curName=seasonNames[seasonNames.length-1];
+      if(curName){wb.Sheets[curName]=liveSheet;merged=true;}
+      else{wb.SheetNames.push('2026-27 Members (live)');wb.Sheets['2026-27 Members (live)']=liveSheet;}
+    } else {
+      wb={SheetNames:['2026-27 Members (live)'],Sheets:{'2026-27 Members (live)':liveSheet}};
+    }
     analyse(wb);
     let note=document.getElementById('liveNote');
     if(!note){note=document.createElement('p');note.id='liveNote';
       note.style.cssText='margin-top:8px;font-size:13px;color:#1E8E5A;font-weight:600;flex-basis:100%';
       document.getElementById('liveRow').appendChild(note);}
-    note.textContent='Live register loaded \u00B7 '+(csv.trim().split('\n').length-1)+' members \u00B7 '+new Date().toLocaleString('en-GB');
+    note.textContent='Live register loaded \u00B7 '+(csv.trim().split('\n').length-1)+' members \u00B7 '+new Date().toLocaleString('en-GB')+(merged?' \u00B7 merged with spreadsheet history & exiles':' \u00B7 tip: drop the spreadsheet first, then Connect, to add history & exile detail');
   }catch(e){alert('Could not reach the register \u2014 '+e.message);}
 }
 function handle(file){
   if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{
-    try{analyse(XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true}))}
+    try{lastWb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});analyse(lastWb)}
     catch(err){alert('Could not read that file: '+err.message)}
   };
   reader.readAsArrayBuffer(file);
