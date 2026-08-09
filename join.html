@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Join the Dale Trust — Membership 2026/27</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--gold:#E8B84B;--green:#1E8E5A;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:15.5px;padding-bottom:120px}
+  h1,h2,h3,.disp{font-family:'Oswald',sans-serif;text-transform:uppercase;color:var(--ink)}
+  .demo{background:var(--gold);color:#1B1400;text-align:center;font-size:12.5px;font-weight:600;padding:7px 14px}
+  header{background:linear-gradient(120deg,var(--navy),#16305C 60%,#00417E);color:#fff;padding:34px 20px 30px;text-align:center;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;top:0;bottom:0;right:-14%;width:34%;background:var(--royal);transform:skewX(-14deg);opacity:.45}
+  header h1{color:#fff;font-size:clamp(28px,6vw,44px);position:relative}
+  header p{color:#C7D6EC;margin-top:6px;position:relative;font-size:14.5px}
+  .wrap{max-width:640px;margin:0 auto;padding:0 16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px 20px;margin-top:16px}
+  .card h2{font-size:18px;margin-bottom:14px;border-left:4px solid var(--royal);padding-left:10px}
+  label{display:block;font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);margin:14px 0 5px}
+  label small{font-weight:500;text-transform:none;letter-spacing:0;color:#7A8AA5}
+  input[type=text],input[type=email],input[type=tel],input[type=date],select{
+    width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:10px;font:inherit;background:#fff;color:var(--ink)}
+  input:focus,select:focus{outline:none;border-color:var(--bright);box-shadow:0 0 0 3px rgba(17,115,212,.15)}
+  input.err{border-color:var(--red)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:480px){.row{grid-template-columns:1fr}}
+  .hint{font-size:12.5px;color:#7A8AA5;margin-top:5px}
+  .hint.notice{color:var(--royal);font-weight:600}
+  /* membership type cards */
+  .types{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  @media(max-width:480px){.types{grid-template-columns:1fr}}
+  .type{border:2px solid var(--line);border-radius:12px;padding:14px 12px;text-align:center;cursor:pointer;background:#fff;transition:all .12s}
+  .type b{font-family:'Oswald';font-size:17px;text-transform:uppercase;color:var(--ink);display:block}
+  .type .price{font-family:'Oswald';font-size:24px;color:var(--royal);display:block;margin:4px 0 2px}
+  .type small{font-size:11.5px;color:#7A8AA5}
+  .type.sel{border-color:var(--royal);background:#EAF2FB;box-shadow:0 4px 14px rgba(0,87,167,.15)}
+  /* donation chips */
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{border:1.5px solid var(--line);background:#fff;border-radius:100px;padding:9px 18px;font:600 14px 'Montserrat';color:var(--ink);cursor:pointer}
+  .chip.sel{background:var(--royal);border-color:var(--royal);color:#fff}
+  #donOther{width:110px;display:none}
+  /* checks & toggles */
+  .check{display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:14px}
+  .check input{width:19px;height:19px;margin-top:2px;accent-color:var(--royal);flex:none}
+  .seg{display:flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;width:max-content}
+  .seg button{border:0;background:#fff;padding:10px 22px;font:600 14px 'Montserrat';color:var(--body);cursor:pointer}
+  .seg button.sel{background:var(--royal);color:#fff}
+  .toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--wash);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:12px}
+  .toggle b{font-size:14px;color:var(--ink);display:block}
+  .toggle small{font-size:12px;color:#7A8AA5}
+  .switch{position:relative;width:52px;height:30px;flex:none}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:#C4CEDC;border-radius:100px;transition:.2s;cursor:pointer}
+  .slider::before{content:"";position:absolute;width:24px;height:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .switch input:checked + .slider{background:var(--green)}
+  .switch input:checked + .slider::before{transform:translateX(22px)}
+  /* pay */
+  .paybtns{display:grid;gap:10px;margin-top:8px}
+  .paybtn{border:0;border-radius:12px;padding:15px;font:600 16px 'Montserrat';cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+  .apple{background:#000;color:#fff}
+  .gpay{background:#fff;color:#3C4043;border:1.5px solid var(--line)}
+  .cardpay{background:var(--royal);color:#fff}
+  .gdot{width:16px;height:16px;border-radius:50%;background:conic-gradient(#4285F4 0 25%,#EA4335 25% 50%,#FBBC04 50% 75%,#34A853 75% 100%)}
+  /* sticky total */
+  .totalbar{position:fixed;left:0;right:0;bottom:0;background:var(--navy);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:16px;box-shadow:0 -8px 24px rgba(4,30,66,.25);z-index:50}
+  .totalbar .t{font-family:'Oswald';font-size:26px}
+  .totalbar .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8FC1FF;display:block}
+  .totalbar button{margin-left:auto;background:var(--bright);color:#fff;border:0;border-radius:100px;font:600 15px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:14px 30px;cursor:pointer}
+  .totalbar button:hover{background:#1e83e8}
+  /* success */
+  #success{display:none}
+  .member-card{background:linear-gradient(135deg,var(--navy),#00417E);color:#fff;border-radius:18px;padding:26px 22px;margin-top:14px}
+  .member-card .no{font-family:'Oswald';font-size:30px;letter-spacing:.12em}
+  .member-card small{color:#8FC1FF;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+  .wallets{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .wallets span{background:#000;color:#fff;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600}
+  .err-msg{color:var(--red);font-size:13px;font-weight:600;margin-top:10px;display:none}
+  footer{max-width:640px;margin:26px auto 0;padding:0 16px;font-size:12px;color:#7A8AA5;text-align:center}
+</style>
+</head>
+<body>
+<div class="demo">Design prototype — payments are simulated. No money moves, nothing is stored.</div>
+<header>
+  <h1>Join the Dale Trust</h1>
+  <p>Membership 2026/27 &middot; one form, two minutes, no PayPal account needed</p>
+</header>
+
+<div class="wrap" id="form">
+
+  <div class="card">
+    <h2>1 &middot; Membership type</h2>
+    <div class="types" id="types">
+      <div class="type sel" data-type="Adult" data-price="7.5"><b>Adult</b><span class="price">&pound;7.50</span><small>16 and over, Rochdale &amp; local</small></div>
+      <div class="type" data-type="Exile" data-price="7.5"><b>Exile</b><span class="price">&pound;7.50</span><small>Following the Dale from afar</small></div>
+      <div class="type" data-type="Junior" data-price="0"><b>Junior</b><span class="price">FREE</span><small>Under 16</small></div>
+    </div>
+    <p class="hint" id="typeHint"></p>
+  </div>
+
+  <div class="card">
+    <h2>2 &middot; About you</h2>
+    <div class="row">
+      <div><label>First name</label><input type="text" id="fn" autocomplete="given-name"></div>
+      <div><label>Last name</label><input type="text" id="ln" autocomplete="family-name"></div>
+    </div>
+    <label>Date of birth <small>— sets junior membership automatically</small></label>
+    <input type="date" id="dob">
+    <label>Email <small>— your membership confirmation goes here</small></label>
+    <input type="email" id="email" autocomplete="email">
+    <label>Mobile <small>(optional)</small></label>
+    <input type="tel" id="mob" autocomplete="tel">
+  </div>
+
+  <div class="card">
+    <h2>3 &middot; Address</h2>
+    <label>Address line 1</label><input type="text" id="ad1" autocomplete="address-line1">
+    <label>Address line 2 <small>(optional)</small></label><input type="text" id="ad2" autocomplete="address-line2">
+    <div class="row">
+      <div><label>Town</label><input type="text" id="town" autocomplete="address-level2"></div>
+      <div><label>Postcode</label><input type="text" id="pc" autocomplete="postal-code" style="text-transform:uppercase"></div>
+    </div>
+    <p class="hint notice" id="exileHint" style="display:none">Looks like you're outside Rochdale — Exile membership is made for you, and we've selected it. (Change it above if we've got that wrong.)</p>
+  </div>
+
+  <div class="card" id="exileCard" style="display:none">
+    <h2>Exile extras</h2>
+    <p style="font-size:14px">Happy for other nearby Exiles to contact you about sharing transport to games? We'd share your area and email in the members-only newsletter.</p>
+    <div class="seg" id="shareSeg" style="margin-top:10px">
+      <button type="button" data-v="Yes">Yes please</button>
+      <button type="button" data-v="No" class="sel">No thanks</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>4 &middot; Add a donation? <span style="font-family:Montserrat;font-size:12px;color:#7A8AA5;text-transform:none;font-weight:500">(entirely optional)</span></h2>
+    <div class="chips" id="chips">
+      <button type="button" class="chip sel" data-v="0">No thanks</button>
+      <button type="button" class="chip" data-v="2.5">&pound;2.50</button>
+      <button type="button" class="chip" data-v="5">&pound;5</button>
+      <button type="button" class="chip" data-v="10">&pound;10</button>
+      <button type="button" class="chip" data-v="other">Other</button>
+      <input type="text" id="donOther" inputmode="decimal" placeholder="&pound;">
+    </div>
+    <p class="hint">Donations fund the DS All Stars appeal and Trust community work.</p>
+  </div>
+
+  <div class="card">
+    <h2>5 &middot; Staying in touch</h2>
+    <div class="check"><input type="checkbox" id="news" checked>
+      <span><b style="color:var(--ink)">Email me the Trust newsletter</b> — Trust news, coach travel and member offers. Unsubscribe any time.</span></div>
+    <div class="check"><input type="checkbox" id="gdpr">
+      <span><b style="color:var(--ink)">I agree to the Trust holding my details for membership purposes</b> — as set out in the <u>privacy policy</u>. Required to join.</span></div>
+    <div class="toggle">
+      <div><b>Renew automatically each July</b><small>We'll email you 14 days before &mdash; cancel any time. Fixes the "forgot to renew" problem for good.</small></div>
+      <label class="switch"><input type="checkbox" id="auto" checked><span class="slider"></span></label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>6 &middot; Payment</h2>
+    <div class="paybtns">
+      <button type="button" class="paybtn apple" onclick="pay('Apple Pay')">&#63743; Pay</button>
+      <button type="button" class="paybtn gpay" onclick="pay('Google Pay')"><span class="gdot"></span> Pay with Google</button>
+      <button type="button" class="paybtn cardpay" onclick="pay('Card')">Pay by card</button>
+    </div>
+    <p class="hint">No account, no login — powered by Stripe in the live version. Junior membership skips payment entirely.</p>
+    <p class="err-msg" id="errs"></p>
+  </div>
+</div>
+
+<!-- success -->
+<div class="wrap" id="success">
+  <div class="card" style="border-top:5px solid var(--green)">
+    <h2 style="border-left-color:var(--green)">Welcome to the Trust! 🎉</h2>
+    <p id="sumLine" style="font-size:15px"></p>
+    <div class="member-card">
+      <small>Dale Supporters Trust &middot; Member 2026/27</small>
+      <div class="no" id="memNo">DT-2026-0000</div>
+      <div style="margin-top:6px;font-size:14px" id="memName"></div>
+      <div class="wallets"><span>&#63743; Add to Apple Wallet</span><span>Add to Google Wallet</span></div>
+    </div>
+    <p style="margin-top:16px;font-size:14px">A confirmation email is on its way (in production, sent instantly via the Trust's email system) with your digital card and everything your membership includes — Partners of the Trust offers, coach travel priority, and both competition leagues, free.</p>
+  </div>
+</div>
+
+<div class="totalbar" id="bar">
+  <div><span class="lbl">Total today</span><span class="t" id="total">&pound;7.50</span></div>
+  <div style="font-size:12px;color:#B9CCE8" id="barNote">Adult membership</div>
+  <button onclick="document.querySelector('.paybtns').scrollIntoView({behavior:'smooth'})">Join now</button>
+</div>
+
+<footer>Dale Trust is the trading name of Rochdale Supporters Club Limited, a registered society (IP29690R). Prototype: no data leaves this page.</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+let type='Adult', price=7.5, don=0;
+
+function setType(t){
+  type=t;
+  document.querySelectorAll('.type').forEach(el=>el.classList.toggle('sel',el.dataset.type===t));
+  price=+document.querySelector(`.type[data-type="${t}"]`).dataset.price;
+  $('exileCard').style.display = t==='Exile' ? 'block':'none';
+  $('typeHint').textContent = t==='Junior' ? 'Junior membership is free — no payment needed. A parent or guardian\u2019s email is fine above.' : '';
+  refresh();
+}
+document.querySelectorAll('.type').forEach(el=>el.onclick=()=>setType(el.dataset.type));
+
+// DOB drives junior automatically
+$('dob').onchange=()=>{
+  const d=new Date($('dob').value); if(isNaN(d))return;
+  const age=Math.floor((Date.now()-d)/31557600000);
+  if(age<16 && type!=='Junior'){setType('Junior');$('typeHint').textContent='Under 16 \u2014 we\u2019ve switched you to free Junior membership.';}
+  if(age>=16 && type==='Junior'){setType('Adult');$('typeHint').textContent='16 or over \u2014 Junior is for under-16s, so we\u2019ve moved you to Adult.';}
+};
+
+// postcode nudges exile
+$('pc').addEventListener('blur',()=>{
+  const pc=$('pc').value.trim().toUpperCase();
+  if(pc && !/^(OL|M24|BL9)/.test(pc) && type==='Adult'){
+    setType('Exile'); $('exileHint').style.display='block';
+  }
+});
+
+// exile transport share segment
+document.querySelectorAll('#shareSeg button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#shareSeg button').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel');
+});
+
+// donation chips
+document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{
+  document.querySelectorAll('.chip').forEach(x=>x.classList.remove('sel'));
+  c.classList.add('sel');
+  if(c.dataset.v==='other'){$('donOther').style.display='inline-block';$('donOther').focus();don=parseFloat($('donOther').value)||0;}
+  else{$('donOther').style.display='none';don=+c.dataset.v;}
+  refresh();
+});
+$('donOther').oninput=()=>{don=parseFloat($('donOther').value)||0;refresh();};
+
+function refresh(){
+  const total=price+don;
+  $('total').innerHTML=total===0?'FREE':'&pound;'+total.toFixed(2);
+  $('barNote').textContent=type+' membership'+(don?` + \u00A3${don.toFixed(2)} donation`:'');
+}
+refresh();
+
+function pay(method){
+  // validation
+  const errs=[];
+  const need=(id,name)=>{const v=$(id).value.trim();$(id).classList.toggle('err',!v);if(!v)errs.push(name);return v};
+  need('fn','first name');need('ln','last name');
+  const em=need('email','email');
+  if(em && !/.+@.+\..+/.test(em)){errs.push('a valid email');$('email').classList.add('err');}
+  need('ad1','address');need('town','town');need('pc','postcode');
+  if(!$('gdpr').checked)errs.push('the privacy agreement tick');
+  const e=$('errs');
+  if(errs.length){e.style.display='block';e.textContent='Still needed: '+errs.join(', ')+'.';e.scrollIntoView({behavior:'smooth',block:'center'});return;}
+  e.style.display='none';
+  // simulate success
+  const no='DT-2026-'+String(Math.floor(1000+Math.random()*9000));
+  $('memNo').textContent=no;
+  $('memName').textContent=$('fn').value.trim()+' '+$('ln').value.trim()+' \u00B7 '+type;
+  $('sumLine').innerHTML=`${type} membership confirmed${don?` with a \u00A3${don.toFixed(2)} donation \u2014 thank you`:''}${price+don>0?` \u00B7 paid by ${method}`:''}${$('auto').checked?' \u00B7 auto-renewal on':''}.`;
+  $('form').style.display='none';$('bar').style.display='none';
+  $('success').style.display='block';window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

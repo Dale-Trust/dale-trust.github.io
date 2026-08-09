@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exiles — Dale Supporters Trust</title>
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--gold:#E8B84B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{overflow-x:hidden}
+  body{font-family:'Montserrat',system-ui,sans-serif;color:var(--body);font-size:16px;line-height:1.65;background:#fff}
+  h1,h2,h3,.disp{font-family:'Oswald',sans-serif;text-transform:uppercase;color:var(--ink);line-height:1.12}
+  a{color:var(--royal)}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 28px}
+  .topbar{background:var(--navy);color:#C7D6EC;font-size:12.5px}
+  .topbar .wrap{display:flex;align-items:center;height:40px}
+  header{border-bottom:1px solid var(--line)}
+  .nav-inner{display:flex;align-items:center;gap:18px;height:96px}
+  .nav-inner img{height:70px;width:auto}
+  .brand-words b{font-family:'Oswald';font-weight:700;font-size:22px;text-transform:uppercase;color:var(--ink);display:block;line-height:1.05}
+  .brand-words small{font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--royal)}
+  .back{margin-left:auto;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.08em;text-decoration:none;border:2px solid var(--royal);padding:9px 18px;color:var(--royal)}
+  .back:hover{background:var(--royal);color:#fff}
+  .hero{background:linear-gradient(120deg,var(--navy),#16305C 55%,#00417E);color:#fff;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:0;bottom:0;right:-12%;width:44%;background:var(--royal);transform:skewX(-14deg);opacity:.35}
+  .hero .wrap{position:relative;padding-top:56px;padding-bottom:56px}
+  .kicker{font-size:12.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#8FC1FF;margin-bottom:10px}
+  .hero h1{color:#fff;font-size:clamp(34px,5.4vw,56px)}
+  .hero p{color:#C7D6EC;max-width:60ch;margin-top:12px}
+  section{padding:64px 0}
+  .smac{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:start}
+  @media(max-width:880px){.smac{grid-template-columns:1fr}}
+  .smac h2{font-size:30px;margin-bottom:6px}
+  .smac .sub{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--royal);margin-bottom:18px}
+  .smac p{margin-top:14px}
+  .photo{border:1px solid var(--line);border-top:5px solid var(--royal);background:#fff;padding:10px;box-shadow:0 14px 34px rgba(4,30,66,.12)}
+  .photo img{width:100%;display:block}
+  .photo figcaption{font-size:12.5px;color:#7A8AA5;padding:10px 4px 2px}
+  .chips{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 4px}
+  .chip{background:var(--wash);border:1px solid var(--line);border-left:4px solid var(--royal);padding:8px 14px;font-size:13px;font-weight:600;color:var(--ink)}
+  .cta{margin-top:26px;background:var(--navy);color:#fff;padding:24px;border-radius:0}
+  .cta b{font-family:'Oswald';font-size:18px;text-transform:uppercase;display:block;margin-bottom:6px}
+  .cta p{color:#C7D6EC;font-size:14.5px;margin:0 0 14px}
+  .cta .btns{display:flex;gap:10px;flex-wrap:wrap}
+  .cta a{display:inline-block;background:var(--bright);color:#fff;text-decoration:none;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:12px 20px}
+  .cta a.alt{background:transparent;border:2px solid #8FC1FF}
+  .motto{font-family:'Oswald';font-weight:700;font-size:22px;text-transform:uppercase;color:var(--royal);margin-top:26px}
+  .other{background:var(--wash);border-top:1px solid var(--line)}
+  .other .wrap{text-align:center;max-width:760px}
+  .other h3{font-size:24px;margin-bottom:10px}
+  footer{background:var(--navy);color:#8CA2C4;font-size:13px}
+  footer .wrap{padding:26px 28px;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+  footer img{height:44px}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="wrap">The independent supporters' trust of Rochdale AFC</div></div>
+<header><div class="wrap nav-inner">
+  <img src="img/brand/dale-logo.png" alt="Dale Supporters Trust">
+  <span class="brand-words"><b>Dale Trust</b><small>Rochdale AFC Supporters</small></span>
+  <a class="back" href="index.html">&larr; Back to Trust home</a>
+</div></header>
+
+<div class="hero">
+  <div class="wrap">
+    <p class="kicker">Exiles &middot; Following the Dale from afar</p>
+    <h1>You're never far from Spotland</h1>
+    <p>Hundreds of Trust members follow the Dale from outside Rochdale &mdash; across England and around the world. Exile groups keep them connected: lifts shared, away days organised, and the Dale followed together wherever you've landed.</p>
+  </div>
+</div>
+
+<section>
+  <div class="wrap smac">
+    <div>
+      <h2>SMAC</h2>
+      <p class="sub">South Manchester &amp; Cheshire Rochdale Supporters</p>
+      <p>SMAC is now in its <strong>25th season</strong> (going since 2002/03) and going strong, with members of all ages.</p>
+      <p>Support is given to the club each season home and away &mdash; plus our own <strong>Player of the Season award</strong>, won last season by <strong>Harvey Gilmour</strong>.</p>
+      <p>SMAC members share lifts to the Dale, enjoying home and away trips together and keeping each other updated via the group's WhatsApp. This season we're hoping to organise an <strong>away match overnighter</strong> and a <strong>match ball sponsor day</strong>.</p>
+      <div class="chips">
+        <span class="chip">25 seasons strong</span>
+        <span class="chip">Lift shares to every game</span>
+        <span class="chip">Player of the Season award</span>
+        <span class="chip">All ages welcome</span>
+      </div>
+      <div class="cta">
+        <b>Live in the SMAC area? Get in touch</b>
+        <p>New members are always welcome &mdash; give Andy a shout and come along to the next one.</p>
+        <div class="btns">
+          <a href="tel:07403612792">Call Andy &middot; 07403 612792</a>
+          <a class="alt" href="mailto:andyhoward56@gmail.com">andyhoward56@gmail.com</a>
+        </div>
+      </div>
+      <p class="motto">Up the Dale and Down the Ale!</p>
+    </div>
+    <figure class="photo">
+      <img src="img/photos/smac.jpg" alt="SMAC members with the Vertu Trophy at the Crown Oil Arena">
+      <figcaption>SMAC members with the trophy at a Dale fans' event &mdash; support given home and away, every season.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="other">
+  <div class="wrap">
+    <h3 class="disp">Got an exile group &mdash; or want to start one?</h3>
+    <p>From overseas WhatsApp groups to county meet-ups, the Trust wants every pocket of Daleys connected. Get in touch with our Exile Officer, Ian Goodwin, and we'll help you get going &mdash; and give your group a home on this page.</p>
+  </div>
+</section>
+
+<footer><div class="wrap">
+  <img src="img/brand/dale-logo.png" alt="">
+  <span>Dale Trust is the trading name of Rochdale Supporters Club Limited, a registered society (IP29690R).</span>
+</div></footer>
+</body>
+</html>
