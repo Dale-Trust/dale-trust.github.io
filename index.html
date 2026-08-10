@@ -346,10 +346,10 @@
           <div class="cd"><b id="cd-s">--</b><span>Sec</span></div>
         </div>
       </div>
-      <div id="lastResult" style="display:none;border-top:1px solid rgba(255,255,255,.14);padding:12px 16px">
-        <p style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8FC1FF;margin-bottom:6px">Last time out</p>
-        <p style="font-size:14.5px;color:#fff;font-weight:600" id="lastLine"></p>
-        <p style="font-size:12px;color:#9FBEE8;margin-top:2px" id="lastMeta"></p>
+      <div id="lastResult" style="display:none;border-top:1px solid #DCE3EC;padding:14px 16px">
+        <p style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#0057A7;margin-bottom:6px">Last time out</p>
+        <p style="font-size:15.5px;color:#10203A;font-weight:700" id="lastLine"></p>
+        <p style="font-size:12.5px;color:#7A8AA5;margin-top:2px" id="lastMeta"></p>
       </div>
       <div class="hub-cta">
         <a href="mailto:travel@daletrust.co.uk?subject=Coach%20travel%20booking">Book coach travel</a>
@@ -745,7 +745,8 @@ async function loadHub(){
     if(next){
       const set = (id,v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
       set('hubComp', next.competition || '');
-      set('hubHomeName', next.home); set('hubAwayName', next.away);
+      const nice = n => /^rochdale$/i.test(String(n).trim()) ? 'Rochdale AFC' : n;
+      set('hubHomeName', nice(next.home)); set('hubAwayName', nice(next.away));
       const hb = document.getElementById('hubHomeBadge'), ab = document.getElementById('hubAwayBadge');
       if(hb){ hb.src = badgeFor(next.home); hb.alt = next.home; hb.style.display=''; }
       if(ab){ ab.src = badgeFor(next.away); ab.alt = next.away; ab.style.display=''; }
@@ -770,7 +771,7 @@ async function loadHub(){
         verdict = ours > theirs ? 'Won' : (ours < theirs ? 'Lost' : 'Drew');
       }
       document.getElementById('lastLine').textContent =
-        (verdict ? verdict + ' ' : '') + sc + ' ' + (isHome ? 'v ' : 'at ') + opp;
+        (verdict ? verdict + ' ' : '') + sc + ' ' + (isHome ? 'v ' : 'away at ') + opp;
       document.getElementById('lastMeta').textContent =
         (last.competition || '') + ' \u00b7 ' + last.when.toLocaleDateString('en-GB',{day:'numeric',month:'long'});
       box.style.display = 'block';
