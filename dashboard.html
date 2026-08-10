@@ -360,12 +360,53 @@ async function loadLive(){
     const order=Object.keys(groups).sort();
     if(!order.length){note('No seasons found in the register.','#C0392B');return;}
     const wb={SheetNames:[],Sheets:{}};
-    order.forEach((s,i)=>{
-      const isCurrent=i===order.length-1;
-      const name=(isCurrent?s.replace('/','-')+' Membership':'Lapsed '+s.replace('/','-'));
+    order.forEach(s=>{
+      const name=s.replace('/','-')+' Membership';
       wb.SheetNames.push(name);
       wb.Sheets[name]=XLSX.utils.aoa_to_sheet([head].concat(groups[s]));
     });
+
+    // ---- build an Exiles sheet in the layout the analysis expects ----
+    const ix={};head.forEach((c,i)=>{ix[String(c).toLowerCase().trim()]=i;});
+    const isEng=v=>{const t=(v||'').toLowerCase();return !t||t==='england'||t==='uk'||t==='united kingdom'||t==='gb'||t==='scotland'||t==='wales';};
+    const byCountry={}, byCounty={}, townsOf={}, summary={overseas:[],england:[],total:[]};
+    order.forEach(s=>{
+      let ov=0,en=0;
+      (groups[s]||[]).forEach(r=>{
+        if(String(r[ix['membership type']]||'').toLowerCase().indexOf('ex')!==0)return;
+        const country=String(r[ix['country']]||'').trim();
+        if(isEng(country)){
+          en++;
+          if(s===order[order.length-1]){
+            const cty=String(r[ix['county']]||'').trim()||'Not recorded';
+            byCounty[cty]=(byCounty[cty]||0)+1;
+            const town=String(r[ix['town']]||'').trim();
+            if(town){townsOf[cty]=townsOf[cty]||new Set();townsOf[cty].add(town);}
+          }
+        } else {
+          ov++;
+          byCountry[country]=byCountry[country]||{};
+          byCountry[country][s]=(byCountry[country][s]||0)+1;
+        }
+      });
+      summary.overseas.push(ov);summary.england.push(en);summary.total.push(ov+en);
+    });
+    const ex=[];
+    ex.push(['Country'].concat(order));
+    Object.keys(byCountry).sort((a,b)=>{
+      const last=order[order.length-1];
+      return (byCountry[b][last]||0)-(byCountry[a][last]||0);
+    }).forEach(c=>ex.push([c].concat(order.map(s=>byCountry[c][s]||0))));
+    ex.push([]);
+    ex.push(['Counties','Members','Towns']);
+    Object.entries(byCounty).sort((a,b)=>b[1]-a[1]).forEach(([c,n])=>
+      ex.push([c,n,[...(townsOf[c]||[])].slice(0,6).join(', ')]));
+    ex.push([]);
+    ex.push(['Overseas'].concat(summary.overseas));
+    ex.push(['England'].concat(summary.england));
+    ex.push(['Total'].concat(summary.total));
+    wb.SheetNames.push('Exiles');
+    wb.Sheets['Exiles']=XLSX.utils.aoa_to_sheet(ex);
     analyse(wb);
     note('Live register loaded \u00b7 '+(aoa.length-1)+' records across '+order.length+' seasons \u00b7 '+new Date().toLocaleString('en-GB'));
   }catch(e){ note('Could not load: '+e.message,'#C0392B'); }
