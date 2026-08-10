@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dale Trust — Manage articles</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:16px 22px}
+  .top h1{font-size:20px}.top small{color:#8FC1FF;font-size:12px;display:block}
+  .wrap{max-width:1100px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  input,select,textarea{padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);width:100%}
+  textarea{min-height:320px;line-height:1.6;resize:vertical}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:12px 0 4px}
+  .searchrow{display:grid;grid-template-columns:1fr 190px auto;gap:10px;align-items:end}
+  @media(max-width:720px){.searchrow{grid-template-columns:1fr}}
+  button{background:var(--royal);color:#fff;border:0;border-radius:9px;padding:11px 20px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+  button.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line)}
+  button.warn{background:var(--red)}
+  button.ok{background:var(--green)}
+  .row{display:flex;gap:12px;align-items:center;padding:11px 6px;border-bottom:1px solid var(--line)}
+  .row:hover{background:#F7FAFF}
+  .row b{color:var(--ink);font-size:14.5px}
+  .row small{color:#7A8AA5;display:block;font-size:12px;margin-top:2px}
+  .pill{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:100px;color:#fff;flex:none}
+  .published{background:var(--green)} .draft{background:#8C9299} .scheduled{background:var(--gold);color:#3a2c00} .archived{background:#5B6472}
+  .grow{flex:1;min-width:0}
+  .acts{display:flex;gap:6px;flex:none}
+  .acts button{padding:6px 12px;font-size:11.5px}
+  .pager{display:flex;gap:10px;align-items:center;margin-top:14px}
+  #editor{display:none}
+  .msg{font-size:13.5px;font-weight:600;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>Manage articles</h1><small>Find, edit, unpublish or archive anything on the site</small></div>
+<div class="wrap">
+
+<div class="panel" id="browser">
+  <div class="searchrow">
+    <div><label>Search titles and text</label><input id="q" placeholder="e.g. Newport coach" onkeydown="if(event.key==='Enter')load(0)"></div>
+    <div><label>Status</label>
+      <select id="status" onchange="load(0)">
+        <option value="">All</option><option value="published">Published</option>
+        <option value="draft">Draft</option><option value="scheduled">Scheduled</option>
+        <option value="archived">Archived</option>
+      </select></div>
+    <div><button onclick="load(0)">Search</button></div>
+  </div>
+  <p class="msg" id="count"></p>
+  <div id="list"></div>
+  <div class="pager">
+    <button class="ghost" id="prev" onclick="load(offset-limit)">&larr; Newer</button>
+    <button class="ghost" id="next" onclick="load(offset+limit)">Older &rarr;</button>
+    <span id="range" style="font-size:13px;color:#7A8AA5"></span>
+  </div>
+</div>
+
+<div class="panel" id="editor">
+  <h2 style="font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px">Editing article</h2>
+  <label>Title</label><input id="eTitle">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+    <div><label>Category</label>
+      <select id="eCat">
+        <option>Trust News</option><option>Coach Travel</option><option>Exile News</option>
+        <option>Competitions</option><option>Community Work</option><option>Junior Dale</option>
+        <option>Meetings with the Club</option><option>Friends of the Trust</option>
+        <option>Travel Guides</option><option>Her Game Too</option>
+      </select></div>
+    <div><label>Status</label>
+      <select id="eStatus"><option value="published">Published</option><option value="draft">Draft (hidden)</option>
+      <option value="scheduled">Scheduled</option><option value="archived">Archived</option></select></div>
+    <div><label>Publish date &amp; time</label><input type="datetime-local" id="eWhen"></div>
+  </div>
+  <label>The words</label><textarea id="eBody"></textarea>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+    <button class="ok" onclick="save()">Save changes</button>
+    <button class="ghost" onclick="closeEditor()">Cancel</button>
+    <a id="eView" href="#" target="_blank" rel="noopener"><button class="ghost" type="button">View on site &rarr;</button></a>
+    <button class="warn" style="margin-left:auto" onclick="archiveIt()">Archive this article</button>
+  </div>
+  <p class="msg" id="eMsg"></p>
+</div>
+
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
+let offset=0, limit=25, total=0, current=null;
+
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const fmt=d=>d?new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—';
+
+async function load(off){
+  offset=Math.max(0,off||0);
+  const q=encodeURIComponent($('q').value.trim()), st=$('status').value;
+  try{
+    const r=await fetch(EP+'/posts/all?q='+q+'&status='+st+'&limit='+limit+'&offset='+offset,{headers:H()});
+    if(r.status===401||r.status===403){location.href='admin.html';return;}
+    const d=await r.json();
+    if(!d.ok){$('count').textContent=d.error||'Could not load.';return;}
+    total=d.total;
+    $('count').innerHTML='<b>'+total+'</b> article'+(total===1?'':'s')+($('q').value?' matching “'+esc($('q').value)+'”':'');
+    $('list').innerHTML=d.posts.map(p=>
+      '<div class="row"><span class="pill '+p.status+'">'+p.status+'</span>'+
+      '<div class="grow"><b>'+esc(p.title)+'</b><small>'+esc(p.category)+' · by '+esc(p.author)+' · '+fmt(p.publish_at)+
+      (p.emailed_at?' · emailed':'')+'</small></div>'+
+      '<div class="acts"><button onclick="edit('+p.id+')">Edit</button>'+
+      (p.status==='published'?'<a href="news.html?p='+encodeURIComponent(p.slug)+'" target="_blank" rel="noopener"><button class="ghost" type="button">View</button></a>':'')+
+      '</div></div>').join('') || '<p style="padding:14px 6px;color:#7A8AA5">Nothing found.</p>';
+    $('prev').style.visibility=offset>0?'visible':'hidden';
+    $('next').style.visibility=(offset+limit<total)?'visible':'hidden';
+    $('range').textContent=total?('Showing '+(offset+1)+'–'+Math.min(offset+limit,total)+' of '+total):'';
+  }catch(e){$('count').textContent='Could not reach the server.';}
+}
+
+async function edit(id){
+  const d=await (await fetch(EP+'/posts/one?id='+id,{headers:H()})).json();
+  if(!d.ok){alert(d.error||'Could not open that article.');return;}
+  current=d.post;
+  $('eTitle').value=current.title;
+  $('eBody').value=current.body;
+  $('eStatus').value=current.status;
+  const sel=$('eCat'); if(![...sel.options].some(o=>o.value===current.category)) sel.add(new Option(current.category,current.category));
+  sel.value=current.category;
+  if(current.publish_at){ const dt=new Date(current.publish_at); if(!isNaN(dt)) $('eWhen').value=new Date(dt-dt.getTimezoneOffset()*60000).toISOString().slice(0,16); }
+  $('eView').href='news.html?p='+encodeURIComponent(current.slug);
+  $('eMsg').textContent='';
+  $('editor').style.display='block';
+  $('editor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function closeEditor(){$('editor').style.display='none';current=null;}
+
+async function save(){
+  if(!current)return;
+  const body={id:current.id, slug:current.slug, title:$('eTitle').value.trim(),
+    category:$('eCat').value, body:$('eBody').value, status:$('eStatus').value,
+    publish_at: $('eWhen').value ? new Date($('eWhen').value).toISOString() : current.publish_at};
+  if(!body.title||!body.body){$('eMsg').innerHTML='<span style="color:var(--red)">Title and words are both needed.</span>';return;}
+  const d=await (await fetch(EP+'/posts/save',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+  $('eMsg').innerHTML=d.ok?'<span style="color:var(--green)">Saved. The website updates immediately.</span>'
+                          :'<span style="color:var(--red)">'+(d.error||'Could not save.')+'</span>';
+  if(d.ok) load(offset);
+}
+
+async function archiveIt(){
+  if(!current)return;
+  if(!confirm('Archive “'+current.title+'”?\\n\\nIt comes off the website but is never deleted — you can set it back to Published at any time.'))return;
+  const d=await (await fetch(EP+'/posts/archive',{method:'POST',headers:H(),body:JSON.stringify({id:current.id})})).json();
+  if(d.ok){$('eMsg').innerHTML='<span style="color:var(--green)">Archived.</span>';closeEditor();load(offset);}
+}
+
+load(0);
+</script>
+</body>
+</html>
