@@ -339,35 +339,38 @@ function renderExiles(wb){
 let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
 async function loadLive(){
   const ep='https://join.daletrust.uk';
-  if(!session){ if(confirm('Please sign in first. Go to the admin sign-in page?')) location.href='../admin.html'; return; }
+  let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+  if(!session){ if(confirm('Please sign in first. Go to the admin sign-in page?')) location.href='admin.html'; return; }
+  const note=(t,c)=>{let n=document.getElementById('liveNote');
+    if(!n){n=document.createElement('p');n.id='liveNote';n.style.cssText='margin-top:8px;font-size:13px;font-weight:600;flex-basis:100%';document.getElementById('liveRow').appendChild(n);}
+    n.style.color=c||'#1E8E5A';n.textContent=t;};
   try{
+    note('Loading\u2026','#46536B');
     const r=await fetch(ep+'/export?season=all',{headers:{'Authorization':'Bearer '+session}});
-    if(!r.ok){alert('Your sign-in may have expired \u2014 please sign in again.');return;}
+    if(!r.ok){note('Sign-in expired or no access (HTTP '+r.status+') \u2014 please sign in again.','#C0392B');return;}
     const csv=await r.text();
-    // split the all-seasons export into one sheet per season, named like the spreadsheet tabs
-    const lines = csv.trim().split('\n');
-    const head = lines[0];
-    const seasonOf = l => (l.split(',')[0] || '').replace(/"/g,'').trim();
-    const groups = {};
-    lines.slice(1).forEach(l => { const s = seasonOf(l); if(!s) return; (groups[s] = groups[s] || []).push(l); });
-    const order = Object.keys(groups).sort();
-    const wb = { SheetNames: [], Sheets: {} };
-    order.forEach(s => {
-      const isCurrent = s === order[order.length-1];
-      const name = isCurrent ? (s.replace('/','-') + ' Membership') : ('Lapsed ' + s.replace('/','-'));
+    // parse the whole export once, then split into one sheet per season
+    const all=XLSX.read(csv,{type:'string'});
+    const aoa=XLSX.utils.sheet_to_json(all.Sheets[all.SheetNames[0]],{header:1,blankrows:false,defval:''});
+    if(aoa.length<2){note('The register came back empty.','#C0392B');return;}
+    const head=aoa[0];
+    const si=head.findIndex(c=>String(c).toLowerCase().trim()==='season');
+    const groups={};
+    aoa.slice(1).forEach(row=>{const s=String(si>=0?row[si]:'2026/27').trim();if(!s)return;(groups[s]=groups[s]||[]).push(row);});
+    const order=Object.keys(groups).sort();
+    if(!order.length){note('No seasons found in the register.','#C0392B');return;}
+    const wb={SheetNames:[],Sheets:{}};
+    order.forEach((s,i)=>{
+      const isCurrent=i===order.length-1;
+      const name=(isCurrent?s.replace('/','-')+' Membership':'Lapsed '+s.replace('/','-'));
       wb.SheetNames.push(name);
-      const tmp = XLSX.read(head + '\n' + groups[s].join('\n'), {type:'string'});
-      wb.Sheets[name] = tmp.Sheets[tmp.SheetNames[0]];
+      wb.Sheets[name]=XLSX.utils.aoa_to_sheet([head].concat(groups[s]));
     });
-    let merged = order.length > 1;
     analyse(wb);
-    let note=document.getElementById('liveNote');
-    if(!note){note=document.createElement('p');note.id='liveNote';
-      note.style.cssText='margin-top:8px;font-size:13px;color:#1E8E5A;font-weight:600;flex-basis:100%';
-      document.getElementById('liveRow').appendChild(note);}
-    note.textContent='Live register loaded \u00B7 '+(csv.trim().split('\n').length-1)+' records across '+order.length+' seasons \u00B7 '+new Date().toLocaleString('en-GB');
-  }catch(e){alert('Could not reach the register \u2014 '+e.message);}
+    note('Live register loaded \u00b7 '+(aoa.length-1)+' records across '+order.length+' seasons \u00b7 '+new Date().toLocaleString('en-GB'));
+  }catch(e){ note('Could not load: '+e.message,'#C0392B'); }
 }
+
 function handle(file){
   if(!file)return;
   const reader=new FileReader();

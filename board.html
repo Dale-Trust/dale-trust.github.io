@@ -1,21 +1,20 @@
-go();
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dale Trust — Membership at a Glance</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js">go();
-</script>
 <style>
-  :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--gold:#E8B84B;--green:#1E8E5A}
+  :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--gold:#E8B84B;--green:#1E8E5A;--grey:#8C9299}
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:15px}
   h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
   .top{background:var(--navy);color:#fff;padding:18px 22px}
-  .top h1{font-size:20px}
-  .top small{color:#8FC1FF;font-size:12px;display:block}
+  .top h1{font-size:20px}.top small{color:#8FC1FF;font-size:12px;display:block}
   .wrap{max-width:1050px;margin:0 auto;padding:18px}
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
   .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
@@ -26,77 +25,74 @@ go();
   .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
   .card h2{font-size:14px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:10px}
   .stamp{font-size:12.5px;color:#7A8AA5;margin:14px 2px}
-  #gate{max-width:420px;margin:60px auto;background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;text-align:center}
-  #gate input{width:100%;padding:11px;border:1.5px solid var(--line);border-radius:9px;font:inherit;margin:12px 0}
-  #gate button{background:var(--royal);color:#fff;border:0;border-radius:9px;padding:12px 24px;font:600 14px 'Oswald';text-transform:uppercase;cursor:pointer}
+  #msg{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;text-align:center;max-width:480px;margin:40px auto}
   #dash{display:none}
 </style>
 </head>
 <body>
-<div style="background:#0A1730;padding:8px 20px;font-family:Montserrat,system-ui,sans-serif;font-size:13px">
-  <a href="admin.html" style="color:#8FC1FF;text-decoration:none;font-weight:600">&larr; Back to admin</a>
-</div>
-
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
 <div class="top"><h1>Membership at a Glance</h1><small>Dale Supporters Trust &middot; live figures, no personal data on this page</small></div>
 <div class="wrap">
-
-<div id="gate">
-  <h2 style="font-size:17px;margin-bottom:4px">Board access</h2>
-  <p style="font-size:13.5px" id="gmsg">Checking your sign-in&hellip;</p>
-  <p style="font-size:13px;margin-top:10px"><a href="admin.html">Sign in with your email &rarr;</a></p>
-</div>
-
-<div id="dash">
-  <div class="kpis" id="kpis"></div>
-  <div class="grid">
-    <div class="card"><h2>Membership by type</h2><canvas id="cType"></canvas></div>
-    <div class="card"><h2>New vs renewing</h2><canvas id="cNvr"></canvas></div>
-    <div class="card"><h2>Members by season on record</h2><canvas id="cSeason"></canvas></div>
-    <div class="card"><h2>Newsletter consent</h2><canvas id="cNews"></canvas></div>
+  <div id="msg">Loading the figures&hellip;</div>
+  <div id="dash">
+    <div class="kpis" id="kpis"></div>
+    <div class="grid">
+      <div class="card"><h2>Membership by type</h2><canvas id="cType"></canvas></div>
+      <div class="card"><h2>New vs renewing</h2><canvas id="cNvr"></canvas></div>
+      <div class="card"><h2>Members by season on record</h2><canvas id="cSeason"></canvas></div>
+      <div class="card"><h2>Newsletter consent</h2><canvas id="cNews"></canvas></div>
+    </div>
+    <p class="stamp" id="stamp"></p>
   </div>
-  <p class="stamp" id="stamp"></p>
-</div>
-
 </div>
 <script>
+const EP='https://join.daletrust.uk';
 const ROYAL='#0057A7',NAVY='#0E1F3D',GOLD='#E8B84B',GREEN='#1E8E5A',GREY='#8C9299';
 const $=id=>document.getElementById(id);
-const EP='https://join.daletrust.uk';
+const say=(t,bad)=>{$('msg').innerHTML=t+(bad?'<br><br><a href="admin.html" style="color:#0057A7">Sign in again &rarr;</a>':'');};
 
-let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
-const HDRS=()=>({'Authorization':'Bearer '+session});
-
-async function go(){
-  if(!session){ $('gmsg').innerHTML='Please sign in to view the figures.'; return; }
+(async function(){
+  let session=null;
+  try{session=localStorage.getItem('dt_session');}catch(e){}
+  if(!session){ say('Please sign in to view the figures.',true); return; }
+  let d;
   try{
-    const r=await fetch(EP+'/stats',{headers:HDRS()});
-    if(!r.ok){ $('gmsg').innerHTML='Your sign-in has expired \u2014 please sign in again.'; return; }
-    const d = await r.json();
-    if(!d.ok){ $('gmsg').textContent = d.error || 'Could not load the figures.'; return; }
-    try{ render(d); }catch(err){ $('gmsg').textContent = 'Display error: ' + err.message; }
-  }catch(e){ $('gmsg').textContent='Could not reach the server.'; }
-}
+    const r=await fetch(EP+'/stats',{headers:{'Authorization':'Bearer '+session}});
+    if(r.status===401||r.status===403){ say('Your sign-in has expired, or you don\u2019t have board access.',true); return; }
+    if(!r.ok){ say('Server error (HTTP '+r.status+').'); return; }
+    d=await r.json();
+    if(!d.ok){ say(d.error||'Could not load the figures.'); return; }
+  }catch(e){ say('Could not reach the server: '+e.message); return; }
 
-function render(d){
-  $('gate').style.display='none';$('dash').style.display='block';
-  const t=Object.fromEntries(d.byType.map(x=>[x.k,x.n]));
-  const total=(t.Adult||0)+(t.Exile||0)+(t.Junior||0);
-  const nvr=Object.fromEntries(d.newVsRenewal.map(x=>[x.k,x.n]));
-  const news=Object.fromEntries(d.newsletter.map(x=>[String(x.k),x.n]));
-  const kpi=(l,v)=>$('kpis').insertAdjacentHTML('beforeend','<div class="kpi"><span>'+l+'</span><b>'+v+'</b></div>');
-  kpi('Members 2026/27', total);
-  kpi('Adults', t.Adult||0); kpi('Exiles', t.Exile||0); kpi('Juniors', t.Junior||0);
-  kpi('New this season', nvr.New||0);
-  kpi('Lapsed to win back', d.chase);
-  kpi('Applications awaiting payment', d.pendingApplications);
-  new Chart($('cType'),{type:'doughnut',data:{labels:['Adult','Exile','Junior'],datasets:[{data:[t.Adult||0,t.Exile||0,t.Junior||0],backgroundColor:[ROYAL,GOLD,GREEN]}]},options:{plugins:{legend:{position:'bottom'}}}});
-  new Chart($('cNvr'),{type:'bar',data:{labels:['Renewing','New'],datasets:[{data:[nvr.Rpt||0,nvr.New||0],backgroundColor:[NAVY,ROYAL]}]},options:{plugins:{legend:{display:false}}}});
-  new Chart($('cSeason'),{type:'bar',data:{labels:d.bySeason.map(x=>x.k),datasets:[{data:d.bySeason.map(x=>x.n),backgroundColor:d.bySeason.map(x=>x.k==='2026/27'?ROYAL:GREY)}]},options:{plugins:{legend:{display:false}}}});
-  new Chart($('cNews'),{type:'doughnut',data:{labels:['Opted in','Declined'],datasets:[{data:[news['1']||0,news['0']||0],backgroundColor:[GREEN,GREY]}]},options:{plugins:{legend:{position:'bottom'}}}});
-  $('stamp').textContent='Live from the Trust\u2019s membership database \u00B7 generated '+new Date(d.generated).toLocaleString('en-GB')+' \u00B7 seasons on record grow as history is imported';
-}
+  try{
+    const pick=(arr,key)=>Object.fromEntries((arr||[]).map(x=>[String(x[key!==undefined?key:'k']),x.n]));
+    const t=pick(d.byType), nvr=pick(d.newVsRenewal), news=pick(d.newsletter);
+    const total=(+t.Adult||0)+(+t.Exile||0)+(+t.Junior||0);
+    const kpi=(l,v)=>$('kpis').insertAdjacentHTML('beforeend','<div class="kpi"><span>'+l+'</span><b>'+v+'</b></div>');
+    kpi('Members 2026/27',total);
+    kpi('Adults',t.Adult||0); kpi('Exiles',t.Exile||0); kpi('Juniors',t.Junior||0);
+    kpi('New this season',nvr.New||0);
+    kpi('Lapsed to win back',d.chase||0);
+    kpi('Awaiting payment',d.pendingApplications||0);
 
-go();
+    new Chart($('cType'),{type:'doughnut',data:{labels:['Adult','Exile','Junior'],
+      datasets:[{data:[t.Adult||0,t.Exile||0,t.Junior||0],backgroundColor:[ROYAL,GOLD,GREEN]}]},
+      options:{plugins:{legend:{position:'bottom'}}}});
+    new Chart($('cNvr'),{type:'bar',data:{labels:['Renewing','New'],
+      datasets:[{data:[nvr.Rpt||0,nvr.New||0],backgroundColor:[NAVY,ROYAL]}]},
+      options:{plugins:{legend:{display:false}}}});
+    const seasons=(d.bySeason||[]).map(x=>x.k), counts=(d.bySeason||[]).map(x=>x.n);
+    new Chart($('cSeason'),{type:'bar',data:{labels:seasons,
+      datasets:[{data:counts,backgroundColor:seasons.map(s=>s==='2026/27'?ROYAL:GREY)}]},
+      options:{plugins:{legend:{display:false}}}});
+    new Chart($('cNews'),{type:'doughnut',data:{labels:['Opted in','Declined'],
+      datasets:[{data:[news['1']||0,news['0']||0],backgroundColor:[GREEN,GREY]}]},
+      options:{plugins:{legend:{position:'bottom'}}}});
+
+    $('stamp').textContent='Live from the Trust\u2019s membership database \u00b7 generated '+new Date(d.generated).toLocaleString('en-GB');
+    $('msg').style.display='none'; $('dash').style.display='block';
+  }catch(err){ say('Display error: '+err.message); }
+})();
 </script>
 </body>
 </html>
