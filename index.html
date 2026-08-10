@@ -61,8 +61,12 @@
   .brand{display:flex;align-items:center;text-decoration:none}
   .brand{gap:14px}
   .brand img{height:96px;width:auto}
-  .brand-words b{font-family:'Oswald';font-weight:700;font-size:24px;text-transform:uppercase;color:var(--ink);display:block;line-height:1.05;letter-spacing:.02em}
-  .brand-words small{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--royal)}
+  .brand-words b{font-family:'Oswald';font-weight:700;font-size:24px;text-transform:uppercase;color:var(--ink);display:block;line-height:1.05;letter-spacing:.02em;white-space:nowrap}
+  .brand-words small{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--royal);white-space:nowrap}
+  .brand{flex:none}
+  .nav .links a{white-space:nowrap}
+  @media (max-width:1180px){.nav .links a{font-size:13px}}
+  @media (max-width:1080px){.brand-words small{display:none}}
   @media (max-width:980px){.nav-inner{height:96px}.brand img{height:70px}.brand-words b{font-size:20px}}
   @media (max-width:560px){.nav-inner{height:80px}.brand img{height:56px}.brand-words small{display:none}}
   nav.links{display:flex;gap:2px;margin-left:auto;height:100%}
@@ -286,6 +290,7 @@
     <span class="right">
       <a href="https://rochdaleafc.co.uk/" target="_blank" rel="noopener">Official club site</a>
       <a href="https://www.rafcshop.co.uk/" target="_blank" rel="noopener">Club shop</a>
+      <a href="community.html">Community</a>
       <a href="#contact">Contact</a>
     </span>
   </div>
@@ -301,10 +306,8 @@
       <a href="news.html">News</a>
       <a href="#matchday">Matchday</a>
       <a href="#membership">Membership</a>
-      <a href="partners.html">Partners</a>
       <a href="exiles.html">Exiles</a>
       <a href="fpa.html">Former Players</a>
-      <a href="community.html">Community</a>
       <a href="#contact">Contact</a>
     </nav>
     <a class="btn btn-royal" style="margin-left:18px;padding:11px 24px" href="join.html"><span>Join</span></a>
@@ -616,10 +619,10 @@
 <div class="partners">
   <div class="wrap row">
     <span class="label">Proud members &amp; partners</span>
-    <img src="https://www.daletrust.co.uk/wp-content/uploads/2025/06/FSA_Logo_v3_green-300x55.jpg" alt="Football Supporters' Association">
-    <span class="pl">Andy's Man Club</span>
-    <span class="pl">Rochdale DS All Stars</span>
-    <span class="pl">Her Game Too</span>
+    <img src="img/brand/fsa-logo.jpg" alt="Football Supporters' Association" style="height:46px;width:auto" onerror="this.src='https://www.daletrust.co.uk/wp-content/uploads/2025/06/FSA_Logo_v3_green-300x55.jpg'">
+    <a href="community.html" style="background:#0E1F3D;padding:10px 14px;border-radius:6px;display:inline-flex;align-items:center"><img src="img/community/andysmanclub.png" alt="Andy's Man Club" style="height:26px;width:auto;display:block"></a>
+    <a href="community.html"><img src="img/community/all-stars.jpg" alt="Rochdale DS All Stars" style="height:52px;width:auto;display:block"></a>
+    <a href="community.html"><img src="img/community/hergametoo.png" alt="Her Game Too" style="height:52px;width:auto;display:block"></a>
   </div>
 </div>
 
