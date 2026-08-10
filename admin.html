@@ -57,6 +57,14 @@
 <div id="app">
   <div class="tiles" id="tiles"></div>
 
+  <div class="card" id="retentionCard" style="display:none">
+    <h2>Data retention</h2>
+    <p style="font-size:13px;margin-bottom:10px">Board policy: personal details from past seasons are removed once they're over 12 months old. The <b>membership numbers are kept forever</b> &mdash; only names, addresses, emails, phones and dates of birth are stripped, so year-on-year figures stay intact.</p>
+    <div id="retPreview" style="font-size:13.5px;margin-bottom:10px">Checking&hellip;</div>
+    <button onclick="runRetention()" style="background:#C0392B">Remove personal data older than 12 months</button>
+    <p class="msg" id="retMsg"></p>
+  </div>
+
   <div class="card" id="officersCard">
     <h2>Officers &amp; access</h2>
     <p style="font-size:13px;margin-bottom:10px">Tick what each officer can reach. Changes apply the next time they load a tool.</p>
@@ -125,9 +133,28 @@ function show(){
   if(me.can_posts) tile('tools/post-import.html','Import old posts','Republish the WordPress archive onto the new site');
   if(me.can_board) tile('tools/board.html','Board figures','Membership at a glance \u2014 live, no personal data');
   tile('tools/coach-poster.html','Coach poster maker','Matchday travel posters in four fields');
-  if(me.is_admin){$('officersCard').style.display='block';loadOfficers();}
+  if(me.is_admin){$('officersCard').style.display='block';loadOfficers();$('retentionCard').style.display='block';loadRetention();}
 }
 
+async function loadRetention(){
+  try{
+    const d=await (await fetch(EP+'/retention',{headers:HDRS()})).json();
+    if(!d.ok){$('retPreview').textContent=d.error||'Could not check.';return;}
+    if(!d.seasons.length){$('retPreview').innerHTML='<span style="color:var(--green);font-weight:600">Nothing is currently due for removal.</span>';return;}
+    $('retPreview').innerHTML='<b>Due for removal (older than '+d.before+'):</b><br>'+
+      d.seasons.map(s=>'&bull; '+s.season+' &mdash; '+s.still_personal+' of '+s.total+' records still hold personal details').join('<br>');
+  }catch(e){$('retPreview').textContent='Could not check.';}
+}
+async function runRetention(){
+  if(!confirm('Remove personal details from past seasons older than 12 months?\n\nNames, addresses, emails, phones and dates of birth are stripped. Membership counts by season and type are preserved for year-on-year reporting. This cannot be undone.'))return;
+  const phrase=prompt('Type ANONYMISE to confirm:');
+  if(phrase!=='ANONYMISE'){$('retMsg').textContent='Cancelled.';return;}
+  const d=await (await fetch(EP+'/retention',{method:'POST',headers:HDRS(),body:JSON.stringify({confirm:'ANONYMISE'})})).json();
+  $('retMsg').innerHTML = d.ok
+    ? '<span style="color:var(--green)">Done \u2014 personal details removed from '+d.anonymised+' records. Season figures preserved.</span>'
+    : '<span style="color:var(--red)">'+(d.error||'Failed')+'</span>';
+  loadRetention();
+}
 async function loadOfficers(){
   const r=await fetch(EP+'/auth/officers',{headers:HDRS()});
   const d=await r.json();
