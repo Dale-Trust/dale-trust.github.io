@@ -42,10 +42,8 @@
 
 <div class="panel">
   <h2>1 &middot; Connection</h2>
-  <label>Worker address</label>
-  <input id="endpoint" value="https://join.daletrust.uk">
-  <label>Admin key</label>
-  <input id="adminkey" type="password" placeholder="Paste from Bitwarden — never save it in this file">
+  <p id="whoBox" style="font-size:13.5px">Checking your sign-in&hellip;</p>
+  <input id="endpoint" type="hidden" value="https://join.daletrust.uk">
 </div>
 
 <div class="panel">
@@ -91,6 +89,17 @@
 </div>
 <script>
 const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='../admin.html';
+const HDRS=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
+(async()=>{
+  try{
+    const me=await (await fetch('https://join.daletrust.uk/auth/me',{headers:HDRS()})).json();
+    $('whoBox').innerHTML = me.ok
+      ? 'Signed in as <b>'+me.officer.name+'</b> \u2014 imports will be recorded against your name.'
+      : '<span class="bad">Your sign-in has expired.</span> <a href="../admin.html">Sign in again</a>.';
+  }catch(e){}
+})();
 let headers=[], rows=[], workbook=null;
 
 // quote-aware CSV parser
@@ -262,8 +271,7 @@ function preview(){
 }
 
 async function runImport(){
-  const key=$('adminkey').value.trim(), ep=$('endpoint').value.trim().replace(/\/$/,'');
-  if(!key){alert('Paste the admin key first.');return;}
+  const ep=$('endpoint').value.trim().replace(/\/$/,'');
   const m=mapping();
   const all=rows.map(r=>transform(r,m)).filter(r=>r.first_name&&r.last_name&&r.membership_type);
   const dropped=rows.length-all.length;
@@ -275,8 +283,7 @@ async function runImport(){
   for(let i=0;i<all.length;i+=CHUNK){
     const batch=all.slice(i,i+CHUNK);
     try{
-      const res=await fetch(ep+'/import?key='+encodeURIComponent(key),{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(batch)});
+      const res=await fetch(ep+'/import',{method:'POST',headers:HDRS(),body:JSON.stringify(batch)});
       const d=await res.json();
       if(!d.ok){errs.push(d.error||('HTTP '+res.status));break;}
       imported+=d.imported;skipped+=d.skipped;errs.push(...(d.errors||[]));
