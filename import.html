@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dale Trust — Member Import</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--red:#C0392B}
@@ -49,8 +50,12 @@
 
 <div class="panel">
   <h2>2 &middot; The spreadsheet (CSV)</h2>
-  <div class="drop" id="drop" onclick="document.getElementById('file').click()">Drop Scott's CSV here, or click to choose<br><small>Export the sheet as CSV first (File &rarr; Save As &rarr; CSV)</small></div>
-  <input type="file" id="file" accept=".csv,text/csv" style="display:none">
+  <div class="drop" id="drop" onclick="document.getElementById('file').click()">Drop the membership spreadsheet here, or click to choose<br><small>Excel (.xlsx) or CSV &mdash; no need to export anything first</small></div>
+  <input type="file" id="file" accept=".xlsx,.xls,.csv" style="display:none">
+  <div id="tabRow" style="display:none;margin-top:12px">
+    <label>Which tab?</label>
+    <select id="tabSel"></select>
+  </div>
   <div id="loaded" style="margin-top:10px"></div>
 </div>
 
@@ -86,7 +91,7 @@
 </div>
 <script>
 const $=id=>document.getElementById(id);
-let headers=[], rows=[];
+let headers=[], rows=[], workbook=null;
 
 // quote-aware CSV parser
 function parseCSV(text){
@@ -149,31 +154,44 @@ drop.ondragleave=()=>drop.classList.remove('on');
 drop.ondrop=e=>{e.preventDefault();drop.classList.remove('on');const f=e.dataTransfer.files[0];if(f)load(f);};
 
 function load(f){
-  const r=new FileReader();
-  r.onload=()=>{
-    let text=r.result;
-    // delimiter sniff: Excel regional exports sometimes use ; or tabs
-    const first=text.split(/\r?\n/)[0]||'';
-    const best=[[',',(first.match(/,/g)||[]).length],[';',(first.match(/;/g)||[]).length],['\t',(first.match(/\t/g)||[]).length]].sort((a,b)=>b[1]-a[1])[0][0];
-    if(best!==',') text=text.split(best).join(',');
-    const data=parseCSV(text);
-    if(data.length<2){$('loaded').innerHTML='<span class="bad">Could not read that file — is it a CSV?</span>';return;}
-    // header-row detection: score the first 12 rows against known field names
-    const vocab=FIELDS.flatMap(f=>f[2]);
-    let hi=0, hscore=-1;
-    for(let i=0;i<Math.min(12,data.length-1);i++){
-      const s=data[i].reduce((a,c)=>a+(vocab.some(v=>(c||'').toLowerCase().includes(v))?1:0),0);
-      if(s>hscore){hscore=s;hi=i;}
-    }
-    headers=data[hi].map(s=>s.trim());
-    rows=data.slice(hi+1).filter(cols=>cols.some(c=>(c||'').trim()!=='')).map(cols=>{const o={};headers.forEach((hh,i)=>o[hh]=(cols[i]||'').trim());return o;});
-    const hdrList=headers.filter(Boolean).slice(0,10).join(' \u00B7 ');
-    $('loaded').innerHTML='<span class="ok">Loaded: '+rows.length+' rows.</span> Headers found on row '+(hi+1)+': <small>'+hdrList+(headers.length>10?' \u2026':'')+'</small>'+
-      (hscore<3?'<br><span class="bad">Warning: these don\u2019t look like member columns \u2014 was the right tab selected when you saved the CSV?</span>':'');
-    buildMaps(); preview();
-    $('mapPanel').style.display='block';
+  const isCSV = /\.csv$/i.test(f.name);
+  const r = new FileReader();
+  r.onload = (ev) => {
+    if (isCSV) { workbook = XLSX.read(r.result, {type:'string'}); }
+    else { workbook = XLSX.read(new Uint8Array(ev.target.result), {type:'array', cellDates:true}); }
+    const sel = $('tabSel');
+    sel.innerHTML = workbook.SheetNames.map(n => '<option>' + n.replace(/</g,'&lt;') + '</option>').join('');
+    $('tabRow').style.display = workbook.SheetNames.length > 1 ? 'block' : 'none';
+    sel.onchange = () => useSheet(sel.value);
+    const guess = workbook.SheetNames.find(n => /2026|26-27/.test(n)) || workbook.SheetNames[0];
+    sel.value = guess;
+    useSheet(guess);
   };
-  r.readAsText(f);
+  if (isCSV) r.readAsText(f); else r.readAsArrayBuffer(f);
+}
+
+function useSheet(name){
+  const grid = XLSX.utils.sheet_to_json(workbook.Sheets[name], {header:1, blankrows:false, raw:false, defval:''});
+  if (!grid.length) { $('loaded').innerHTML = '<span class="bad">That tab looks empty.</span>'; return; }
+  const vocab = FIELDS.flatMap(f => f[2]);
+  let hi = 0, hscore = -1;
+  for (let i = 0; i < Math.min(12, grid.length - 1); i++) {
+    const s = grid[i].reduce((a,c) => a + (vocab.some(v => String(c||'').toLowerCase().includes(v)) ? 1 : 0), 0);
+    if (s > hscore) { hscore = s; hi = i; }
+  }
+  headers = grid[hi].map(s => String(s||'').trim());
+  rows = grid.slice(hi+1).filter(c => c.some(x => String(x||'').trim() !== ''))
+             .map(cols => { const o = {}; headers.forEach((hh,ix) => o[hh] = String(cols[ix]||'').trim()); return o; });
+  const ss = $('seasonSel');
+  const guessSeason = /cancel/i.test(name) ? '2025/26|cancelled'
+    : /2025|25-26|last season/i.test(name) ? '2025/26|paid'
+    : /2024|24-25/i.test(name) ? '2024/25|paid'
+    : /2023|23-24/i.test(name) ? '2023/24|paid' : '2026/27|desk';
+  if (ss) ss.value = guessSeason;
+  $('loaded').innerHTML = '<span class="ok">Tab &ldquo;' + name + '&rdquo;: ' + rows.length + ' rows</span> \u00b7 headers on row ' + (hi+1) +
+    (hscore < 3 ? '<br><span class="bad">These don\u2019t look like member columns \u2014 try another tab.</span>' : '');
+  buildMaps(); preview();
+  $('mapPanel').style.display = 'block';
 }
 
 function buildMaps(){
