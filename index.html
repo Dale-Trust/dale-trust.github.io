@@ -330,21 +330,26 @@
     <aside class="hub" aria-label="Matchday hub">
       <div class="hub-top">
         <span class="t"><span class="live-dot" aria-hidden="true"></span>Matchday hub</span>
-        <span class="r">Sky Bet League Two &middot; Opening Day</span>
+        <span class="r" id="hubComp">Sky Bet League Two</span>
       </div>
       <div class="fixture">
         <div class="teams">
-          <div class="team"><div class="badge"><img src="img/badges/Newport-County.png" alt="Newport County" onerror="this.style.display='none';this.parentElement.textContent='NCFC'"></div><p>Newport County</p></div>
+          <div class="team" id="hubHome"><div class="badge"><img id="hubHomeBadge" src="img/badges/Newport-County.png" alt="" onerror="this.style.display='none'"></div><p id="hubHomeName">Newport County</p></div>
           <span class="vs">VS</span>
-          <div class="team"><div class="badge"><img src="img/badges/badge.png" alt="Rochdale AFC"></div><p>Rochdale AFC</p></div>
+          <div class="team" id="hubAway"><div class="badge"><img id="hubAwayBadge" src="img/badges/badge.png" alt=""></div><p id="hubAwayName">Rochdale AFC</p></div>
         </div>
-        <p class="meta">Rodney Parade &middot; Sat 15 August &middot; 12:30pm kick-off</p>
+        <p class="meta" id="hubMeta">Loading fixture&hellip;</p>
         <div class="countdown" id="countdown" aria-label="Countdown to kick-off">
           <div class="cd"><b id="cd-d">--</b><span>Days</span></div>
           <div class="cd"><b id="cd-h">--</b><span>Hrs</span></div>
           <div class="cd"><b id="cd-m">--</b><span>Min</span></div>
           <div class="cd"><b id="cd-s">--</b><span>Sec</span></div>
         </div>
+      </div>
+      <div id="lastResult" style="display:none;border-top:1px solid rgba(255,255,255,.14);padding:12px 16px">
+        <p style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8FC1FF;margin-bottom:6px">Last time out</p>
+        <p style="font-size:14.5px;color:#fff;font-weight:600" id="lastLine"></p>
+        <p style="font-size:12px;color:#9FBEE8;margin-top:2px" id="lastMeta"></p>
       </div>
       <div class="hub-cta">
         <a href="mailto:travel@daletrust.co.uk?subject=Coach%20travel%20booking">Book coach travel</a>
@@ -671,20 +676,108 @@
 </footer>
 
 <script>
-  const target = new Date('2026-08-15T12:30:00+01:00').getTime();
-  const el = id => document.getElementById(id);
-  function tick(){
-    let d = Math.max(0, target - Date.now());
-    const days = Math.floor(d/86400000); d -= days*86400000;
-    const hrs = Math.floor(d/3600000); d -= hrs*3600000;
-    const min = Math.floor(d/60000); d -= min*60000;
-    const sec = Math.floor(d/1000);
-    el('cd-d').textContent = days;
-    el('cd-h').textContent = String(hrs).padStart(2,'0');
-    el('cd-m').textContent = String(min).padStart(2,'0');
-    el('cd-s').textContent = String(sec).padStart(2,'0');
-  }
-  tick(); setInterval(tick, 1000);
+  // ---- Matchday hub: drives itself from the fixtures file ----
+const BADGES = {
+  'accrington stanley':'accrington.png','barnet':'Barnet.png','bradford city':'bradford.png',
+  'bristol rovers':'bristol-rovers.png','cheltenham town':'Cheltenham.png','chesterfield':'Chesterfield.png',
+  'colchester united':'Colchester-united.png','crawley town':'Crawley-Town.png','crewe alexandra':'crewe.png',
+  'exeter city':'exeter-city.png','fleetwood town':'Fleetwood-Town.png','gillingham':'Gillingham.png',
+  'grimsby town':'grimsby.png','newport county':'Newport-County.png','northampton town':'Northampton-Town.png',
+  'oldham athletic':'oldham.png','port vale':'port-vale.png','rotherham united':'Rotherham.png',
+  'salford city':'Salford-City.png','shrewsbury town':'Shrewsbury.png','swindon town':'Swindon-Town.png',
+  'tranmere rovers':'Tranmere-Rovers.png','walsall':'Walsall.png','york city':'York-City.png',
+  'fc halifax town':'Halifax.png','fc united':'FC_United_of_Manchester_crest.svg_.png','farnham town':'Farnham-Town.png',
+  'rochdale':'badge.png'
+};
+const GROUNDS = {
+  'rochdale':'Crown Oil Arena','newport county':'Rodney Parade','crawley town':'Broadfield Stadium',
+  'colchester united':'JobServe Community Stadium','bradford city':'Valley Parade','tranmere rovers':'Prenton Park',
+  'shrewsbury town':'Croud Meadow','walsall':'Bescot Stadium','barnet':'The Hive','grimsby town':'Blundell Park',
+  'salford city':'Peninsula Stadium','oldham athletic':'Boundary Park','accrington stanley':'Wham Stadium',
+  'chesterfield':'SMH Group Stadium','crewe alexandra':'Mornflake Stadium','port vale':'Vale Park',
+  'swindon town':'County Ground','gillingham':'Priestfield Stadium','cheltenham town':'Completely-Suzuki Stadium',
+  'exeter city':'St James Park','bristol rovers':'Memorial Stadium','fleetwood town':'Highbury Stadium',
+  'northampton town':'Sixfields','rotherham united':'New York Stadium','york city':'LNER Community Stadium'
+};
+const badgeFor = n => 'img/badges/' + (BADGES[String(n||'').toLowerCase().trim()] || 'badge.png');
+const MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+
+function parseFixtureDate(s){
+  const m = String(s||'').match(/([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4}),\s*(\d{1,2})[:.](\d{2})\s*(am|pm)?/i);
+  if(!m) return null;
+  let hr = +m[4]; const min = +m[5]; const ap = (m[6]||'').toLowerCase();
+  if(ap === 'pm' && hr < 12) hr += 12;
+  if(ap === 'am' && hr === 12) hr = 0;
+  const mo = MONTHS[m[1].toLowerCase().slice(0,3)];
+  if(mo === undefined) return null;
+  return new Date(+m[3], mo, +m[2], hr, min);
+}
+
+let cdTimer = null;
+function startCountdown(target){
+  const pad = n => String(n).padStart(2,'0');
+  const tick = () => {
+    const diff = target - Date.now();
+    if(diff <= 0){
+      ['cd-d','cd-h','cd-m','cd-s'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = '00'; });
+      clearInterval(cdTimer);
+      setTimeout(loadHub, 60000);   // roll on to the next fixture shortly after kick-off
+      return;
+    }
+    const d = Math.floor(diff/864e5), h = Math.floor(diff%864e5/36e5),
+          mi = Math.floor(diff%36e5/6e4), s = Math.floor(diff%6e4/1000);
+    const set = (id,v) => { const el = document.getElementById(id); if(el) el.textContent = pad(v); };
+    set('cd-d',d); set('cd-h',h); set('cd-m',mi); set('cd-s',s);
+  };
+  clearInterval(cdTimer); tick(); cdTimer = setInterval(tick, 1000);
+}
+
+async function loadHub(){
+  try{
+    const raw = await (await fetch('data/rochdale-fixtures-2026-27.json?v=' + Date.now())).json();
+    const items = (Array.isArray(raw) ? raw : (raw.fixtures || [])).map(f => ({...f, when: parseFixtureDate(f.datetime)})).filter(f => f.when);
+    items.sort((a,b) => a.when - b.when);
+    const now = Date.now();
+    const next = items.find(f => f.when.getTime() > now);
+    const played = items.filter(f => f.when.getTime() <= now && f.score);
+    const last = played[played.length - 1];
+
+    if(next){
+      const set = (id,v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+      set('hubComp', next.competition || '');
+      set('hubHomeName', next.home); set('hubAwayName', next.away);
+      const hb = document.getElementById('hubHomeBadge'), ab = document.getElementById('hubAwayBadge');
+      if(hb){ hb.src = badgeFor(next.home); hb.alt = next.home; hb.style.display=''; }
+      if(ab){ ab.src = badgeFor(next.away); ab.alt = next.away; ab.style.display=''; }
+      const ground = GROUNDS[String(next.home).toLowerCase().trim()] || (next.venue === 'H' ? 'Crown Oil Arena' : 'Away');
+      const dt = next.when.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long'});
+      const ko = next.when.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      set('hubMeta', ground + ' \u00b7 ' + dt + ' \u00b7 ' + ko + ' kick-off');
+      startCountdown(next.when.getTime());
+    }
+
+    if(last){
+      const box = document.getElementById('lastResult');
+      const dale = /rochdale/i;
+      const isHome = dale.test(last.home);
+      const opp = isHome ? last.away : last.home;
+      const sc = String(last.score).trim();
+      const parts = sc.match(/(\d+)\s*[-\u2013]\s*(\d+)/);
+      let verdict = '';
+      if(parts){
+        const ours = isHome ? +parts[1] : +parts[2];
+        const theirs = isHome ? +parts[2] : +parts[1];
+        verdict = ours > theirs ? 'Won' : (ours < theirs ? 'Lost' : 'Drew');
+      }
+      document.getElementById('lastLine').textContent =
+        (verdict ? verdict + ' ' : '') + sc + ' ' + (isHome ? 'v ' : 'at ') + opp;
+      document.getElementById('lastMeta').textContent =
+        (last.competition || '') + ' \u00b7 ' + last.when.toLocaleDateString('en-GB',{day:'numeric',month:'long'});
+      box.style.display = 'block';
+    }
+  }catch(e){ /* leave the static fallback in place */ }
+}
+loadHub();
 </script>
 
 
