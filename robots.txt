@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /import.html
+Disallow: /dashboard.html
+Disallow: /board.html
+Disallow: /tools/
+
+Sitemap: https://daletrust.uk/sitemap.xml
