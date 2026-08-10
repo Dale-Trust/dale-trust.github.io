@@ -122,6 +122,7 @@ function show(){
     tile('tools/import.html','Member import','Load spreadsheet tabs into the database');
   }
   if(me.can_posts) tile('tools/compose.html','Post composer','Write once \u2014 publish or schedule in the Trust style');
+  if(me.can_posts) tile('tools/post-import.html','Import old posts','Republish the WordPress archive onto the new site');
   if(me.can_board) tile('tools/board.html','Board figures','Membership at a glance \u2014 live, no personal data');
   tile('tools/coach-poster.html','Coach poster maker','Matchday travel posters in four fields');
   if(me.is_admin){$('officersCard').style.display='block';loadOfficers();}
