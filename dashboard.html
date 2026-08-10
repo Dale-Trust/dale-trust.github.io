@@ -337,6 +337,21 @@ function renderExiles(wb){
   }
 }
 let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+async function syncOfficial(wb){
+  let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+  if(!session) return;
+  const hist=parseHistory(wb);
+  if(!hist||!hist.length) return;
+  try{
+    const r=await fetch('https://join.daletrust.uk/official',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+session},
+      body:JSON.stringify(hist.map(x=>({season:x.season,adult:x.adult,exile:x.exile,junior:x.junior,
+        other:x.other||0,total:x.total,avg_attendance:x.att,pct:x.pct})))});
+    const d=await r.json();
+    if(d.ok) console.log('Official history saved to the database:',d.saved,'seasons');
+  }catch(e){}
+}
+
 async function loadLive(){
   const ep='https://join.daletrust.uk';
   let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
@@ -407,6 +422,16 @@ async function loadLive(){
     ex.push(['Total'].concat(summary.total));
     wb.SheetNames.push('Exiles');
     wb.Sheets['Exiles']=XLSX.utils.aoa_to_sheet(ex);
+    // official season history (2012/13 onwards) from the database
+    try{
+      const oh=await (await fetch(ep+'/official')).json();
+      if(oh.ok && oh.history.length){
+        const rowsH=[['Season','Adult','Exile','Junior','Other','Total','Avg Attendance','%']].concat(
+          oh.history.map(x=>[x.season,x.adult,x.exile,x.junior,x.other,x.total,x.avg_attendance,x.pct]));
+        wb.SheetNames.unshift('Membership Analysis');
+        wb.Sheets['Membership Analysis']=XLSX.utils.aoa_to_sheet(rowsH);
+      }
+    }catch(e){}
     analyse(wb);
     note('Live register loaded \u00b7 '+(aoa.length-1)+' records across '+order.length+' seasons \u00b7 '+new Date().toLocaleString('en-GB'));
   }catch(e){ note('Could not load: '+e.message,'#C0392B'); }
@@ -416,7 +441,7 @@ function handle(file){
   if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{
-    try{lastWb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});analyse(lastWb)}
+    try{lastWb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});analyse(lastWb);syncOfficial(lastWb)}
     catch(err){alert('Could not read that file: '+err.message)}
   };
   reader.readAsArrayBuffer(file);
