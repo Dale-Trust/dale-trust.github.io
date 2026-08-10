@@ -126,12 +126,12 @@ function show(){
   const t=$('tiles');t.innerHTML='';
   const tile=(href,title,desc)=>t.insertAdjacentHTML('beforeend','<a class="tile" href="'+href+'"><b>'+title+'</b><small>'+desc+'</small></a>');
   if(me.can_members){
-    tile('tools/dashboard.html','Membership dashboard','Live register analysis \u2014 drop the sheet, press Connect');
-    tile('tools/import.html','Member import','Load spreadsheet tabs into the database');
+    tile('dashboard.html','Membership dashboard','Live register analysis \u2014 drop the sheet, press Connect');
+    tile('import.html','Member import','Load spreadsheet tabs into the database');
   }
   if(me.can_posts) tile('tools/compose.html','Post composer','Write once \u2014 publish or schedule in the Trust style');
   if(me.can_posts) tile('tools/post-import.html','Import old posts','Republish the WordPress archive onto the new site');
-  if(me.can_board) tile('tools/board.html','Board figures','Membership at a glance \u2014 live, no personal data');
+  if(me.can_board) tile('board.html','Board figures','Membership at a glance \u2014 live, no personal data');
   tile('tools/coach-poster.html','Coach poster maker','Matchday travel posters in four fields');
   if(me.is_admin){$('officersCard').style.display='block';loadOfficers();$('retentionCard').style.display='block';loadRetention();}
 }
