@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>News &amp; Newsletters — Dale Supporters Trust</title>
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;color:var(--body);font-size:15.5px;line-height:1.7;background:#fff}
+  h1,h2,h3{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  a{color:var(--royal)}
+  .hero{background:linear-gradient(120deg,var(--navy),#16305C 60%,#00417E);color:#fff;padding:40px 24px;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:0;bottom:0;right:-12%;width:40%;background:var(--royal);transform:skewX(-14deg);opacity:.35}
+  .hero .wrap{max-width:860px;margin:0 auto;position:relative}
+  .hero h1{color:#fff;font-size:clamp(28px,4.6vw,42px)}
+  .hero p{color:#C7D6EC;margin-top:6px}
+  .back{display:inline-block;margin-top:10px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.07em;color:#8FC1FF;text-decoration:none}
+  .wrap{max-width:860px;margin:0 auto;padding:30px 24px 60px}
+  .item{border-bottom:1px solid var(--line);padding:20px 0}
+  .item:last-child{border:0}
+  .cat{display:inline-block;background:#E8F1FC;color:var(--royal);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:100px}
+  .item h2{font-size:22px;margin:8px 0 4px;text-transform:none}
+  .item h2 a{text-decoration:none;color:var(--ink)}
+  .item h2 a:hover{color:var(--royal)}
+  .meta{font-size:12.5px;color:#7A8AA5}
+  article h2{font-size:clamp(24px,4vw,34px);text-transform:none;margin-bottom:6px}
+  article .body{margin-top:22px}
+  article .body p{margin:0 0 14px}
+  article .body h3{font-size:20px;text-transform:none;margin:22px 0 8px}
+  article .body ul{margin:0 0 14px 22px}
+  footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:20px}
+</style>
+</head>
+<body>
+<div class="hero"><div class="wrap">
+  <h1 id="heroTitle">News &amp; Newsletters</h1>
+  <p id="heroSub">Everything from the Dale Trust — straight from the source.</p>
+  <a class="back" href="index.html">&larr; Back to the Trust</a>
+</div></div>
+<div class="wrap" id="out"><p>Loading…</p></div>
+<footer>Dale Trust is the trading name of Rochdale Supporters Club Limited, a registered society (IP29690R).</footer>
+<script>
+const EP='https://join.daletrust.uk';
+const out=document.getElementById('out');
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+function md(t){
+  return esc(t).split(/\n{2,}/).map(b=>{
+    b=b.trim(); if(!b)return '';
+    if(b.split('\n').every(l=>l.trim().startsWith('- ')))
+      return '<ul>'+b.split('\n').map(l=>'<li>'+inline(l.trim().slice(2))+'</li>').join('')+'</ul>';
+    if(b.startsWith('# ')) return '<h3>'+inline(b.slice(2))+'</h3>';
+    return '<p>'+inline(b).replace(/\n/g,'<br>')+'</p>';
+  }).join('');
+  function inline(s){return s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');}
+}
+const fmt=d=>new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+const slug=new URLSearchParams(location.search).get('p');
+
+(async()=>{
+  try{
+    if(slug){
+      const r=await fetch(EP+'/posts?slug='+encodeURIComponent(slug));
+      if(!r.ok){out.innerHTML='<p>That story isn\u2019t available. <a href="news.html">See all news</a>.</p>';return;}
+      const {post:p}=await r.json();
+      document.title=p.title+' — Dale Supporters Trust';
+      document.getElementById('heroTitle').textContent=p.category;
+      document.getElementById('heroSub').textContent='Dale Trust news';
+      out.innerHTML='<article><h2>'+esc(p.title)+'</h2><p class="meta">By '+esc(p.author)+' \u00b7 '+fmt(p.publish_at)+'</p><div class="body">'+md(p.body)+'</div>'+
+        '<p style="margin-top:26px"><a href="news.html">&larr; All news &amp; newsletters</a></p></article>';
+    } else {
+      const {posts}=await (await fetch(EP+'/posts')).json();
+      out.innerHTML = posts.length ? posts.map(p=>
+        '<div class="item"><span class="cat">'+esc(p.category)+'</span>'+
+        '<h2><a href="news.html?p='+encodeURIComponent(p.slug)+'">'+esc(p.title)+'</a></h2>'+
+        '<p class="meta">By '+esc(p.author)+' \u00b7 '+fmt(p.publish_at)+'</p>'+
+        (p.summary?'<p>'+esc(p.summary)+'</p>':'')+'</div>').join('')
+        : '<p>No news posted yet — check back soon.</p>';
+    }
+  }catch(e){out.innerHTML='<p>Couldn\u2019t load the news just now. Please try again shortly.</p>';}
+})();
+</script>
+</body>
+</html>
