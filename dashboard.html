@@ -73,14 +73,10 @@
     <p>…or click to choose the .xlsx file. Works offline once this page has loaded.</p>
     <input type="file" id="file" accept=".xlsx,.xls">
   </div>
-<div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:12px" id="liveRow">
-  <div style="flex:2;min-width:220px"><label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Or load the live register</label>
-  <input id="liveEp" value="https://join.daletrust.uk" style="width:100%;padding:9px 11px;border:1.5px solid #DCE3EC;border-radius:8px;font:inherit"></div>
-  <div style="flex:2;min-width:200px"><label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Report key</label>
-  <input id="liveKey" type="password" placeholder="From Bitwarden" style="width:100%;padding:9px 11px;border:1.5px solid #DCE3EC;border-radius:8px;font:inherit"></div>
-  <button onclick="loadLive()" style="background:#0057A7;color:#fff;border:0;border-radius:8px;padding:11px 20px;font:600 13px Oswald;text-transform:uppercase;letter-spacing:.06em;cursor:pointer">Connect &rarr;</button>
-
-  </div>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px" id="liveRow">
+  <button onclick="loadLive()" style="background:#0057A7;color:#fff;border:0;border-radius:8px;padding:11px 22px;font:600 13px Oswald;text-transform:uppercase;letter-spacing:.06em;cursor:pointer">Load the live register &rarr;</button>
+  <span style="font-size:13px;color:#7A8AA5">Uses your Trust sign-in &mdash; no key needed.</span>
+</div>
 
   <div id="dash">
     <div class="reportbar">
@@ -336,13 +332,13 @@ function renderExiles(wb){
       e.england.map(o=>`<tr><td>${o.name}</td><td>${o.count}</td><td>${o.towns}</td></tr>`).join('');
   }
 }
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
 async function loadLive(){
-  const ep=document.getElementById('liveEp').value.trim().replace(/\/$/,'');
-  const key=document.getElementById('liveKey').value.trim();
-  if(!key){alert('Paste the report key first.');return;}
+  const ep='https://join.daletrust.uk';
+  if(!session){ if(confirm('Please sign in first. Go to the admin sign-in page?')) location.href='../admin.html'; return; }
   try{
-    const r=await fetch(ep+'/export?key='+encodeURIComponent(key));
-    if(!r.ok){alert('Server said '+r.status+' \u2014 check the key.');return;}
+    const r=await fetch(ep+'/export',{headers:{'Authorization':'Bearer '+session}});
+    if(!r.ok){alert('Your sign-in may have expired \u2014 please sign in again.');return;}
     const csv=await r.text();
     const raw=XLSX.read(csv,{type:'string'});
     const liveSheet=raw.Sheets[raw.SheetNames[0]];

@@ -1,3 +1,4 @@
+go();
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
@@ -36,10 +37,8 @@
 
 <div id="gate">
   <h2 style="font-size:17px;margin-bottom:4px">Board access</h2>
-  <p style="font-size:13.5px">Enter the board key (it's in the group description / from Chris).</p>
-  <input id="bkey" type="password" placeholder="Board key">
-  <button onclick="go()">View figures &rarr;</button>
-  <p id="gerr" style="color:#C0392B;font-size:13px;margin-top:8px"></p>
+  <p style="font-size:13.5px" id="gmsg">Checking your sign-in&hellip;</p>
+  <p style="font-size:13px;margin-top:10px"><a href="../admin.html">Sign in with your email &rarr;</a></p>
 </div>
 
 <div id="dash">
@@ -59,19 +58,20 @@ const ROYAL='#0057A7',NAVY='#0E1F3D',GOLD='#E8B84B',GREEN='#1E8E5A',GREY='#8C929
 const $=id=>document.getElementById(id);
 const EP='https://join.daletrust.uk';
 
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+const HDRS=()=>({'Authorization':'Bearer '+session});
+
 async function go(){
-  const key=$('bkey').value.trim();
-  if(!key)return;
+  if(!session){ $('gmsg').innerHTML='Please sign in to view the figures.'; return; }
   try{
-    const r=await fetch(EP+'/stats?key='+encodeURIComponent(key));
-    if(!r.ok){$('gerr').textContent='That key was not accepted.';return;}
-    render(await r.json(), key);
-  }catch(e){$('gerr').textContent='Could not reach the server.';}
+    const r=await fetch(EP+'/stats',{headers:HDRS()});
+    if(!r.ok){ $('gmsg').innerHTML='Your sign-in has expired \u2014 please sign in again.'; return; }
+    render(await r.json());
+  }catch(e){ $('gmsg').textContent='Could not reach the server.'; }
 }
 
-function render(d, key){
+function render(d){
   $('gate').style.display='none';$('dash').style.display='block';
-  try{sessionStorage.setItem('bk',key);}catch(e){}
   const t=Object.fromEntries(d.byType.map(x=>[x.k,x.n]));
   const total=(t.Adult||0)+(t.Exile||0)+(t.Junior||0);
   const nvr=Object.fromEntries(d.newVsRenewal.map(x=>[x.k,x.n]));
