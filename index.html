@@ -425,32 +425,7 @@
       </div>
       <a class="more" href="news.html">All stories &rarr;</a>
     </div>
-    <div class="news-grid">
-      <a class="story lead" href="news.html">
-        <span class="bg" style="background-image:url('https://www.daletrust.co.uk/wp-content/uploads/2026/07/newport-326x245.jpg')"></span>
-        <span class="body">
-          <span class="cat"><span>Coach travel</span></span>
-          <h3>Newport coach booking now open</h3>
-          <time datetime="2026-07-23">23 July 2026</time>
-        </span>
-      </a>
-      <a class="story small" href="news.html">
-        <span class="bg" style="background-image:url('https://www.daletrust.co.uk/wp-content/uploads/2026/07/wcf-326x245.png')"></span>
-        <span class="body">
-          <span class="cat"><span>Competitions</span></span>
-          <h3>World Cup prediction league — the result</h3>
-          <time datetime="2026-07-23">23 July 2026</time>
-        </span>
-      </a>
-      <a class="story small" href="news.html">
-        <span class="bg" style="background-image:url('https://www.daletrust.co.uk/wp-content/uploads/2026/06/walk4d-326x245.png')"></span>
-        <span class="body">
-          <span class="cat"><span>Podcast</span></span>
-          <h3>Walkie Talkie podcast &mdash; Episode 10 out now</h3>
-          <time datetime="2026-06-11">11 June 2026</time>
-        </span>
-      </a>
-    </div>
+    <div class="news-grid" id="newsGrid"></div>
   </div>
 </section>
 
@@ -658,8 +633,8 @@
           <li><b>Treasurer</b> &mdash; Michael Shepherd</li>
           <li><b>Digital</b> &mdash; Chris Culshaw</li>
           <li><b>Exiles</b> &mdash; Ian Goodwin</li>
-          <li><b>Partners of the Trust</b> &mdash; Keith Hicks</li>
-          <li><b>Former Players Association</b> &mdash; Keith Hicks / Siobhan McElhinney</li>
+          <li><b>Partners of the Trust</b> &mdash; <a href="partners.html" style="color:inherit">Keith Hicks</a></li>
+          <li><b>Former Players Association</b> &mdash; <a href="fpa.html" style="color:inherit">Keith Hicks / Siobhan McElhinney</a></li>
           <li><b>Youth Inclusion / Media Officer</b> &mdash; Ruby Loynd</li>
           <li><b>Fan Liaison</b> &mdash; Matt Cullen</li>
           <li><b>Rochdale AFC Ladies</b> &mdash; Kirsty Fernehough</li>
@@ -680,7 +655,9 @@
           <li><a href="mailto:travel@daletrust.co.uk?subject=Coach%20travel">Coach travel &amp; code of conduct</a></li>
           <li><a href="mailto:info@daletrust.co.uk?subject=Away%20fans%20guide">Away fans guide</a></li>
           <li><a href="mailto:info@daletrust.co.uk?subject=All%20Stars%20appeal">All Stars appeal</a></li>
-          <li><a href="privacy.html">Privacy &amp; GDPR policy</a></li>
+          <li><a href="partners.html">Partners of the Trust</a>
+          <a href="fpa.html">Former Players Association</a>
+          <a href="privacy.html">Privacy &amp; GDPR policy</a></li>
         </ul>
       </div>
     </div>
@@ -708,5 +685,33 @@
   tick(); setInterval(tick, 1000);
 </script>
 
+
+<script>
+// Live news feed — pulls the latest published stories from the Trust's own database
+(async () => {
+  const grid = document.getElementById('newsGrid');
+  if (!grid) return;
+  const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const fmt = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const firstImage = t => (String(t).match(/https?:\/\/[^\s"'<)]+\.(?:jpg|jpeg|png|webp)/i) || [])[0] || null;
+  try {
+    const r = await fetch('https://join.daletrust.uk/posts');
+    const d = await r.json();
+    const posts = (d.posts || []).slice(0, 5);
+    if (!posts.length) { grid.innerHTML = ''; return; }
+    grid.innerHTML = posts.map((p, i) => {
+      const img = p.image || firstImage(p.summary || '');
+      return '<a class="story ' + (i === 0 ? 'lead' : 'small') + '" href="news.html?p=' + encodeURIComponent(p.slug) + '">' +
+        (img ? '<span class="bg" style="background-image:url(\'' + img + '\')"></span>' : '<span class="bg" style="background:linear-gradient(120deg,#0E1F3D,#0057A7)"></span>') +
+        '<span class="body"><span class="cat"><span>' + esc(p.category) + '</span></span>' +
+        '<h3>' + esc(p.title) + '</h3>' +
+        '<time datetime="' + esc((p.publish_at || '').slice(0, 10)) + '">' + fmt(p.publish_at) + '</time>' +
+        '</span></a>';
+    }).join('');
+  } catch (e) {
+    grid.innerHTML = '<p style="grid-column:1/-1;color:#7A8AA5">Latest stories are on <a href="news.html">the news page</a>.</p>';
+  }
+})();
+</script>
 </body>
 </html>
