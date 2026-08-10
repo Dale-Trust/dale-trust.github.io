@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dale Trust — Coach Poster Maker</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:15px}
+  .top{background:var(--navy);color:#fff;padding:16px 22px}
+  .top h1{font-family:'Oswald';text-transform:uppercase;font-size:20px;letter-spacing:.04em}
+  .top small{color:#8FC1FF;font-size:12px}
+  .wrap{max-width:1150px;margin:0 auto;padding:18px;display:grid;grid-template-columns:330px 1fr;gap:18px}
+  @media(max-width:860px){.wrap{grid-template-columns:1fr}}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px}
+  label{display:block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);margin:13px 0 5px}
+  input,select{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink)}
+  input:focus,select:focus{outline:none;border-color:#1173D4}
+  .go{width:100%;margin-top:18px;background:var(--royal);color:#fff;border:0;border-radius:10px;font:600 15px 'Oswald';text-transform:uppercase;letter-spacing:.08em;padding:14px;cursor:pointer}
+  .go:hover{background:#1173D4}
+  .hint{font-size:12px;color:#7A8AA5;margin-top:4px}
+  canvas{width:100%;border-radius:10px;border:1px solid var(--line);background:#0E1F3D}
+  #badgeFile{display:none}
+</style>
+</head>
+<body>
+<div style="background:#0A1730;padding:8px 20px;font-family:Montserrat,system-ui,sans-serif;font-size:13px">
+  <a href="../admin.html" style="color:#8FC1FF;text-decoration:none;font-weight:600">&larr; Back to admin</a>
+</div>
+
+<div class="top"><h1>Coach Poster Maker</h1><small>Pick the opposition, set the details, download — the design stays identical every time.</small></div>
+<div class="wrap">
+  <div class="panel">
+    <label>Opposition badge</label>
+    <select id="badge"></select>
+    <input type="file" id="badgeFile" accept="image/*">
+    <p class="hint">Cup tie against someone new? Choose "Upload a badge…" and pick their crest image.</p>
+    <label>Opposition name (as shown on the poster)</label>
+    <input type="text" id="opp" value="BRADFORD CITY">
+    <p class="hint">Tip: shorter names render bigger — "BRADFORD CITY" matches the Rochdale text; adding "AFC" makes it shrink to fit.</p>
+    <label>Match date</label>
+    <input type="text" id="date" value="SATURDAY 8TH AUGUST">
+    <label>Kick-off</label>
+    <input type="text" id="ko" value="15:00">
+    <label>Coach departs</label>
+    <input type="text" id="dep" value="12:00 PM">
+    <label>Price per seat <small style="text-transform:none">(number only &mdash; the &pound; is on the poster)</small></label>
+    <input type="text" id="price" value="15">
+    <button class="go" onclick="download()">&#11015; Download poster</button>
+    <p class="hint" style="margin-top:10px">Posts perfectly to Facebook &amp; X. For Instagram, crop square in the app or ask Chris for a square template.</p>
+  </div>
+  <div class="panel"><canvas id="cv" width="1983" height="793"></canvas></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'), x=cv.getContext('2d');
+const BLUE='#35A7FF', WHITE='#FFFFFF', ICE='#7EC3FF';
+
+const TEAMS=[
+ ['Accrington Stanley','accrington.png'],['Barnet','Barnet.png'],['Bristol Rovers','bristol-rovers.png'],
+ ['Cheltenham Town','Cheltenham.png'],['Chesterfield','Chesterfield.png'],['Colchester United','Colchester-united.png'],
+ ['Crawley Town','Crawley-Town.png'],['Crewe Alexandra','crewe.png'],['Exeter City','exeter-city.png'],
+ ['Fleetwood Town','Fleetwood-Town.png'],['Gillingham','Gillingham.png'],['Grimsby Town','grimsby.png'],
+ ['Newport County','Newport-County.png'],['Northampton Town','Northampton-Town.png'],['Oldham Athletic','oldham.png'],
+ ['Port Vale','port-vale.png'],['Rotherham United','Rotherham.png'],['Salford City','Salford-City.png'],
+ ['Shrewsbury Town','Shrewsbury.png'],['Swindon Town','Swindon-Town.png'],['Tranmere Rovers','Tranmere-Rovers.png'],
+ ['Walsall','Walsall.png'],['York City','York-City.png'],
+];
+const sel=$('badge');
+TEAMS.forEach(([n,f],i)=>sel.add(new Option(n,'../img/badges/'+f)));
+sel.add(new Option('Upload a badge\u2026','__upload'));
+sel.value='../img/badges/Tranmere-Rovers.png';
+
+const tmpl=new Image(); tmpl.src='coach-template.png';
+let badgeImg=new Image(); badgeImg.src=sel.value;
+
+sel.onchange=()=>{
+  if(sel.value==='__upload'){$('badgeFile').click();return;}
+  loadBadge(sel.value);
+  const name=sel.options[sel.selectedIndex].text.toUpperCase();
+  $('opp').value=name;
+  render();
+};
+$('badgeFile').onchange=e=>{
+  const f=e.target.files[0]; if(!f)return;
+  loadBadge(URL.createObjectURL(f));
+};
+function loadBadge(src){badgeImg=new Image();badgeImg.onload=render;badgeImg.src=src;}
+['opp','date','ko','dep','price'].forEach(id=>$(id).addEventListener('input',render));
+
+function fitFont(text, weight, maxSize, maxWidth, family='Oswald'){
+  let s=maxSize;
+  do{x.font=`${weight} ${s}px ${family}`;if(x.measureText(text).width<=maxWidth)break;s-=2;}while(s>20);
+  return s;
+}
+
+function render(){
+  if(!tmpl.complete)return;
+  x.clearRect(0,0,1983,793);
+  x.drawImage(tmpl,0,0);
+  x.textBaseline='alphabetic';
+  // full headline composed dynamically: VS centred under the Trust roundel (x=991)
+  const opp=$('opp').value.toUpperCase()||'OPPOSITION';
+  const home='ROCHDALE AFC', GAP=26, BASE=411, CX=991;
+  let size=84;
+  for(;;){
+    x.font=`700 ${size}px Oswald`;
+    var vsW=x.measureText('VS').width*1.28;
+    var oppW=x.measureText(opp).width, homeW=x.measureText(home).width;
+    const left=CX-vsW/2-GAP-oppW, right=CX+vsW/2+GAP+homeW;
+    if((left>=60&&right<=1545)||size<=30)break;
+    size-=3;
+  }
+  x.font=`700 ${size}px Oswald`;
+  x.fillStyle='#FFFFFF';
+  x.fillText(opp, CX-vsW/2-GAP-x.measureText(opp).width, BASE);
+  x.fillText(home, CX+vsW/2+GAP, BASE);
+  // the VS: bigger, blue, slight tilt for the brush feel
+  x.save();
+  x.translate(CX, BASE-6);
+  x.rotate(-0.06);
+  x.font=`700 ${Math.round(size*1.28)}px Oswald`;
+  x.fillStyle='#35A7FF';
+  const vw=x.measureText('VS').width;
+  x.fillText('VS', -vw/2, 0);
+  x.restore();
+  // date line composed between the static dashes, centred at 948
+  const dateT=($('date').value.toUpperCase()||'').trim();
+  const koT=(($('ko').value||'').trim())+' KO';
+  const sep='  |  ';
+  let ds=44, full=dateT+sep+koT;
+  do{x.font=`600 ${ds}px Oswald`;if(x.measureText(full).width<=560)break;ds-=2;}while(ds>20);
+  let cx=948-x.measureText(full).width/2;
+  x.fillStyle='#FFFFFF';x.fillText(dateT,cx,500);cx+=x.measureText(dateT).width;
+  x.fillStyle='#35A7FF';x.fillText(sep,cx,500);cx+=x.measureText(sep).width;
+  x.fillStyle='#FFFFFF';x.fillText(koT,cx,500);
+  // opponent badge in the clear zone left of the bus
+  if(badgeImg.complete&&badgeImg.naturalWidth){
+    const bx=470,by=480,bw=230,bh=172;
+    const s=Math.min(bw/badgeImg.naturalWidth,bh/badgeImg.naturalHeight);
+    const w2=badgeImg.naturalWidth*s,h2=badgeImg.naturalHeight*s;
+    x.drawImage(badgeImg,bx+(bw-w2)/2,by+(bh-h2)/2,w2,h2);
+  }
+  // departs time, right of the static label
+  const dep=$('dep').value.toUpperCase()||'';
+  let ts=38;do{x.font=`700 ${ts}px Oswald`;if(x.measureText(dep).width<=205)break;ts-=2;}while(ts>18);
+  x.fillStyle='#FFFFFF';x.fillText(dep,322,752);
+  // price digits, right of the static £
+  const pr=($('price').value||'').replace(/[^0-9.]/g,'');
+  let ps=40;do{x.font=`700 ${ps}px Oswald`;if(x.measureText(pr).width<=150)break;ps-=2;}while(ps>18);
+  x.fillStyle='#FFFFFF';x.fillText(pr,1504,694);
+}
+
+function download(){
+  render();
+  const a=document.createElement('a');
+  a.download='dale-trust-coach-'+($('opp').value||'match').toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.png';
+  a.href=cv.toDataURL('image/png');a.click();
+}
+
+Promise.all([
+  document.fonts.load('700 66px Oswald'),
+  document.fonts.load('600 38px Oswald'),
+  new Promise(r=>{tmpl.onload=r;if(tmpl.complete)r();}),
+]).then(render);
+badgeImg.onload=render;
+</script>
+</body>
+</html>

@@ -63,6 +63,10 @@
 </style>
 </head>
 <body>
+<div style="background:#0A1730;padding:8px 20px;font-family:Montserrat,system-ui,sans-serif;font-size:13px">
+  <a href="admin.html" style="color:#8FC1FF;text-decoration:none;font-weight:600">&larr; Back to admin</a>
+</div>
+
 <div class="top">
   <div><h1>Dale Trust — Membership Dashboard</h1><small>Drag the membership spreadsheet on — nothing leaves this computer</small></div>
   <div class="priv">All analysis happens locally in your browser. The file is never uploaded anywhere. Close the tab and nothing is kept.</div>
@@ -352,7 +356,8 @@ async function loadLive(){
       const isCurrent = s === order[order.length-1];
       const name = isCurrent ? (s.replace('/','-') + ' Membership') : ('Lapsed ' + s.replace('/','-'));
       wb.SheetNames.push(name);
-      wb.Sheets[name] = XLSX.read(head + '\n' + groups[s].join('\n'), {type:'string'}).Sheets['Sheet1'];
+      const tmp = XLSX.read(head + '\n' + groups[s].join('\n'), {type:'string'});
+      wb.Sheets[name] = tmp.Sheets[tmp.SheetNames[0]];
     });
     let merged = order.length > 1;
     analyse(wb);

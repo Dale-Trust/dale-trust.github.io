@@ -33,6 +33,10 @@ go();
 </style>
 </head>
 <body>
+<div style="background:#0A1730;padding:8px 20px;font-family:Montserrat,system-ui,sans-serif;font-size:13px">
+  <a href="admin.html" style="color:#8FC1FF;text-decoration:none;font-weight:600">&larr; Back to admin</a>
+</div>
+
 <div class="top"><h1>Membership at a Glance</h1><small>Dale Supporters Trust &middot; live figures, no personal data on this page</small></div>
 <div class="wrap">
 
@@ -67,7 +71,9 @@ async function go(){
   try{
     const r=await fetch(EP+'/stats',{headers:HDRS()});
     if(!r.ok){ $('gmsg').innerHTML='Your sign-in has expired \u2014 please sign in again.'; return; }
-    render(await r.json());
+    const d = await r.json();
+    if(!d.ok){ $('gmsg').textContent = d.error || 'Could not load the figures.'; return; }
+    try{ render(d); }catch(err){ $('gmsg').textContent = 'Display error: ' + err.message; }
   }catch(e){ $('gmsg').textContent='Could not reach the server.'; }
 }
 

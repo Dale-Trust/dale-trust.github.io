@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dale Trust — Import old posts</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .top{background:var(--navy);color:#fff;padding:16px 22px}
+  .top h1{font-size:20px}.top small{color:#8FC1FF;font-size:12px}
+  .wrap{max-width:900px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{font-size:15px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:10px 0 4px}
+  input,select{width:100%;padding:9px 11px;border:1.5px solid var(--line);border-radius:8px;font:inherit}
+  .drop{border:2px dashed var(--royal);border-radius:12px;padding:32px;text-align:center;cursor:pointer;background:#F7FAFF}
+  button{background:var(--green);color:#fff;border:0;border-radius:9px;padding:12px 24px;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer;margin-top:14px}
+  button:disabled{background:#9FB4CC}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px}
+  th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+  th{font-size:11px;text-transform:uppercase;color:#7A8AA5}
+  .bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:12px;display:none}
+  .bar i{display:block;height:100%;width:0;background:var(--royal)}
+  .ok{color:var(--green);font-weight:700}.bad{color:var(--red);font-weight:700}
+</style>
+</head>
+<body>
+<div style="background:#0A1730;padding:8px 20px;font-family:Montserrat,system-ui,sans-serif;font-size:13px">
+  <a href="../admin.html" style="color:#8FC1FF;text-decoration:none;font-weight:600">&larr; Back to admin</a>
+</div>
+
+<div class="top"><h1>Import old posts</h1><small>Republish the WordPress archive onto the new site &mdash; runs entirely in this browser</small></div>
+<div class="wrap">
+
+<div class="panel">
+  <h2>1 &middot; The WordPress export</h2>
+  <div class="drop" id="drop" onclick="document.getElementById('f').click()">Drop the WordPress .xml export here, or click to choose</div>
+  <input type="file" id="f" accept=".xml" style="display:none">
+  <p id="loaded" style="margin-top:10px"></p>
+</div>
+
+<div class="panel" id="opts" style="display:none">
+  <h2>2 &middot; What to bring over</h2>
+  <label>Published on or after</label>
+  <input type="date" id="from" value="2025-07-01">
+  <p style="font-size:12.5px;margin-top:6px">Default is the start of the 2025/26 season. Only published posts are imported &mdash; drafts, pages and attachments are ignored.</p>
+  <div id="summary" style="margin-top:12px"></div>
+  <button id="go" onclick="run()">Import these posts &rarr;</button>
+  <div class="bar" id="bar"><i id="fill"></i></div>
+  <p id="report" style="margin-top:10px"></p>
+</div>
+
+<div class="panel" id="prevPanel" style="display:none">
+  <h2>Preview (newest 8)</h2>
+  <div id="preview"></div>
+</div>
+
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='../admin.html';
+const HDRS=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
+let all=[];
+
+function htmlToText(html){
+  let s=html
+    .replace(/<!--[\s\S]*?-->/g,'')
+    .replace(/<script[\s\S]*?<\/script>/gi,'')
+    .replace(/<style[\s\S]*?<\/style>/gi,'')
+    .replace(/<h[1-6][^>]*>/gi,'\n\n# ').replace(/<\/h[1-6]>/gi,'\n\n')
+    .replace(/<li[^>]*>/gi,'\n- ').replace(/<\/li>/gi,'')
+    .replace(/<(ul|ol)[^>]*>/gi,'\n').replace(/<\/(ul|ol)>/gi,'\n')
+    .replace(/<(strong|b)>/gi,'**').replace(/<\/(strong|b)>/gi,'**')
+    .replace(/<br\s*\/?>/gi,'\n')
+    .replace(/<\/p>/gi,'\n\n').replace(/<p[^>]*>/gi,'')
+    .replace(/<[^>]+>/g,'')
+    .replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+    .replace(/&#8217;|&rsquo;/g,'\u2019').replace(/&#8216;|&lsquo;/g,'\u2018')
+    .replace(/&#8220;|&ldquo;/g,'\u201c').replace(/&#8221;|&rdquo;/g,'\u201d')
+    .replace(/&#8211;|&ndash;/g,'\u2013').replace(/&#8212;|&mdash;/g,'\u2014')
+    .replace(/&quot;/g,'"').replace(/&#039;|&apos;/g,"'");
+  return s.replace(/\n{3,}/g,'\n\n').trim();
+}
+
+$('f').onchange=e=>{const file=e.target.files[0]; if(file) load(file);};
+const drop=$('drop');
+drop.ondragover=e=>{e.preventDefault();};
+drop.ondrop=e=>{e.preventDefault();const file=e.dataTransfer.files[0];if(file)load(file);};
+
+function load(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    const doc=new DOMParser().parseFromString(r.result,'text/xml');
+    const items=[...doc.getElementsByTagName('item')];
+    all=items.map(it=>{
+      const g=(tag)=>{const n=it.getElementsByTagName(tag)[0];return n?n.textContent:''};
+      const type=g('wp:post_type')||g('post_type');
+      const status=g('wp:status')||g('status');
+      if(type!=='post'||status!=='publish')return null;
+      const cats=[...it.getElementsByTagName('category')].filter(c=>c.getAttribute('domain')==='category');
+      const encoded=it.getElementsByTagNameNS('http://purl.org/rss/1.0/modules/content/','encoded')[0];
+      const body=htmlToText(encoded?encoded.textContent:'');
+      if(!body)return null;
+      const date=(g('wp:post_date')||g('post_date')||'').replace(' ','T');
+      return {title:(it.getElementsByTagName('title')[0]||{}).textContent||'(untitled)',
+              category:cats.length?cats[0].textContent:'Trust News',
+              author:(it.getElementsByTagName('dc:creator')[0]||{}).textContent||'Dale Trust',
+              slug:g('wp:post_name')||g('post_name'), body, publish_at:date};
+    }).filter(Boolean);
+    $('loaded').innerHTML='<span class="ok">Read '+all.length+' published posts</span> from the export. Nothing uploaded yet.';
+    $('opts').style.display='block';$('prevPanel').style.display='block';
+    $('from').onchange=refresh; refresh();
+  };
+  r.readAsText(file);
+}
+
+function selected(){
+  const from=new Date($('from').value||'2025-07-01');
+  return all.filter(p=>new Date(p.publish_at)>=from).sort((a,b)=>a.publish_at<b.publish_at?-1:1);
+}
+function refresh(){
+  const sel=selected();
+  const cats={}; sel.forEach(p=>cats[p.category]=(cats[p.category]||0)+1);
+  $('summary').innerHTML='<b>'+sel.length+' posts</b> selected'+(sel.length?' \u00b7 '+sel[0].publish_at.slice(0,10)+' to '+sel[sel.length-1].publish_at.slice(0,10):'')+
+    '<br><small>'+Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([k,v])=>k+': '+v).join(' \u00b7 ')+'</small>';
+  const newest=sel.slice(-8).reverse();
+  $('preview').innerHTML='<table><tr><th>Date</th><th>Title</th><th>Category</th></tr>'+
+    newest.map(p=>'<tr><td>'+p.publish_at.slice(0,10)+'</td><td>'+p.title.replace(/</g,'&lt;')+'</td><td>'+p.category+'</td></tr>').join('')+'</table>';
+}
+
+async function run(){
+  const sel=selected();
+  if(!sel.length){alert('Nothing selected.');return;}
+  if(!confirm('Publish '+sel.length+' old posts onto the new site? Existing posts with the same web address are skipped.'))return;
+  $('go').disabled=true;$('bar').style.display='block';
+  let imported=0,skipped=0;
+  const CHUNK=15;
+  for(let i=0;i<sel.length;i+=CHUNK){
+    try{
+      const d=await (await fetch(EP+'/posts/import',{method:'POST',headers:HDRS(),body:JSON.stringify(sel.slice(i,i+CHUNK))})).json();
+      if(!d.ok){$('report').innerHTML='<span class="bad">'+(d.error||'Failed')+'</span>';break;}
+      imported+=d.imported;skipped+=d.skipped;
+    }catch(e){$('report').innerHTML='<span class="bad">'+e.message+'</span>';break;}
+    $('fill').style.width=Math.round(100*Math.min(i+CHUNK,sel.length)/sel.length)+'%';
+    $('report').innerHTML='<span class="ok">Published: '+imported+'</span> \u00b7 skipped: '+skipped;
+  }
+  $('go').disabled=false;
+}
+</script>
+</body>
+</html>

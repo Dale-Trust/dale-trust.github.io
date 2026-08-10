@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dale Trust — Post Composer</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--gold:#E8B84B;--green:#1E8E5A}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:15px}
+  h1,h2,h3{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .top{background:var(--navy);color:#fff;padding:16px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .top h1{font-size:20px;letter-spacing:.04em}
+  .top small{color:#8FC1FF;font-size:12px;display:block}
+  .top .who{margin-left:auto;font-size:13px;color:#C7D6EC}
+  .wrap{max-width:1240px;margin:0 auto;padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:960px){.wrap{grid-template-columns:1fr}}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px}
+  .panel h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  label{display:block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);margin:12px 0 5px}
+  input,select,textarea{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
+  textarea{min-height:260px;resize:vertical;line-height:1.6}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bright)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .hint{font-size:12px;color:#7A8AA5;margin-top:4px}
+  .pubrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}
+  .seg{display:flex;border:1.5px solid var(--line);border-radius:9px;overflow:hidden}
+  .seg button{border:0;background:#fff;padding:10px 18px;font:600 13px 'Montserrat';color:var(--body);cursor:pointer}
+  .seg button.sel{background:var(--royal);color:#fff}
+  #when{width:auto;display:none}
+  .go{margin-left:auto;background:var(--green);color:#fff;border:0;border-radius:9px;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.07em;padding:12px 26px;cursor:pointer}
+  .go:hover{filter:brightness(1.08)}
+  /* preview styled as the Trust site renders posts */
+  .pv{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .pv-head{background:linear-gradient(120deg,var(--navy),#16305C 60%,#00417E);padding:26px 24px;position:relative;overflow:hidden}
+  .pv-head::before{content:"";position:absolute;top:0;bottom:0;right:-12%;width:38%;background:var(--royal);transform:skewX(-14deg);opacity:.4}
+  .cat{display:inline-block;background:var(--bright);color:#fff;font:600 11px 'Montserrat';letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;position:relative}
+  .pv-head h2{color:#fff;font-size:clamp(22px,3vw,32px);margin-top:10px;position:relative;border:0;padding:0}
+  .pv-head .meta{color:#8FC1FF;font-size:12.5px;margin-top:8px;position:relative}
+  .pv-body{padding:22px 24px;font-size:15.5px;line-height:1.75;color:#333}
+  .pv-body h3{font-size:20px;margin:20px 0 8px;text-transform:none;font-family:'Oswald'}
+  .pv-body p{margin:0 0 14px}
+  .pv-body ul{margin:0 0 14px 22px}
+  .pv-body img{max-width:100%;border-radius:8px;margin:6px 0 16px}
+  .pv-body strong{color:var(--ink)}
+  /* queue */
+  .queue{grid-column:1/-1}
+  .qi{display:flex;gap:14px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line)}
+  .qi:last-child{border-bottom:0}
+  .qi .pill{font:600 11px 'Montserrat';letter-spacing:.06em;text-transform:uppercase;padding:4px 12px;border-radius:100px;color:#fff;flex:none}
+  .pill.live{background:var(--green)} .pill.sched{background:var(--gold);color:#3a2c00}
+  .qi b{color:var(--ink)}
+  .qi small{color:#7A8AA5;display:block;font-size:12px}
+  .qi button{margin-left:auto;background:none;border:1px solid var(--line);border-radius:7px;padding:6px 12px;cursor:pointer;font:600 12px 'Montserrat';color:#C0392B}
+  .note{grid-column:1/-1;background:#FDF6E3;border:1px solid #EAD198;border-radius:10px;padding:12px 16px;font-size:13px}
+</style>
+</head>
+<body>
+<div style="background:#0A1730;padding:8px 20px;font-family:Montserrat,system-ui,sans-serif;font-size:13px">
+  <a href="../admin.html" style="color:#8FC1FF;text-decoration:none;font-weight:600">&larr; Back to admin</a>
+</div>
+
+<div class="top">
+  <div><h1>Post Composer</h1><small>Write it once &mdash; the Trust look is applied for you</small></div>
+  <div class="who">Signed in as: <b id="whoami">Chris Culshaw</b></div>
+</div>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Write</h2>
+    <label>Title</label>
+    <input id="title" placeholder="e.g. Coach booking open for Newport away">
+    <div class="row">
+      <div>
+        <label>Category</label>
+        <select id="cat">
+          <option>Trust News</option><option>Coach Travel</option><option>Exile News</option>
+          <option>Competitions</option><option>Community Work</option><option>Junior Dale</option>
+          <option>Meetings with the Club</option><option>Friends of the Trust</option>
+        </select>
+      </div>
+      <div>
+        <label>Your name</label>
+        <input id="author" value="Chris Culshaw">
+      </div>
+    </div>
+    <label>Header image <small style="text-transform:none">(optional)</small></label>
+    <input type="file" id="img" accept="image/*">
+    <label>Your words</label>
+    <textarea id="body" placeholder="Just write. Blank line = new paragraph.
+# A line starting with # becomes a heading
+**bold** for emphasis
+- lines starting with - become a bullet list"></textarea>
+    <p class="hint">No formatting skills needed &mdash; the preview shows exactly how it publishes.</p>
+    <div class="pubrow">
+      <div class="seg" id="mode">
+        <button type="button" class="sel" data-m="now">Publish now</button>
+        <button type="button" data-m="later">Schedule</button>
+      </div>
+      <input type="datetime-local" id="when">
+      <button class="go" onclick="publish()">Send it &rarr;</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Preview &mdash; how members will see it</h2>
+    <div class="pv">
+      <div class="pv-head">
+        <span class="cat" id="pvCat">Trust News</span>
+        <h2 id="pvTitle">Your headline appears here</h2>
+        <div class="meta" id="pvMeta">By you &middot; today</div>
+      </div>
+      <div class="pv-body" id="pvBody"><p>Start typing and watch this update live&hellip;</p></div>
+    </div>
+  </div>
+
+  <div class="panel queue">
+    <h2>The queue &mdash; published &amp; scheduled</h2>
+    <div id="queue"><p class="hint">Nothing yet &mdash; your posts will appear here. Scheduled posts go live automatically at their time.</p></div>
+  </div>
+
+  <p class="note"><b>How this works:</b> posts save to the Trust's own database and appear on <b>daletrust.uk/news.html</b> immediately (or at their scheduled time). Emails are deliberately short and point readers to the website, so the full piece always lives at the Trust's own address.</p>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+// In production, set to the Cloudflare Worker endpoint — publishing then goes to the live site.
+const CMS_ENDPOINT = 'https://join.daletrust.uk';
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+const HDRS=()=>({'Content-Type':'application/json',...(session?{'Authorization':'Bearer '+session}:{})});
+let currentPostId=null, audience={members:0,lapsed:0};
+if(!session){ location.href='../admin.html'; }
+(async()=>{
+  try{
+    const me=await (await fetch(CMS_ENDPOINT+'/auth/me',{headers:HDRS()})).json();
+    if(me.ok){ $('author').value=me.officer.name; $('whoami').textContent=me.officer.name; render(); }
+    const a=await (await fetch(CMS_ENDPOINT+'/audience',{headers:HDRS()})).json();
+    if(a.ok){ audience=a; const el=$('audienceNote'); if(el) el.textContent='Current audience: '+a.members+' members opted in \u00b7 '+a.lapsed+' lapsed to win back'; }
+  }catch(e){}
+})();
+
+let imgData=null, mode='now';
+$('img').onchange=e=>{
+  const f=e.target.files[0]; if(!f){imgData=null;render();return;}
+  const r=new FileReader(); r.onload=()=>{imgData=r.result;render();}; r.readAsDataURL(f);
+};
+document.querySelectorAll('#mode button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#mode button').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel'); mode=b.dataset.m;
+  $('when').style.display = mode==='later' ? 'inline-block':'none';
+});
+
+function md(t){
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const blocks = esc(t).split(/\n{2,}/);
+  return blocks.map(b=>{
+    b=b.trim(); if(!b)return '';
+    if(b.split('\n').every(l=>l.trim().startsWith('- ')))
+      return '<ul>'+b.split('\n').map(l=>'<li>'+inline(l.trim().slice(2))+'</li>').join('')+'</ul>';
+    if(b.startsWith('# ')) return '<h3>'+inline(b.slice(2))+'</h3>';
+    return '<p>'+inline(b).replace(/\n/g,'<br>')+'</p>';
+  }).join('');
+  function inline(s){return s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');}
+}
+function render(){
+  $('pvCat').textContent=$('cat').value;
+  $('pvTitle').textContent=$('title').value||'Your headline appears here';
+  const who=$('author').value||'Chris Culshaw';
+  $('whoami').textContent=$('author').value||'Chris Culshaw';
+  $('pvMeta').textContent='By '+who+' \u00B7 '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  let html = imgData?'<img src="'+imgData+'" alt="">':'';
+  html += md($('body').value)||'<p>Start typing and watch this update live\u2026</p>';
+  $('pvBody').innerHTML=html;
+}
+['title','cat','author','body'].forEach(id=>$(id).addEventListener('input',render));
+
+// queue (device-local for the prototype)
+function load(){try{return JSON.parse(localStorage.getItem('dtq')||'[]')}catch(e){return[]}}
+function save(q){try{localStorage.setItem('dtq',JSON.stringify(q))}catch(e){}}
+async function publish(){
+  if(!$('title').value.trim()){alert('Give it a title first.');return;}
+  const at = mode==='later' && $('when').value ? new Date($('when').value).toISOString() : new Date().toISOString();
+  const body={ id: currentPostId, title:$('title').value, category:$('cat').value, body:$('body').value,
+               status: mode==='later' ? 'scheduled' : 'published', publish_at: at };
+  try{
+    const d = await (await fetch(CMS_ENDPOINT+'/posts/save',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
+    if(!d.ok){alert(d.error||'Could not save.');return;}
+    currentPostId=d.id;
+    const url='https://dale-trust.github.io/news.html?p='+d.slug;
+    $('queue').innerHTML='<div class="qi"><span class="pill '+(mode==='later'?'sched':'live')+'">'+(mode==='later'?'Scheduled':'Live')+'</span>'+
+      '<div><b>'+$('title').value+'</b><small>'+$('cat').value+' \u00b7 <a href="'+url+'" target="_blank">view on the website</a></small></div></div>'+
+      '<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">'+
+      '<b style="font-family:Oswald;text-transform:uppercase">Email it out?</b>'+
+      '<p class="hint" id="audienceNote" style="margin:4px 0 10px"></p>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button class="go" style="width:auto;background:#46536B" onclick="mailshot(\'members\',true)">Send me a test</button>'+
+      '<button class="go" style="width:auto" onclick="mailshot(\'members\',false)">Email '+audience.members+' members</button>'+
+      '<button class="go" style="width:auto;background:#E8B84B;color:#3a2c00" onclick="mailshot(\'lapsed\',false)">Email '+audience.lapsed+' lapsed members</button>'+
+      '</div><p class="hint" style="margin-top:8px">Emails are short and link back to the website \u2014 the full piece always lives on daletrust.uk.</p>'+
+      '<p id="mailmsg" style="margin-top:8px;font-weight:600"></p></div>';
+  }catch(e){alert('Could not reach the server.');}
+}
+
+async function mailshot(segment, test){
+  if(!currentPostId){alert('Publish it first.');return;}
+  if(!test){
+    const n = segment==='lapsed'?audience.lapsed:audience.members;
+    if(!confirm('Send this to '+n+' '+(segment==='lapsed'?'lapsed members':'members')+'? This cannot be unsent.'))return;
+    if(segment==='lapsed' && !confirm('Lapsed mailshots need the board\u2019s legitimate-interest minute on record. Is that agreed?'))return;
+  }
+  const body={post_id:currentPostId, segment};
+  if(test){ const to=prompt('Send a test to which email?', $('author').value.includes('@')?$('author').value:''); if(!to)return; body.test_to=to; }
+  $('mailmsg').textContent='Sending\u2026';
+  const d = await (await fetch(CMS_ENDPOINT+'/mailshot',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
+  $('mailmsg').textContent = d.ok ? (d.test?'Test sent.':'Sent to '+d.sent+' people.') : (d.error||'Failed.');
+}
+function drawQueue(){
+  const q=load(), now=Date.now(), el=$('queue');
+  if(!q.length){el.innerHTML='<p class="hint">Nothing yet \u2014 your posts will appear here.</p>';return;}
+  el.innerHTML=q.map(p=>{
+    const live=p.at<=now;
+    const when=new Date(p.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    return `<div class="qi">
+      <span class="pill ${live?'live':'sched'}">${live?'Live':'Scheduled'}</span>
+      <div><b>${p.title}</b><small>${p.cat} \u00B7 by ${p.author} \u00B7 ${live?'published':'goes live'} ${when}</small></div>
+      <button onclick="del(${p.id})">Remove</button></div>`;
+  }).join('');
+}
+function del(id){save(load().filter(p=>p.id!==id));drawQueue();}
+drawQueue(); render();
+setInterval(drawQueue, 30000); // scheduled items flip to Live automatically
+</script>
+</body>
+</html>
