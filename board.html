@@ -6,7 +6,8 @@ go();
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dale Trust — Membership at a Glance</title>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js">go();
+</script>
 <style>
   :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--gold:#E8B84B;--green:#1E8E5A}
   *{margin:0;padding:0;box-sizing:border-box}
@@ -38,7 +39,7 @@ go();
 <div id="gate">
   <h2 style="font-size:17px;margin-bottom:4px">Board access</h2>
   <p style="font-size:13.5px" id="gmsg">Checking your sign-in&hellip;</p>
-  <p style="font-size:13px;margin-top:10px"><a href="../admin.html">Sign in with your email &rarr;</a></p>
+  <p style="font-size:13px;margin-top:10px"><a href="admin.html">Sign in with your email &rarr;</a></p>
 </div>
 
 <div id="dash">
@@ -89,9 +90,7 @@ function render(d){
   $('stamp').textContent='Live from the Trust\u2019s membership database \u00B7 generated '+new Date(d.generated).toLocaleString('en-GB')+' \u00B7 seasons on record grow as history is imported';
 }
 
-// auto-load: ?key= in the URL, or remembered from this session
-const uk=new URLSearchParams(location.search).get('key')||((()=>{try{return sessionStorage.getItem('bk')}catch(e){return null}})());
-if(uk){$('bkey').value=uk;go();}
+go();
 </script>
 </body>
 </html>

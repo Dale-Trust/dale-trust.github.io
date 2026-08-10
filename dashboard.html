@@ -337,29 +337,30 @@ async function loadLive(){
   const ep='https://join.daletrust.uk';
   if(!session){ if(confirm('Please sign in first. Go to the admin sign-in page?')) location.href='../admin.html'; return; }
   try{
-    const r=await fetch(ep+'/export',{headers:{'Authorization':'Bearer '+session}});
+    const r=await fetch(ep+'/export?season=all',{headers:{'Authorization':'Bearer '+session}});
     if(!r.ok){alert('Your sign-in may have expired \u2014 please sign in again.');return;}
     const csv=await r.text();
-    const raw=XLSX.read(csv,{type:'string'});
-    const liveSheet=raw.Sheets[raw.SheetNames[0]];
-    let wb, merged=false;
-    if(lastWb){
-      // replace the current-season tab in the dropped workbook with the live register
-      wb={SheetNames:[...lastWb.SheetNames],Sheets:{...lastWb.Sheets}};
-      const seasonNames=wb.SheetNames.filter(n=>seasonKey(n)&&!low(n).includes('lapsed')&&!low(n).includes('cancel'));
-      seasonNames.sort((a,b)=>seasonKey(a)<seasonKey(b)?-1:1);
-      const curName=seasonNames[seasonNames.length-1];
-      if(curName){wb.Sheets[curName]=liveSheet;merged=true;}
-      else{wb.SheetNames.push('2026-27 Members (live)');wb.Sheets['2026-27 Members (live)']=liveSheet;}
-    } else {
-      wb={SheetNames:['2026-27 Members (live)'],Sheets:{'2026-27 Members (live)':liveSheet}};
-    }
+    // split the all-seasons export into one sheet per season, named like the spreadsheet tabs
+    const lines = csv.trim().split('\n');
+    const head = lines[0];
+    const seasonOf = l => (l.split(',')[0] || '').replace(/"/g,'').trim();
+    const groups = {};
+    lines.slice(1).forEach(l => { const s = seasonOf(l); if(!s) return; (groups[s] = groups[s] || []).push(l); });
+    const order = Object.keys(groups).sort();
+    const wb = { SheetNames: [], Sheets: {} };
+    order.forEach(s => {
+      const isCurrent = s === order[order.length-1];
+      const name = isCurrent ? (s.replace('/','-') + ' Membership') : ('Lapsed ' + s.replace('/','-'));
+      wb.SheetNames.push(name);
+      wb.Sheets[name] = XLSX.read(head + '\n' + groups[s].join('\n'), {type:'string'}).Sheets['Sheet1'];
+    });
+    let merged = order.length > 1;
     analyse(wb);
     let note=document.getElementById('liveNote');
     if(!note){note=document.createElement('p');note.id='liveNote';
       note.style.cssText='margin-top:8px;font-size:13px;color:#1E8E5A;font-weight:600;flex-basis:100%';
       document.getElementById('liveRow').appendChild(note);}
-    note.textContent='Live register loaded \u00B7 '+(csv.trim().split('\n').length-1)+' members \u00B7 '+new Date().toLocaleString('en-GB')+(merged?' \u00B7 merged with spreadsheet history & exiles':' \u00B7 tip: drop the spreadsheet first, then Connect, to add history & exile detail');
+    note.textContent='Live register loaded \u00B7 '+(csv.trim().split('\n').length-1)+' records across '+order.length+' seasons \u00B7 '+new Date().toLocaleString('en-GB');
   }catch(e){alert('Could not reach the register \u2014 '+e.message);}
 }
 function handle(file){
