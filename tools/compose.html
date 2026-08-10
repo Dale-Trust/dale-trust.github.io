@@ -116,13 +116,25 @@
     <div id="queue"><p class="hint">Nothing yet &mdash; your posts will appear here. Scheduled posts go live automatically at their time.</p></div>
   </div>
 
-  <p class="note"><b>Prototype note:</b> posts currently save on this device only, so the board can try the workflow. In production this exact screen saves to the Trust's database &mdash; posts appear on the website instantly (or at their scheduled time), feed the monthly newsletter automatically, and can generate ready-to-paste social drafts. One switch turns that on.</p>
+  <p class="note"><b>How this works:</b> posts save to the Trust's own database and appear on <b>daletrust.uk/news.html</b> immediately (or at their scheduled time). Emails are deliberately short and point readers to the website, so the full piece always lives at the Trust's own address.</p>
 </div>
 
 <script>
 const $=id=>document.getElementById(id);
 // In production, set to the Cloudflare Worker endpoint — publishing then goes to the live site.
-const CMS_ENDPOINT = '';
+const CMS_ENDPOINT = 'https://join.daletrust.uk';
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+const HDRS=()=>({'Content-Type':'application/json',...(session?{'Authorization':'Bearer '+session}:{})});
+let currentPostId=null, audience={members:0,lapsed:0};
+if(!session){ location.href='../admin.html'; }
+(async()=>{
+  try{
+    const me=await (await fetch(CMS_ENDPOINT+'/auth/me',{headers:HDRS()})).json();
+    if(me.ok){ $('author').value=me.officer.name; $('whoami').textContent=me.officer.name; render(); }
+    const a=await (await fetch(CMS_ENDPOINT+'/audience',{headers:HDRS()})).json();
+    if(a.ok){ audience=a; const el=$('audienceNote'); if(el) el.textContent='Current audience: '+a.members+' members opted in \u00b7 '+a.lapsed+' lapsed to win back'; }
+  }catch(e){}
+})();
 
 let imgData=null, mode='now';
 $('img').onchange=e=>{
@@ -162,14 +174,42 @@ function render(){
 // queue (device-local for the prototype)
 function load(){try{return JSON.parse(localStorage.getItem('dtq')||'[]')}catch(e){return[]}}
 function save(q){try{localStorage.setItem('dtq',JSON.stringify(q))}catch(e){}}
-function publish(){
+async function publish(){
   if(!$('title').value.trim()){alert('Give it a title first.');return;}
-  const q=load();
-  const at = mode==='later' && $('when').value ? new Date($('when').value).getTime() : Date.now();
-  q.unshift({id:Date.now(),title:$('title').value,cat:$('cat').value,author:$('author').value||'Officer',at});
-  save(q); drawQueue();
-  if(CMS_ENDPOINT){/* production: POST the full post to the Worker here */}
-  alert(mode==='later'?'Scheduled \u2014 it will go live automatically.':'Published to the queue.');
+  const at = mode==='later' && $('when').value ? new Date($('when').value).toISOString() : new Date().toISOString();
+  const body={ id: currentPostId, title:$('title').value, category:$('cat').value, body:$('body').value,
+               status: mode==='later' ? 'scheduled' : 'published', publish_at: at };
+  try{
+    const d = await (await fetch(CMS_ENDPOINT+'/posts/save',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
+    if(!d.ok){alert(d.error||'Could not save.');return;}
+    currentPostId=d.id;
+    const url='https://dale-trust.github.io/news.html?p='+d.slug;
+    $('queue').innerHTML='<div class="qi"><span class="pill '+(mode==='later'?'sched':'live')+'">'+(mode==='later'?'Scheduled':'Live')+'</span>'+
+      '<div><b>'+$('title').value+'</b><small>'+$('cat').value+' \u00b7 <a href="'+url+'" target="_blank">view on the website</a></small></div></div>'+
+      '<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">'+
+      '<b style="font-family:Oswald;text-transform:uppercase">Email it out?</b>'+
+      '<p class="hint" id="audienceNote" style="margin:4px 0 10px"></p>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button class="go" style="width:auto;background:#46536B" onclick="mailshot(\'members\',true)">Send me a test</button>'+
+      '<button class="go" style="width:auto" onclick="mailshot(\'members\',false)">Email '+audience.members+' members</button>'+
+      '<button class="go" style="width:auto;background:#E8B84B;color:#3a2c00" onclick="mailshot(\'lapsed\',false)">Email '+audience.lapsed+' lapsed members</button>'+
+      '</div><p class="hint" style="margin-top:8px">Emails are short and link back to the website \u2014 the full piece always lives on daletrust.uk.</p>'+
+      '<p id="mailmsg" style="margin-top:8px;font-weight:600"></p></div>';
+  }catch(e){alert('Could not reach the server.');}
+}
+
+async function mailshot(segment, test){
+  if(!currentPostId){alert('Publish it first.');return;}
+  if(!test){
+    const n = segment==='lapsed'?audience.lapsed:audience.members;
+    if(!confirm('Send this to '+n+' '+(segment==='lapsed'?'lapsed members':'members')+'? This cannot be unsent.'))return;
+    if(segment==='lapsed' && !confirm('Lapsed mailshots need the board\u2019s legitimate-interest minute on record. Is that agreed?'))return;
+  }
+  const body={post_id:currentPostId, segment};
+  if(test){ const to=prompt('Send a test to which email?', $('author').value.includes('@')?$('author').value:''); if(!to)return; body.test_to=to; }
+  $('mailmsg').textContent='Sending\u2026';
+  const d = await (await fetch(CMS_ENDPOINT+'/mailshot',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
+  $('mailmsg').textContent = d.ok ? (d.test?'Test sent.':'Sent to '+d.sent+' people.') : (d.error||'Failed.');
 }
 function drawQueue(){
   const q=load(), now=Date.now(), el=$('queue');
