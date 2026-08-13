@@ -46,6 +46,13 @@
   .banner b{color:var(--ink)}
   .checked{background:#EAF7F0;border:1px solid #B7E0CB;border-left:5px solid var(--green);border-radius:10px;padding:14px 18px;font-size:14px;margin-bottom:16px}
   .hist{font-size:13.5px;color:#7A8AA5;margin-top:10px}
+  .ben{border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:0 10px 10px 0;padding:13px 15px;margin-bottom:9px;background:#fff}
+  .ben b{color:var(--ink);font-family:'Oswald';font-size:15.5px;text-transform:uppercase;letter-spacing:.01em;display:block}
+  .ben span{font-size:14px;display:block;margin-top:2px}
+  .ben .deal{display:inline-block;background:var(--green);color:#fff;font-size:12.5px;font-weight:600;padding:3px 11px;border-radius:100px;margin-top:7px}
+  .bengrid{margin-top:4px}
+  .benfoot{font-size:13.5px;color:#7A8AA5;margin-top:12px}
+  .lapsedben{opacity:.55}
   #signin,#area{display:none}
 </style>
 </head>
@@ -134,6 +141,33 @@
       <p class="msg" id="rmsg"></p>
     </div>
 
+    <div class="panel" id="benefitsPanel">
+      <h2 id="benTitle">What your membership gets you</h2>
+      <p id="benIntro" style="font-size:14.5px;margin-bottom:14px">Show your membership card at any of these &mdash; the number on it is all they need.</p>
+      <div class="bengrid">
+        <div class="ben"><b>Rochdale Cricket Club</b><span>Bridgefold Road &mdash; under ten minutes from the ground, free parking</span><span class="deal">15% off beer on match days</span></div>
+        <div class="ben"><b>Twisted Mule Brewery &amp; Taphouse</b><span>Spotland Bridge Mill, Mellor Street &mdash; brewed on site, free parking</span><span class="deal">15% off beer</span></div>
+        <div class="ben"><b>Cap &amp; Whippet</b><span>796A Edenfield Road &mdash; four hand pumps, Twisted Mule beers</span><span class="deal">15% off beer</span></div>
+        <div class="ben"><b>Mill About</b><span>Spotland Bridge Mill &mdash; coffee, food and drinks, free parking</span><span class="deal">10% off food &amp; drink</span></div>
+        <div class="ben"><b>Moody Blue</b><span>1 Drake Street &mdash; real ales and sports screens in the town centre</span><span class="deal">10% off beer</span></div>
+        <div class="ben"><b>Cemetery Hotel</b><span>470 Bury Road &mdash; a proper traditional pub on the walk down Sandy Lane</span><span class="deal">10% off all beer</span></div>
+        <div class="ben"><b>The Moorcock</b><span>Halifax Road, Littleborough &mdash; country inn, restaurant menu and rooms</span><span class="deal">Buy one meal, get the second half price</span></div>
+        <div class="ben"><b>Dale AFC School of Motoring</b><span>Martin Culshaw &middot; 07899 824098</span><span class="deal">&pound;2 off driving lessons</span></div>
+        <div class="ben"><b>Distinctive Holidays</b><span>Andy Sharples &middot; 01706 437010 &mdash; cruises, packages and tailor-made trips</span><span class="deal">Member discounts</span></div>
+        <div class="ben"><b>Bottomley&rsquo;s Print Services</b><span>Unit 3, Spen Business Park</span><span class="deal">Contact for member offers</span></div>
+      </div>
+
+      <h3 style="font-size:15px;margin:22px 0 10px;font-family:'Oswald';text-transform:uppercase;color:var(--ink)">And beyond the discounts</h3>
+      <div class="bengrid">
+        <div class="ben" style="border-left-color:var(--royal)"><b>A real voice in Rochdale AFC</b><span>The Trust holds shares in the club and has a supporter director on the club board. By law the club must now consult supporters on the ground, the badge, the colours and ticket prices &mdash; and that consultation comes through us.</span></div>
+        <div class="ben" style="border-left-color:var(--royal)"><b>Your vote</b><span>Player of the Month, Player of the Season, and a vote at the AGM &mdash; one member, one vote.</span></div>
+        <div class="ben" style="border-left-color:var(--royal)"><b>Both prediction leagues, free</b><span>Fantasy Football and Super 6 &mdash; free entry for members.</span></div>
+        <div class="ben" style="border-left-color:var(--royal)"><b>Coach travel</b><span>Priority on Trust coaches to away games. <a href="visiting.html">Away days</a> made easy.</span></div>
+        <div class="ben" style="border-left-color:var(--royal)"><b>Exiles</b><span>Following from further afield? <a href="exiles.html">Meet the exile groups</a> &mdash; from South Manchester and Cheshire to Malta.</span></div>
+      </div>
+      <p class="benfoot" id="benFoot">Offers are correct at the time of writing &mdash; see <a href="partners.html">Partners of the Trust</a> for the full details.</p>
+    </div>
+
     <div class="panel">
       <p style="font-size:14px">Something not right? Email <a href="mailto:membership@daletrust.co.uk">membership@daletrust.co.uk</a> and we'll sort it.</p>
       <div style="margin-top:12px"><button class="ghost" onclick="signOut()">Sign out</button></div>
@@ -207,6 +241,9 @@ function render(){
     $('renewIntro').textContent='Your details are already filled in above \u2014 just check them, then choose your membership below.';
     $('r_type').value=rec.membership_type;
     $('renewBtn').textContent='Renew for '+data.season;
+    $('benTitle').textContent='What you\u2019re missing';
+    $('benIntro').innerHTML='These come back the moment you renew.';
+    $('benefitsPanel').classList.add('lapsedben');
   }
 
   // details form
