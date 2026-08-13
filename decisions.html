@@ -36,6 +36,7 @@
   .reply small{color:#7A8AA5;font-size:11.5px;display:block;margin-top:3px}
   .answer{display:none;margin-top:10px}
   .answer textarea{width:100%;padding:11px;border:1.5px solid var(--line);border-radius:8px;font:inherit;min-height:80px}
+  .namesel{padding:9px 11px;border:1.5px solid var(--line);border-radius:8px;font:inherit;color:var(--ink);background:#fff}
   .answer button{background:var(--green);color:#fff;border:0;border-radius:8px;padding:10px 20px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.05em;cursor:pointer;margin-top:8px}
   .link{background:none;border:0;color:var(--royal);font:600 13px 'Montserrat';cursor:pointer;padding:0;text-decoration:underline;margin-top:10px;display:inline-block}
   .status{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
@@ -47,19 +48,9 @@
 </style>
 </head>
 <body>
-<div class="top"><h1>Website — decisions and tasks</h1><small>Everything raised so far. Anyone can answer anything — it saves for everyone.</small></div>
+<div class="top"><h1>Website — decisions and tasks</h1><small>Everything raised so far. Anyone can answer anything &mdash; it saves for everyone to see.</small></div>
 <div class="wrap">
-  <div class="bar">
-    <label for="who">You are</label>
-    <select id="who" onchange="setWho()">
-      <option value="">— choose your name —</option>
-      <option>Emma Loynd</option><option>Scott Goulding</option><option>Murray Knight</option>
-      <option>Vince Ashall</option><option>Michael Shepherd</option><option>Chris Culshaw</option>
-      <option>Ian Goodwin</option><option>Keith Hicks</option><option>Siobhan McElhinney</option>
-      <option>Ruby Loynd</option><option>Matt Cullen</option><option>Kirsty Fernehough</option>
-    </select>
-    <span id="counts"></span>
-  </div>
+  <p id="counts" style="font-size:13.5px;color:#7A8AA5;margin-bottom:14px"></p>
   <div id="msg">Loading…</div>
   <div id="content" style="display:none">
     <div class="filters">
@@ -74,13 +65,14 @@
 <footer>Dale Supporters Trust &middot; board use</footer>
 <script>
 const EP='https://join.daletrust.uk';
-const KEY='TASKS_KEY_FOR_DALE';
+const KEY='REPLACE_WITH_TASKS_KEY';
 const $=id=>document.getElementById(id);
 let tasks=[], filter='all', who='';
+const NAMES=['— your name —','Emma Loynd','Scott Goulding','Murray Knight','Vince Ashall','Michael Shepherd',
+  'Chris Culshaw','Ian Goodwin','Keith Hicks','Siobhan McElhinney','Ruby Loynd','Matt Cullen','Kirsty Fernehough'];
 try{who=localStorage.getItem('dt_who')||'';}catch(e){}
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-function setWho(){who=$('who').value;try{localStorage.setItem('dt_who',who);}catch(e){}}
 function setFilter(b){document.querySelectorAll('.filters button').forEach(x=>x.classList.remove('on'));b.classList.add('on');filter=b.dataset.f;draw();}
 
 async function load(){
@@ -88,7 +80,6 @@ async function load(){
     const d=await (await fetch(EP+'/tasks?key='+encodeURIComponent(KEY))).json();
     if(!d.ok){$('msg').textContent=d.error||'Could not load the list.';return;}
     tasks=d.tasks;
-    if(who) $('who').value=who;
     const open=tasks.filter(t=>t.status==='open').length, done=tasks.filter(t=>t.status==='done').length;
     $('counts').textContent=tasks.length+' items \u00b7 '+open+' still open \u00b7 '+done+' done';
     $('msg').style.display='none';$('content').style.display='block';
@@ -112,7 +103,9 @@ function draw(){
         '<small>'+new Date(r.at.replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</small></div>').join('')+
       '<button class="link" onclick="toggle('+t.id+')">'+(t.responses.length?'Add a comment':'Answer this')+'</button>'+
       '<div class="answer" id="a'+t.id+'"><textarea id="t'+t.id+'" placeholder="Type your answer…"></textarea>'+
-      '<br><button onclick="send('+t.id+')">Save</button></div>'+
+      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px">'+
+      '<select id="w'+t.id+'" class="namesel">'+NAMES.map(n=>'<option'+(n===who?' selected':'')+'>'+n+'</option>').join('')+'</select>'+
+      '<button onclick="send('+t.id+')">Save</button></div></div>'+
       '<div class="status"><em>Mark as:</em>'+['open','answered','done','parked'].map(s=>
         '<button onclick="setStatus('+t.id+',&quot;'+s+'&quot;)">'+s+'</button>').join('')+'</div>'+
       '</div>';
@@ -123,10 +116,12 @@ function draw(){
 function toggle(id){const el=$('a'+id);el.style.display=el.style.display==='block'?'none':'block';if(el.style.display==='block')$('t'+id).focus();}
 
 async function send(id){
-  if(!who){alert('Please choose your name at the top first.');return;}
+  const name=$('w'+id).value;
+  if(name.indexOf('—')===0){alert('Please choose your name next to the Save button.');return;}
+  who=name; try{localStorage.setItem('dt_who',who);}catch(e){}
   const body=$('t'+id).value.trim(); if(!body)return;
   const d=await (await fetch(EP+'/tasks/respond?key='+encodeURIComponent(KEY),{method:'POST',
-    headers:{'Content-Type':'application/json'},body:JSON.stringify({task_id:id,body,author:who})})).json();
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({task_id:id,body,author:name})})).json();
   if(d.ok) load(); else alert(d.error||'Could not save.');
 }
 async function setStatus(id,status){
