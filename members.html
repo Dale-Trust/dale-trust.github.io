@@ -60,6 +60,8 @@
   .perk span{font-size:13px;color:#C7D6EC;display:block;margin-top:3px;line-height:1.5}
   .benfoot{font-size:13px;color:#7A8AA5;margin-top:14px}
   .lapsedben{opacity:.6}
+  .pbtn{background:#fff;border:1.5px solid var(--line);border-radius:100px;padding:10px 18px;font:600 14px 'Montserrat';color:var(--body);cursor:pointer;width:auto}
+  .pbtn.on{background:var(--royal);border-color:var(--royal);color:#fff}
   #signin,#area{display:none}
 </style>
 </head>
@@ -87,6 +89,11 @@
 
   <!-- MEMBER AREA -->
   <div id="area">
+    <div id="peopleBar" style="display:none" class="panel">
+      <h2>Memberships on this email</h2>
+      <p style="font-size:14px;margin-bottom:10px">More than one membership uses this address. Choose whose you'd like to see.</p>
+      <div id="peopleBtns" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    </div>
     <div id="statusBanner"></div>
 
     <div class="panel">
@@ -194,7 +201,7 @@
 <script>
 const EP='https://join.daletrust.uk';
 const $=id=>document.getElementById(id);
-let session=null, data=null;
+let session=null, data=null, who=0;
 try{session=localStorage.getItem('dt_member');}catch(e){}
 const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
@@ -233,28 +240,41 @@ async function load(){
   show('area');
 }
 
+function person(){ return data.people[who]; }
+
+function drawPeople(){
+  if(data.people.length<2){$('peopleBar').style.display='none';return;}
+  $('peopleBar').style.display='block';
+  $('peopleBtns').innerHTML=data.people.map((p,i)=>
+    '<button class="pbtn'+(i===who?' on':'')+'" onclick="pick('+i+')">'+esc(p.name)+
+    (p.isMember?'':' <span style="opacity:.7">(lapsed)</span>')+'</button>').join('');
+}
+function pick(i){who=i;render();window.scrollTo({top:0,behavior:'smooth'});}
+
 function render(){
-  const rec=data.record, cur=data.isMember;
-  $('cName').textContent=(rec.first_name+' '+rec.last_name).trim();
+  drawPeople();
+  const p=person(), rec=p.record, cur=p.isMember;
+  $('cName').textContent=p.name;
   $('cNo').textContent=rec.member_no || 'Application '+rec.app_ref;
   $('cType').textContent=rec.membership_type;
   $('cSeason').textContent=rec.season;
-  $('cPending').innerHTML = rec.payment_status==='pending'
-    ? '<span class="pending">Awaiting payment</span>' : '';
-  if(data.history.length>1){
-    $('cHist').textContent='Member since '+data.history[data.history.length-1].season+' \u00b7 '+data.history.length+' seasons on record';
-  }
+  $('cPending').innerHTML = rec.payment_status==='pending' ? '<span class="pending">Awaiting payment</span>' : '';
+  $('cHist').textContent = p.seasons.length>1
+    ? 'Member since '+p.since+' \u00b7 '+p.seasons.length+' seasons on record'
+    : 'Member for '+p.seasons[0];
 
-  // status banner
   if(cur){
-    $('statusBanner').innerHTML='<div class="checked"><b>You\u2019re a member for '+esc(data.season)+'.</b> Thanks for backing the Trust.</div>';
+    $('statusBanner').innerHTML='<div class="checked"><b>'+esc(p.name.split(' ')[0])+' is a member for '+esc(data.season)+'.</b> Thanks for backing the Trust.</div>';
     $('renewPanel').style.display='none';
+    $('benTitle').textContent='Your membership gets you';
+    $('benIntro').textContent='Just show your card.';
+    $('benefitsPanel').classList.remove('lapsedben');
   } else {
-    $('statusBanner').innerHTML='<div class="banner"><b>Your membership has lapsed.</b> Your last season with us was '+
-      esc(rec.season)+'. Renewing takes a minute \u2014 check your details below, then renew for '+esc(data.season)+'.</div>';
+    $('statusBanner').innerHTML='<div class="banner"><b>'+esc(p.name.split(' ')[0])+'\u2019s membership has lapsed.</b> The last season was '+
+      esc(rec.season)+'. Renewing takes a minute \u2014 check the details below, then renew for '+esc(data.season)+'.</div>';
     $('renewPanel').style.display='block';
     $('renewTitle').textContent='Renew for '+data.season;
-    $('renewIntro').textContent='Your details are already filled in above \u2014 just check them, then choose your membership below.';
+    $('renewIntro').textContent='The details above are already filled in \u2014 just check them, then choose the membership below.';
     $('r_type').value=rec.membership_type;
     $('renewBtn').textContent='Renew for '+data.season;
     $('benTitle').textContent='What you\u2019re missing';
@@ -262,17 +282,18 @@ function render(){
     $('benefitsPanel').classList.add('lapsedben');
   }
 
-  // details form
   $('f_first').value=rec.first_name||''; $('f_last').value=rec.last_name||'';
   $('f_dob').value=(rec.dob||'').slice(0,10); $('f_mobile').value=rec.mobile||'';
   $('f_ad1').value=rec.address1||''; $('f_ad2').value=rec.address2||'';
   $('f_town').value=rec.town||''; $('f_county').value=rec.county||'';
   $('f_pc').value=rec.postcode||''; $('f_country').value=rec.country||'';
   $('f_news').value=rec.newsletter_optin?'1':'0';
-  if(rec.membership_type==='Exile'){$('exileWrap').style.display='block';$('f_share').value=rec.exile_transport_share||'No';}
+  $('exileWrap').style.display = rec.membership_type==='Exile' ? 'block':'none';
+  if(rec.membership_type==='Exile') $('f_share').value=rec.exile_transport_share||'No';
   $('confirmedNote').innerHTML = rec.details_confirmed_at
-    ? '<div class="checked">You last confirmed these on '+new Date(rec.details_confirmed_at.replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'.</div>'
+    ? '<div class="checked">Last confirmed on '+new Date(rec.details_confirmed_at.replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'.</div>'
     : '';
+  $('dmsg').textContent=''; $('rmsg').textContent='';
 }
 
 function formValues(){
@@ -282,7 +303,8 @@ function formValues(){
     town:$('f_town').value.trim(), county:$('f_county').value.trim(),
     postcode:$('f_pc').value.trim(), country:$('f_country').value.trim(),
     newsletter_optin:$('f_news').value==='1',
-    exile_transport_share:$('f_share')?$('f_share').value:null};
+    exile_transport_share:$('f_share')?$('f_share').value:null,
+    record_id:person().record.id};
 }
 
 async function saveDetails(){
