@@ -24,11 +24,16 @@
   .filters button.on{background:var(--royal);border-color:var(--royal);color:#fff}
   h2.sec{font-size:16px;margin:24px 0 10px;border-left:4px solid var(--royal);padding-left:10px}
   .item{background:#fff;border:1px solid var(--line);border-radius:10px;padding:15px 17px;margin-bottom:10px}
+  .item.settled{background:#FBFCFE;border-style:dashed}
+  .settledhead{margin:34px 0 6px;padding-top:22px;border-top:2px solid var(--line)}
+  .settledhead h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:4px}
+  .settledhead p{font-size:13px;color:#7A8AA5;padding-left:14px}
+  .locked{font-size:12.5px;color:#7A8AA5;margin-top:10px;font-style:italic}
   .head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
   .ref{font-family:'Oswald';font-weight:700;color:var(--royal);font-size:16px;flex:none}
   .title{font-weight:700;color:var(--ink);flex:1;min-width:170px}
   .pill{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:100px;color:#fff;flex:none}
-  .open{background:#8C9299}.answered{background:var(--gold);color:#3a2c00}.done{background:var(--green)}.parked{background:#5B6472}
+  .open{background:#8C9299}.answered{background:var(--gold);color:#3a2c00}.confirmed{background:var(--royal)}.live{background:var(--green)}.parked{background:#5B6472}
   .with{font-size:12.5px;color:#fff;background:var(--royal);padding:3px 10px;border-radius:100px;flex:none}
   .detail{margin-top:9px;font-size:14px;line-height:1.6}
   .reply{background:var(--wash);border-left:3px solid var(--royal);padding:9px 12px;margin-top:8px;font-size:14px;border-radius:0 6px 6px 0}
@@ -57,7 +62,7 @@
       <button class="on" data-f="all" onclick="setFilter(this)">Everything</button>
       <button data-f="open" onclick="setFilter(this)">Still open</button>
       <button data-f="answered" onclick="setFilter(this)">Answered</button>
-      <button data-f="done" onclick="setFilter(this)">Done</button>
+      <button data-f="settled" onclick="setFilter(this)">Settled</button>
     </div>
     <div id="list"></div>
   </div>
@@ -65,7 +70,7 @@
 <footer>Dale Supporters Trust &middot; board use</footer>
 <script>
 const EP='https://join.daletrust.uk';
-const KEY='TASKS_KEY_FOR_DALE';
+const KEY='REPLACE_WITH_TASKS_KEY';
 const $=id=>document.getElementById(id);
 let tasks=[], filter='all', who='';
 const NAMES=['— your name —','Emma Loynd','Scott Goulding','Murray Knight','Vince Ashall','Michael Shepherd',
@@ -80,36 +85,52 @@ async function load(){
     const d=await (await fetch(EP+'/tasks?key='+encodeURIComponent(KEY))).json();
     if(!d.ok){$('msg').textContent=d.error||'Could not load the list.';return;}
     tasks=d.tasks;
-    const open=tasks.filter(t=>t.status==='open').length, done=tasks.filter(t=>t.status==='done').length;
-    $('counts').textContent=tasks.length+' items \u00b7 '+open+' still open \u00b7 '+done+' done';
+    const open=tasks.filter(t=>t.status==='open').length, settled=tasks.filter(t=>isSettled(t)).length;
+    $('counts').textContent=tasks.length+' items \u00b7 '+open+' still open \u00b7 '+settled+' settled';
     $('msg').style.display='none';$('content').style.display='block';
     draw();
   }catch(e){$('msg').textContent='Could not reach the server — please try again.';}
 }
 
+const isSettled=t=>t.status==='confirmed'||t.status==='live';
+
+function card(t){
+  const settled=isSettled(t);
+  return '<div class="item'+(settled?' settled':'')+'">'+
+    '<div class="head"><span class="ref">'+esc(t.ref)+'</span>'+
+    '<span class="title">'+esc(t.title)+'</span>'+
+    (t.owner?'<span class="with">'+esc(t.owner)+'</span>':'')+
+    '<span class="pill '+t.status+'">'+t.status+'</span></div>'+
+    (t.detail?'<div class="detail">'+esc(t.detail)+'</div>':'')+
+    t.responses.map(r=>'<div class="reply"><b>'+esc(r.author)+':</b> '+esc(r.body)+
+      '<small>'+new Date(r.at.replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</small></div>').join('')+
+    (settled
+      ? '<p class="locked">Settled \u2014 no further comments needed. <button class="link" style="margin:0" onclick="setStatus('+t.id+',&quot;answered&quot;)">Reopen</button></p>'
+      : '<button class="link" onclick="toggle('+t.id+')">'+(t.responses.length?'Add a comment':'Answer this')+'</button>'+
+        '<div class="answer" id="a'+t.id+'"><textarea id="t'+t.id+'" placeholder="Type your answer…"></textarea>'+
+        '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px">'+
+        '<select id="w'+t.id+'" class="namesel">'+NAMES.map(n=>'<option'+(n===who?' selected':'')+'>'+n+'</option>').join('')+'</select>'+
+        '<button onclick="send('+t.id+')">Save</button></div></div>'+
+        '<div class="status"><em>Mark as:</em>'+['answered','confirmed','live','parked'].map(s=>
+          '<button onclick="setStatus('+t.id+',&quot;'+s+'&quot;)">'+s+'</button>').join('')+'</div>')+
+    '</div>';
+}
+
 function draw(){
-  const list = filter==='all' ? tasks : tasks.filter(t=>t.status===filter);
-  if(!list.length){$('list').innerHTML='<p style="padding:20px;color:#7A8AA5">Nothing here.</p>';return;}
+  let live=tasks.filter(t=>!isSettled(t)), settled=tasks.filter(isSettled);
+  if(filter==='open'){live=live.filter(t=>t.status==='open');settled=[];}
+  else if(filter==='answered'){live=live.filter(t=>t.status==='answered');settled=[];}
+  else if(filter==='settled'){live=[];}
   let html='',section='';
-  list.forEach(t=>{
+  live.forEach(t=>{
     if(t.section!==section){section=t.section;html+='<h2 class="sec">'+esc(section)+'</h2>';}
-    html+='<div class="item">'+
-      '<div class="head"><span class="ref">'+esc(t.ref)+'</span>'+
-      '<span class="title">'+esc(t.title)+'</span>'+
-      (t.owner?'<span class="with">'+esc(t.owner)+'</span>':'')+
-      '<span class="pill '+t.status+'">'+t.status+'</span></div>'+
-      (t.detail?'<div class="detail">'+esc(t.detail)+'</div>':'')+
-      t.responses.map(r=>'<div class="reply"><b>'+esc(r.author)+':</b> '+esc(r.body)+
-        '<small>'+new Date(r.at.replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</small></div>').join('')+
-      '<button class="link" onclick="toggle('+t.id+')">'+(t.responses.length?'Add a comment':'Answer this')+'</button>'+
-      '<div class="answer" id="a'+t.id+'"><textarea id="t'+t.id+'" placeholder="Type your answer…"></textarea>'+
-      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px">'+
-      '<select id="w'+t.id+'" class="namesel">'+NAMES.map(n=>'<option'+(n===who?' selected':'')+'>'+n+'</option>').join('')+'</select>'+
-      '<button onclick="send('+t.id+')">Save</button></div></div>'+
-      '<div class="status"><em>Mark as:</em>'+['open','answered','done','parked'].map(s=>
-        '<button onclick="setStatus('+t.id+',&quot;'+s+'&quot;)">'+s+'</button>').join('')+'</div>'+
-      '</div>';
+    html+=card(t);
   });
+  if(!live.length && filter!=='settled') html+='<p style="padding:20px;color:#7A8AA5">Nothing outstanding here.</p>';
+  if(settled.length){
+    html+='<div class="settledhead"><h2>Settled</h2><p>Decided and closed \u2014 kept here for the record.</p></div>';
+    settled.forEach(t=>{html+=card(t);});
+  }
   $('list').innerHTML=html;
 }
 
