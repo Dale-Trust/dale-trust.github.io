@@ -7,30 +7,30 @@
 <meta name="robots" content="noindex,nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B}
+  :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B}
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:15px}
   h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
   .top{background:var(--navy);color:#fff;padding:20px 22px}
-  .top h1{font-size:22px}.top small{color:#8FC1FF;font-size:13px;display:block;margin-top:3px}
+  .top h1{font-size:22px}
+  .top small{color:#8FC1FF;font-size:13px;display:block;margin-top:3px}
   .wrap{max-width:900px;margin:0 auto;padding:18px}
-  .whobox{background:#fff;border:1px solid var(--line);border-left:5px solid var(--royal);border-radius:10px;padding:16px 18px;margin-bottom:16px}
-  .whobox label{display:block;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin-bottom:6px}
-  .whobox select{padding:11px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff;min-width:220px}
-  .whobox p{font-size:14px;margin-top:10px}
+  .bar{background:#fff;border:1px solid var(--line);border-left:5px solid var(--royal);border-radius:10px;padding:14px 16px;margin-bottom:14px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .bar label{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink)}
+  .bar select{padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
+  .bar span{font-size:13.5px;color:#7A8AA5}
   .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
   .filters button{background:#fff;border:1.5px solid var(--line);border-radius:100px;padding:8px 16px;font:600 13px 'Montserrat';color:var(--body);cursor:pointer}
   .filters button.on{background:var(--royal);border-color:var(--royal);color:#fff}
   h2.sec{font-size:16px;margin:24px 0 10px;border-left:4px solid var(--royal);padding-left:10px}
   .item{background:#fff;border:1px solid var(--line);border-radius:10px;padding:15px 17px;margin-bottom:10px}
-  .item.mine{border-left:5px solid var(--gold);background:#FFFDF7}
   .head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
   .ref{font-family:'Oswald';font-weight:700;color:var(--royal);font-size:16px;flex:none}
   .title{font-weight:700;color:var(--ink);flex:1;min-width:170px}
   .pill{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:100px;color:#fff;flex:none}
   .open{background:#8C9299}.answered{background:var(--gold);color:#3a2c00}.done{background:var(--green)}.parked{background:#5B6472}
-  .who{font-size:12.5px;color:#7A8AA5}
-  .detail{margin-top:8px;font-size:14px;line-height:1.6}
+  .with{font-size:12.5px;color:#fff;background:var(--royal);padding:3px 10px;border-radius:100px;flex:none}
+  .detail{margin-top:9px;font-size:14px;line-height:1.6}
   .reply{background:var(--wash);border-left:3px solid var(--royal);padding:9px 12px;margin-top:8px;font-size:14px;border-radius:0 6px 6px 0}
   .reply b{color:var(--ink)}
   .reply small{color:#7A8AA5;font-size:11.5px;display:block;margin-top:3px}
@@ -38,17 +38,19 @@
   .answer textarea{width:100%;padding:11px;border:1.5px solid var(--line);border-radius:8px;font:inherit;min-height:80px}
   .answer button{background:var(--green);color:#fff;border:0;border-radius:8px;padding:10px 20px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.05em;cursor:pointer;margin-top:8px}
   .link{background:none;border:0;color:var(--royal);font:600 13px 'Montserrat';cursor:pointer;padding:0;text-decoration:underline;margin-top:10px;display:inline-block}
-  .adminbar{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
-  .adminbar button{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 11px;font-size:11.5px;cursor:pointer;color:var(--body)}
+  .status{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .status em{font-size:12px;color:#7A8AA5;font-style:normal;margin-right:2px}
+  .status button{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 11px;font-size:11.5px;cursor:pointer;color:var(--body)}
+  .status button:hover{border-color:var(--royal);color:var(--royal)}
   #msg{padding:30px;text-align:center;color:#7A8AA5}
   footer{text-align:center;color:#7A8AA5;font-size:12.5px;padding:24px}
 </style>
 </head>
 <body>
-<div class="top"><h1>Website — decisions and tasks</h1><small>Everything raised so far. Answer your own items here — no need to reply by email.</small></div>
+<div class="top"><h1>Website — decisions and tasks</h1><small>Everything raised so far. Anyone can answer anything — it saves for everyone.</small></div>
 <div class="wrap">
-  <div class="whobox">
-    <label for="who">Who are you?</label>
+  <div class="bar">
+    <label for="who">You are</label>
     <select id="who" onchange="setWho()">
       <option value="">— choose your name —</option>
       <option>Emma Loynd</option><option>Scott Goulding</option><option>Murray Knight</option>
@@ -56,13 +58,12 @@
       <option>Ian Goodwin</option><option>Keith Hicks</option><option>Siobhan McElhinney</option>
       <option>Ruby Loynd</option><option>Matt Cullen</option><option>Kirsty Fernehough</option>
     </select>
-    <p id="greeting">Pick your name and your items will be highlighted.</p>
+    <span id="counts"></span>
   </div>
   <div id="msg">Loading…</div>
   <div id="content" style="display:none">
     <div class="filters">
       <button class="on" data-f="all" onclick="setFilter(this)">Everything</button>
-      <button data-f="mine" onclick="setFilter(this)">Mine</button>
       <button data-f="open" onclick="setFilter(this)">Still open</button>
       <button data-f="answered" onclick="setFilter(this)">Answered</button>
       <button data-f="done" onclick="setFilter(this)">Done</button>
@@ -70,75 +71,50 @@
     <div id="list"></div>
   </div>
 </div>
-<footer>Dale Supporters Trust &middot; this page is for board use</footer>
+<footer>Dale Supporters Trust &middot; board use</footer>
 <script>
 const EP='https://join.daletrust.uk';
 const KEY='REPLACE_WITH_TASKS_KEY';
 const $=id=>document.getElementById(id);
 let tasks=[], filter='all', who='';
 try{who=localStorage.getItem('dt_who')||'';}catch(e){}
-
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const firstName=n=>String(n||'').split(' ')[0];
 
-function setWho(){
-  who=$('who').value;
-  try{localStorage.setItem('dt_who',who);}catch(e){}
-  greet(); draw();
-}
-function greet(){
-  if(!who){$('greeting').textContent='Pick your name and your items will be highlighted.';return;}
-  const mine=tasks.filter(isMine);
-  const open=mine.filter(t=>t.status==='open').length;
-  $('greeting').innerHTML='Hello '+esc(firstName(who))+'. '+
-    (open? '<b>'+open+' item'+(open===1?'':'s')+' waiting on you</b> — tap <b>Mine</b> below, then type your answer under each one.'
-         : (mine.length? 'Nothing outstanding on your items — thank you.' : 'Nothing has your name on it, but do comment on anything you like.'));
-}
-function isMine(t){
-  if(!who) return false;
-  const o=String(t.owner||'').toLowerCase();
-  const f=firstName(who).toLowerCase();
-  return o.includes(f) || (o.includes('board') && true);
-}
-function setFilter(btn){
-  document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on'); filter=btn.dataset.f; draw();
-}
+function setWho(){who=$('who').value;try{localStorage.setItem('dt_who',who);}catch(e){}}
+function setFilter(b){document.querySelectorAll('.filters button').forEach(x=>x.classList.remove('on'));b.classList.add('on');filter=b.dataset.f;draw();}
 
 async function load(){
   try{
-    const r=await fetch(EP+'/tasks?key='+encodeURIComponent(KEY));
-    const d=await r.json();
+    const d=await (await fetch(EP+'/tasks?key='+encodeURIComponent(KEY))).json();
     if(!d.ok){$('msg').textContent=d.error||'Could not load the list.';return;}
     tasks=d.tasks;
     if(who) $('who').value=who;
-    $('msg').style.display='none'; $('content').style.display='block';
-    greet(); draw();
+    const open=tasks.filter(t=>t.status==='open').length, done=tasks.filter(t=>t.status==='done').length;
+    $('counts').textContent=tasks.length+' items \u00b7 '+open+' still open \u00b7 '+done+' done';
+    $('msg').style.display='none';$('content').style.display='block';
+    draw();
   }catch(e){$('msg').textContent='Could not reach the server — please try again.';}
 }
 
 function draw(){
-  let list=tasks;
-  if(filter==='mine') list=tasks.filter(isMine);
-  else if(filter!=='all') list=tasks.filter(t=>t.status===filter);
-  if(!list.length){$('list').innerHTML='<p style="padding:20px;color:#7A8AA5">Nothing here'+(filter==='mine'&&!who?' — pick your name above first.':'.')+'</p>';return;}
-  const isChris=firstName(who).toLowerCase()==='chris';
+  const list = filter==='all' ? tasks : tasks.filter(t=>t.status===filter);
+  if(!list.length){$('list').innerHTML='<p style="padding:20px;color:#7A8AA5">Nothing here.</p>';return;}
   let html='',section='';
   list.forEach(t=>{
     if(t.section!==section){section=t.section;html+='<h2 class="sec">'+esc(section)+'</h2>';}
-    html+='<div class="item'+(isMine(t)?' mine':'')+'">'+
+    html+='<div class="item">'+
       '<div class="head"><span class="ref">'+esc(t.ref)+'</span>'+
       '<span class="title">'+esc(t.title)+'</span>'+
-      '<span class="pill '+t.status+'">'+t.status+'</span>'+
-      '<span class="who">'+esc(t.owner||'')+'</span></div>'+
+      (t.owner?'<span class="with">'+esc(t.owner)+'</span>':'')+
+      '<span class="pill '+t.status+'">'+t.status+'</span></div>'+
       (t.detail?'<div class="detail">'+esc(t.detail)+'</div>':'')+
       t.responses.map(r=>'<div class="reply"><b>'+esc(r.author)+':</b> '+esc(r.body)+
         '<small>'+new Date(r.at.replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</small></div>').join('')+
       '<button class="link" onclick="toggle('+t.id+')">'+(t.responses.length?'Add a comment':'Answer this')+'</button>'+
       '<div class="answer" id="a'+t.id+'"><textarea id="t'+t.id+'" placeholder="Type your answer…"></textarea>'+
       '<br><button onclick="send('+t.id+')">Save</button></div>'+
-      (isChris?'<div class="adminbar">'+['open','answered','done','parked'].map(s=>
-        '<button onclick="setStatus('+t.id+',&quot;'+s+'&quot;)">'+s+'</button>').join('')+'</div>':'')+
+      '<div class="status"><em>Mark as:</em>'+['open','answered','done','parked'].map(s=>
+        '<button onclick="setStatus('+t.id+',&quot;'+s+'&quot;)">'+s+'</button>').join('')+'</div>'+
       '</div>';
   });
   $('list').innerHTML=html;
@@ -147,19 +123,15 @@ function draw(){
 function toggle(id){const el=$('a'+id);el.style.display=el.style.display==='block'?'none':'block';if(el.style.display==='block')$('t'+id).focus();}
 
 async function send(id){
-  if(!who){alert('Please pick your name at the top first.');return;}
-  const body=$('t'+id).value.trim();
-  if(!body)return;
-  const d=await (await fetch(EP+'/tasks/respond?key='+encodeURIComponent(KEY),
-    {method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({task_id:id,body,author:who})})).json();
+  if(!who){alert('Please choose your name at the top first.');return;}
+  const body=$('t'+id).value.trim(); if(!body)return;
+  const d=await (await fetch(EP+'/tasks/respond?key='+encodeURIComponent(KEY),{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({task_id:id,body,author:who})})).json();
   if(d.ok) load(); else alert(d.error||'Could not save.');
 }
-
 async function setStatus(id,status){
-  const d=await (await fetch(EP+'/tasks/status?key='+encodeURIComponent(KEY),
-    {method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({task_id:id,status,author:who})})).json();
+  const d=await (await fetch(EP+'/tasks/status?key='+encodeURIComponent(KEY),{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({task_id:id,status,author:who})})).json();
   if(d.ok) load();
 }
 load();
