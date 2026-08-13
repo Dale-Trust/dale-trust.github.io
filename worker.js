@@ -177,8 +177,27 @@ export default {
     if (request.method === 'GET' && url.pathname === '/posts/all') {
       const me = await sessionOfficer(request, env);
       if (!me || !me.can_posts) return json({ ok: false, error: 'Unauthorised' }, 403, h);
-      const rows = await env.DB.prepare('SELECT id,slug,title,category,author,status,publish_at,emailed_at,summary,body FROM posts ORDER BY COALESCE(publish_at, created_at) DESC LIMIT 60').all();
-      return json({ ok: true, posts: rows.results }, 200, h);
+      const q = (url.searchParams.get('q') || '').trim();
+      const status = url.searchParams.get('status') || '';
+      const limit = Math.min(100, parseInt(url.searchParams.get('limit') || '25', 10));
+      const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+      const where = [], binds = [];
+      if (q) { where.push('(title LIKE ?' + (binds.length+1) + ' OR body LIKE ?' + (binds.length+1) + ')'); binds.push('%' + q + '%'); }
+      if (status) { where.push('status = ?' + (binds.length+1)); binds.push(status); }
+      const clause = where.length ? ' WHERE ' + where.join(' AND ') : '';
+      const cnt = await env.DB.prepare('SELECT COUNT(*) AS n FROM posts' + clause).bind(...binds).first();
+      const rows = await env.DB.prepare(
+        'SELECT id,slug,title,category,author,status,publish_at,emailed_at,summary FROM posts' + clause +
+        ' ORDER BY COALESCE(publish_at, created_at) DESC LIMIT ' + limit + ' OFFSET ' + offset).bind(...binds).all();
+      return json({ ok: true, total: cnt.n, limit, offset, posts: rows.results }, 200, h);
+    }
+
+    // single post for editing (any status)
+    if (request.method === 'GET' && url.pathname === '/posts/one') {
+      const me = await sessionOfficer(request, env);
+      if (!me || !me.can_posts) return json({ ok: false, error: 'Unauthorised' }, 403, h);
+      const p = await env.DB.prepare('SELECT * FROM posts WHERE id=?1').bind(url.searchParams.get('id')).first();
+      return p ? json({ ok: true, post: p }, 200, h) : json({ ok: false, error: 'Not found' }, 404, h);
     }
 
     // ---------- officer: save / publish / schedule a post ----------
@@ -188,7 +207,7 @@ export default {
       const b = await request.json();
       if (!b.title || !b.body) return json({ ok: false, error: 'Title and words are required' }, 400, h);
       const base = String(b.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
-      const status = b.status === 'scheduled' ? 'scheduled' : (b.status === 'published' ? 'published' : 'draft');
+      const status = ['scheduled','published','draft','archived'].includes(b.status) ? b.status : 'draft';
       const publish_at = b.publish_at || new Date().toISOString();
       const summary = String(b.body).replace(/[#*]/g, '').split('\n').filter(Boolean)[0] || '';
       if (b.id) {
@@ -364,6 +383,358 @@ export default {
       }
     }
 
+    // ---------- decisions & tasks board ----------
+    if (request.method === 'GET' && url.pathname === '/tasks') {
+      const me = await sessionOfficer(request, env);
+      const keyed = env.TASKS_KEY && url.searchParams.get('key') === env.TASKS_KEY;
+      if (!me && !keyed) return json({ ok: false, error: 'Unauthorised' }, 401, h);
+      const rows = await env.DB.prepare('SELECT * FROM tasks ORDER BY sort_order').all();
+      const reps = await env.DB.prepare('SELECT * FROM task_responses ORDER BY at').all();
+      const byTask = {};
+      reps.results.forEach(r => { (byTask[r.task_id] = byTask[r.task_id] || []).push(r); });
+      const tasks = rows.results.map(t => ({ ...t, responses: byTask[t.id] || [] }));
+      return json({ ok: true, tasks, me: me ? { name: me.name, email: me.email, is_admin: !!me.is_admin } : null }, 200, h);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/tasks/respond') {
+      const me = await sessionOfficer(request, env);
+      const keyed = env.TASKS_KEY && url.searchParams.get('key') === env.TASKS_KEY;
+      if (!me && !keyed) return json({ ok: false, error: 'Unauthorised' }, 401, h);
+      const b = await request.json();
+      if (!b.task_id || !String(b.body || '').trim()) return json({ ok: false, error: 'Nothing to save' }, 400, h);
+      const t = await env.DB.prepare('SELECT status FROM tasks WHERE id=?1').bind(b.task_id).first();
+      if (t && t.status !== 'open') {
+        return json({ ok: false, error: 'This one already has an answer \u2014 reopen it first if it needs revisiting' }, 400, h);
+      }
+      const who = me ? me.name : String(b.author || 'Unknown').slice(0, 60);
+      await env.DB.prepare('INSERT INTO task_responses (task_id, author, body) VALUES (?1,?2,?3)')
+        .bind(b.task_id, who, String(b.body).trim()).run();
+      const cur = await env.DB.prepare('SELECT status FROM tasks WHERE id=?1').bind(b.task_id).first();
+      if (cur && cur.status === 'open') {
+        await env.DB.prepare("UPDATE tasks SET status='answered', updated_at=datetime('now') WHERE id=?1").bind(b.task_id).run();
+      }
+      await audit(env, me ? me.email : 'page:' + (b.author || '?'), 'task.respond', 'task ' + b.task_id);
+      return json({ ok: true }, 200, h);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/tasks/status') {
+      const me = await sessionOfficer(request, env);
+      const keyed = env.TASKS_KEY && url.searchParams.get('key') === env.TASKS_KEY;
+      if (!(me && me.is_admin) && !keyed) return json({ ok: false, error: 'Unauthorised' }, 403, h);
+      const b = await request.json();
+      if (!['open','answered','confirmed','live','parked'].includes(b.status)) return json({ ok: false, error: 'Bad status' }, 400, h);
+      await env.DB.prepare("UPDATE tasks SET status=?1, updated_at=datetime('now') WHERE id=?2").bind(b.status, b.task_id).run();
+      await audit(env, me ? me.email : 'page:' + (b.author || '?'), 'task.status', 'task ' + b.task_id + ' -> ' + b.status);
+      return json({ ok: true }, 200, h);
+    }
+
+    // ================= MEMBERS' AREA =================
+    // Season handling: CURRENT_SEASON variable, defaults to 2026/27
+    const CURRENT = env.CURRENT_SEASON || '2026/27';
+
+    // ---- member: request a sign-in link ----
+    if (request.method === 'POST' && url.pathname === '/member/request') {
+      const b = await request.json().catch(() => ({}));
+      const email = String(b.email || '').trim().toLowerCase();
+      if (!email) return json({ ok: false, error: 'Email required' }, 400, h);
+      const row = await env.DB.prepare(
+        "SELECT first_name FROM members WHERE lower(email)=?1 AND email<>'none@daletrust.uk' ORDER BY season DESC LIMIT 1"
+      ).bind(email).first();
+      if (row && env.RESEND_KEY) {
+        const tok = randToken();
+        await env.DB.prepare("INSERT INTO member_tokens (token, email, expires_at) VALUES (?1,?2,datetime('now','+30 minutes'))").bind(tok, email).run();
+        const link = 'https://daletrust.uk/members.html#in=' + tok;
+        await sendEmail(env, email, 'Your Dale Trust sign-in link',
+          '<p>Hi ' + row.first_name + ',</p>' +
+          '<p>Tap below to open your Dale Trust membership. The link works once and lasts 30 minutes.</p>' +
+          '<p style="margin:18px 0"><a href="' + link + '" style="background:#0057A7;color:#fff;text-decoration:none;font-weight:700;padding:14px 26px;border-radius:9px;display:inline-block">Open my membership</a></p>' +
+          '<p style="color:#666;font-size:13px">Didn\u2019t ask for this? You can ignore it.</p>' +
+          '<p>Up the Dale!<br><strong>The Dale Trust</strong></p>');
+      }
+      return json({ ok: true, sent: true }, 200, h);   // never reveal whether the address is known
+    }
+
+    // ---- member: exchange link for a session ----
+    if (request.method === 'POST' && url.pathname === '/member/verify') {
+      const b = await request.json().catch(() => ({}));
+      const t = await env.DB.prepare("SELECT * FROM member_tokens WHERE token=?1 AND used=0 AND expires_at>datetime('now')").bind(String(b.token || '')).first();
+      if (!t) return json({ ok: false, error: 'That link has expired or been used \u2014 please ask for a new one' }, 400, h);
+      await env.DB.prepare('UPDATE member_tokens SET used=1 WHERE token=?1').bind(t.token).run();
+      const st = randToken();
+      await env.DB.prepare("INSERT INTO member_sessions (token, email, expires_at) VALUES (?1,?2,datetime('now','+90 days'))").bind(st, t.email).run();
+      return json({ ok: true, session: st }, 200, h);
+    }
+
+    // ---- member: my record ----
+    async function memberFromSession(req) {
+      const auth = req.headers.get('Authorization') || '';
+      const tok = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+      if (!tok) return null;
+      const s = await env.DB.prepare("SELECT email FROM member_sessions WHERE token=?1 AND expires_at>datetime('now')").bind(tok).first();
+      if (!s) return null;
+      const rows = await env.DB.prepare(
+        "SELECT * FROM members WHERE lower(email)=?1 ORDER BY season DESC, id DESC"
+      ).bind(s.email).all();
+      return rows.results.length ? { email: s.email, records: rows.results } : null;
+    }
+
+    if (request.method === 'GET' && url.pathname === '/member/me') {
+      const m = await memberFromSession(request);
+      if (!m) return json({ ok: false }, 401, h);
+      const strip = r => r && ({
+        id: r.id, app_ref: r.app_ref, member_no: r.member_no, season: r.season, membership_type: r.membership_type,
+        first_name: r.first_name, last_name: r.last_name, dob: r.dob, email: r.email, mobile: r.mobile,
+        address1: r.address1, address2: r.address2, town: r.town, county: r.county, postcode: r.postcode,
+        country: r.country, newsletter_optin: r.newsletter_optin, exile_transport_share: r.exile_transport_share,
+        payment_status: r.payment_status, details_confirmed_at: r.details_confirmed_at, activated_at: r.activated_at
+      });
+      // one email can cover a household — group the records by person
+      const byPerson = {};
+      m.records.forEach(r => {
+        const key = (r.first_name + '|' + r.last_name).toLowerCase().trim();
+        (byPerson[key] = byPerson[key] || []).push(r);
+      });
+      const people = Object.values(byPerson).map(recs => {
+        const current = recs.find(r => r.season === CURRENT && r.payment_status !== 'cancelled');
+        const seasons = [...new Set(recs.map(r => r.season))].sort();
+        return {
+          name: (recs[0].first_name + ' ' + recs[0].last_name).trim(),
+          isMember: !!current,
+          record: strip(current || recs[0]),
+          seasons,
+          since: seasons[0]
+        };
+      }).sort((a, b) => (b.isMember ? 1 : 0) - (a.isMember ? 1 : 0));
+      return json({ ok: true, season: CURRENT, people }, 200, h);
+    }
+
+    // ---- member: save corrected details ----
+    if (request.method === 'POST' && url.pathname === '/member/update') {
+      const m = await memberFromSession(request);
+      if (!m) return json({ ok: false, error: 'Please sign in again' }, 401, h);
+      const b = await request.json();
+      const target = (b.record_id && m.records.find(r => r.id === b.record_id)) ||
+                     m.records.find(r => r.season === CURRENT) || m.records[0];
+      await env.DB.prepare(`UPDATE members SET
+          first_name=?1, last_name=?2, dob=?3, mobile=?4, address1=?5, address2=?6,
+          town=?7, county=?8, postcode=?9, country=?10, newsletter_optin=?11,
+          exile_transport_share=?12, details_confirmed_at=datetime('now')
+        WHERE id=?13`)
+        .bind(
+          String(b.first_name || target.first_name).trim(), String(b.last_name || target.last_name).trim(),
+          b.dob || null, b.mobile || null,
+          String(b.address1 || target.address1).trim(), b.address2 || null,
+          String(b.town || target.town).trim(), b.county || null,
+          String(b.postcode || target.postcode).trim().toUpperCase(), b.country || null,
+          b.newsletter_optin ? 1 : 0,
+          target.membership_type === 'Exile' ? (b.exile_transport_share || 'No') : null,
+          target.id
+        ).run();
+      return json({ ok: true }, 200, h);
+    }
+
+    // ---- member: renew / rejoin for the current season ----
+    if (request.method === 'POST' && url.pathname === '/member/renew') {
+      const m = await memberFromSession(request);
+      if (!m) return json({ ok: false, error: 'Please sign in again' }, 401, h);
+      const b = await request.json().catch(() => ({}));
+      const prev = (b.record_id && m.records.find(r => r.id === b.record_id)) || m.records[0];
+      const already = m.records.find(r => r.season === CURRENT && r.payment_status !== 'cancelled'
+        && r.first_name.toLowerCase() === prev.first_name.toLowerCase()
+        && r.last_name.toLowerCase() === prev.last_name.toLowerCase());
+      if (already) return json({ ok: false, error: prev.first_name + ' is already a member for ' + CURRENT }, 400, h);
+      const donation = Math.max(0, Number(b.donation) || 0);
+      const type = ['Adult','Exile','Junior'].includes(b.membership_type) ? b.membership_type : prev.membership_type;
+      const base = type === 'Junior' ? 0 : 7.5;
+      const total = base + donation;
+      const status = total > 0 ? 'pending' : 'free';
+
+      const c = await env.DB.prepare('SELECT COUNT(*) AS n FROM members').first();
+      const app_ref = 'REF-' + String(1000 + c.n + 1);
+      let member_no = null, activated_at = null;
+      if (status === 'free') { member_no = await nextMemberNo(env); activated_at = new Date().toISOString(); }
+
+      await env.DB.prepare(`INSERT INTO members
+        (app_ref, member_no, season, membership_type, new_or_renewal, first_name, last_name, gender, dob,
+         email, mobile, home_tel, address1, address2, town, county, postcode, country,
+         exile_transport_share, newsletter_optin, auto_renew_pref, gdpr_consent_at,
+         donation, amount_due, payment_status, activated_at, details_confirmed_at, joined_via)
+        VALUES (?1,?2,?3,?4,'Rpt',?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,0,?20,?21,?22,?23,?24,datetime('now'),'renewal')`)
+        .bind(app_ref, member_no, CURRENT, type,
+          b.first_name || prev.first_name, b.last_name || prev.last_name, prev.gender, b.dob || prev.dob,
+          m.email, b.mobile || prev.mobile, prev.home_tel,
+          b.address1 || prev.address1, b.address2 || prev.address2, b.town || prev.town,
+          b.county || prev.county, (b.postcode || prev.postcode || '').toUpperCase(), b.country || prev.country,
+          type === 'Exile' ? (b.exile_transport_share || 'No') : null,
+          b.newsletter_optin ? 1 : 0, new Date().toISOString(),
+          donation, total, status, activated_at).run();
+
+      let pay_url = null;
+      if (total > 0) {
+        if (env.SUMUP_KEY && env.SUMUP_MERCHANT) {
+          const chk = await fetch('https://api.sumup.com/v0.1/checkouts', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + env.SUMUP_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ checkout_reference: app_ref, amount: total, currency: 'GBP',
+              merchant_code: env.SUMUP_MERCHANT, description: 'Dale Trust membership ' + CURRENT + ' (' + app_ref + ')',
+              return_url: 'https://join.daletrust.uk/webhook', hosted_checkout: { enabled: true } })
+          }).then(r => r.json()).catch(() => null);
+          pay_url = chk && (chk.hosted_checkout_url || (chk.hosted_checkout && chk.hosted_checkout.url)) || null;
+        }
+        if (!pay_url) {
+          const links = { 7.5: env.LINK_750, 10: env.LINK_1000, 12.5: env.LINK_1250, 17.5: env.LINK_1750 };
+          pay_url = links[total] || env.LINK_750;
+        }
+      }
+      await audit(env, m.email, 'member.renew', app_ref + ' ' + CURRENT + ' \u00a3' + total);
+      return json({ ok: true, app_ref, member_no, amount: total, pay_url }, 200, h);
+    }
+
+    // ================= COACH TRAVEL =================
+    async function tripWithSeats(t) {
+      const b = await env.DB.prepare(
+        "SELECT COALESCE(SUM(seats),0) AS taken FROM coach_bookings WHERE trip_id=?1 AND payment_status<>'cancelled'"
+      ).bind(t.id).first();
+      return { ...t, taken: b.taken, remaining: Math.max(0, t.seats - b.taken) };
+    }
+
+    // ---- public: open trips ----
+    if (request.method === 'GET' && url.pathname === '/coach/trips') {
+      const rows = await env.DB.prepare(
+        "SELECT * FROM coach_trips WHERE status='open' AND date(match_date) >= date('now','-1 day') ORDER BY match_date"
+      ).all();
+      const trips = [];
+      for (const t of rows.results) trips.push(await tripWithSeats(t));
+      return json({ ok: true, trips }, 200, h);
+    }
+
+    // ---- public: book a seat ----
+    if (request.method === 'POST' && url.pathname === '/coach/book') {
+      const b = await request.json().catch(() => ({}));
+      const trip = await env.DB.prepare("SELECT * FROM coach_trips WHERE id=?1 AND status='open'").bind(b.trip_id).first();
+      if (!trip) return json({ ok: false, error: 'That coach is not open for booking' }, 400, h);
+      const name = String(b.name || '').trim(), mobile = String(b.mobile || '').trim();
+      const email = String(b.email || '').trim().toLowerCase();
+      if (!name || !mobile) return json({ ok: false, error: 'Name and mobile number are needed' }, 400, h);
+      const seats = Math.max(1, Math.min(10, parseInt(b.seats, 10) || 1));
+      const withSeats = await tripWithSeats(trip);
+      if (seats > withSeats.remaining) return json({ ok: false, error: 'Only ' + withSeats.remaining + ' seat(s) left on that coach' }, 400, h);
+
+      if (env.TURNSTILE_SECRET && !b.member_no) {
+        const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+          method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ secret: env.TURNSTILE_SECRET, response: b.turnstile_token || '' }),
+        }).then(x => x.json());
+        if (!r.success) return json({ ok: false, error: 'Human check failed — please try again' }, 400, h);
+      }
+
+      const c = await env.DB.prepare('SELECT COUNT(*) AS n FROM coach_bookings').first();
+      const booking_ref = 'CT-' + String(1000 + c.n + 1);
+      const amount = Math.round(trip.price * seats * 100) / 100;
+      await env.DB.prepare(`INSERT INTO coach_bookings (booking_ref, trip_id, name, email, mobile, seats, amount, member_no, payment_status, taken_by)
+        VALUES (?1,?2,?3,?4,?5,?6,?7,?8,'pending','online')`)
+        .bind(booking_ref, trip.id, name, email || null, mobile, seats, amount, b.member_no || null).run();
+
+      let pay_url = null;
+      if (env.SUMUP_KEY && env.SUMUP_MERCHANT) {
+        const chk = await fetch('https://api.sumup.com/v0.1/checkouts', {
+          method: 'POST', headers: { Authorization: 'Bearer ' + env.SUMUP_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ checkout_reference: booking_ref, amount, currency: 'GBP',
+            merchant_code: env.SUMUP_MERCHANT,
+            description: 'Dale Trust coach — ' + trip.opponent + ' (' + booking_ref + ')',
+            return_url: 'https://join.daletrust.uk/webhook', hosted_checkout: { enabled: true } })
+        }).then(r => r.json()).catch(() => null);
+        pay_url = chk && (chk.hosted_checkout_url || (chk.hosted_checkout && chk.hosted_checkout.url)) || null;
+      }
+      if (env.RESEND_KEY && email) {
+        ctx.waitUntil(sendEmail(env, email, 'Your Dale Trust coach booking — ' + trip.opponent,
+          '<p>Hi ' + name.split(' ')[0] + ',</p>' +
+          '<p>Your seat' + (seats > 1 ? 's are' : ' is') + ' reserved for <strong>' + trip.opponent + '</strong>.</p>' +
+          '<p><strong>Booking reference:</strong> ' + booking_ref + '<br>' +
+          '<strong>Departs:</strong> ' + trip.depart_time + ' from ' + trip.depart_from + '<br>' +
+          '<strong>Seats:</strong> ' + seats + '<br><strong>Total:</strong> \u00a3' + amount.toFixed(2) + '</p>' +
+          (pay_url ? '<p style="margin:18px 0"><a href="' + pay_url + '" style="background:#1E8E5A;color:#fff;text-decoration:none;font-weight:700;padding:14px 26px;border-radius:9px;display:inline-block">Pay \u00a3' + amount.toFixed(2) + ' to confirm your seat</a></p>' : '') +
+          '<p style="color:#666;font-size:13px">Please arrive ten minutes before departure. Your coach seat does not include a match ticket.</p>' +
+          '<p>Up the Dale!<br><strong>The Dale Trust</strong></p>'));
+      }
+      return json({ ok: true, booking_ref, amount, seats, pay_url }, 200, h);
+    }
+
+    // ---- officer: trips with bookings ----
+    if (request.method === 'GET' && url.pathname === '/coach/admin') {
+      const me = await sessionOfficer(request, env);
+      if (!me) return json({ ok: false, error: 'Unauthorised' }, 401, h);
+      const rows = await env.DB.prepare('SELECT * FROM coach_trips ORDER BY match_date DESC').all();
+      const trips = [];
+      for (const t of rows.results) trips.push(await tripWithSeats(t));
+      const tripId = url.searchParams.get('trip_id');
+      let bookings = [];
+      if (tripId) {
+        const bk = await env.DB.prepare('SELECT * FROM coach_bookings WHERE trip_id=?1 ORDER BY created_at').bind(tripId).all();
+        bookings = bk.results;
+      }
+      return json({ ok: true, trips, bookings, me: { name: me.name } }, 200, h);
+    }
+
+    // ---- officer: create or update a trip ----
+    if (request.method === 'POST' && url.pathname === '/coach/trip') {
+      const me = await sessionOfficer(request, env);
+      if (!me) return json({ ok: false, error: 'Unauthorised' }, 401, h);
+      const b = await request.json();
+      if (b.id) {
+        await env.DB.prepare(`UPDATE coach_trips SET opponent=?1, venue=?2, match_date=?3, kickoff=?4,
+          depart_time=?5, depart_from=?6, price=?7, seats=?8, status=?9, notes=?10 WHERE id=?11`)
+          .bind(b.opponent, b.venue || null, b.match_date, b.kickoff || null, b.depart_time,
+            b.depart_from || 'Crown Oil Arena', Number(b.price) || 0, parseInt(b.seats, 10) || 49,
+            b.status || 'open', b.notes || null, b.id).run();
+        await audit(env, me.email, 'coach.trip.update', b.opponent);
+        return json({ ok: true, id: b.id }, 200, h);
+      }
+      if (!b.opponent || !b.match_date || !b.depart_time) return json({ ok: false, error: 'Opponent, date and departure time are needed' }, 400, h);
+      const r = await env.DB.prepare(`INSERT INTO coach_trips (opponent, venue, match_date, kickoff, depart_time, depart_from, price, seats, notes)
+        VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)`)
+        .bind(b.opponent, b.venue || null, b.match_date, b.kickoff || null, b.depart_time,
+          b.depart_from || 'Crown Oil Arena', Number(b.price) || 35, parseInt(b.seats, 10) || 49, b.notes || null).run();
+      await audit(env, me.email, 'coach.trip.create', b.opponent);
+      return json({ ok: true, id: r.meta.last_row_id }, 200, h);
+    }
+
+    // ---- officer: add a booking taken by phone or at the desk ----
+    if (request.method === 'POST' && url.pathname === '/coach/manual') {
+      const me = await sessionOfficer(request, env);
+      if (!me) return json({ ok: false, error: 'Unauthorised' }, 401, h);
+      const b = await request.json();
+      const trip = await env.DB.prepare('SELECT * FROM coach_trips WHERE id=?1').bind(b.trip_id).first();
+      if (!trip) return json({ ok: false, error: 'Trip not found' }, 400, h);
+      if (!String(b.name || '').trim()) return json({ ok: false, error: 'A name is needed' }, 400, h);
+      const seats = Math.max(1, Math.min(10, parseInt(b.seats, 10) || 1));
+      const c = await env.DB.prepare('SELECT COUNT(*) AS n FROM coach_bookings').first();
+      const booking_ref = 'CT-' + String(1000 + c.n + 1);
+      const amount = Math.round(trip.price * seats * 100) / 100;
+      const status = ['pending','paid','cash','free'].includes(b.payment_status) ? b.payment_status : 'pending';
+      await env.DB.prepare(`INSERT INTO coach_bookings (booking_ref, trip_id, name, email, mobile, seats, amount, payment_status, taken_by, notes)
+        VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)`)
+        .bind(booking_ref, trip.id, String(b.name).trim(), b.email || null, b.mobile || null,
+          seats, amount, status, me.name, b.notes || null).run();
+      await audit(env, me.email, 'coach.manual', booking_ref + ' ' + trip.opponent);
+      return json({ ok: true, booking_ref }, 200, h);
+    }
+
+    // ---- officer: change a booking ----
+    if (request.method === 'POST' && url.pathname === '/coach/booking') {
+      const me = await sessionOfficer(request, env);
+      if (!me) return json({ ok: false, error: 'Unauthorised' }, 401, h);
+      const b = await request.json();
+      if (b.payment_status) {
+        await env.DB.prepare('UPDATE coach_bookings SET payment_status=?1 WHERE id=?2').bind(b.payment_status, b.id).run();
+      }
+      if (b.notes !== undefined) {
+        await env.DB.prepare('UPDATE coach_bookings SET notes=?1 WHERE id=?2').bind(b.notes, b.id).run();
+      }
+      await audit(env, me.email, 'coach.booking.update', 'booking ' + b.id);
+      return json({ ok: true }, 200, h);
+    }
+
     // ---------- health ----------
     if (request.method === 'GET' && url.pathname === '/health') {
       const c = await env.DB.prepare('SELECT COUNT(*) AS n FROM members').first();
@@ -506,7 +877,14 @@ export default {
         headers: { Authorization: 'Bearer ' + env.SUMUP_KEY },
       }).then(r => r.json());
       if (chk && chk.status === 'PAID' && chk.checkout_reference) {
-        const res = await activate(env, chk.checkout_reference, 'sumup:' + checkoutId);
+        const ref = chk.checkout_reference;
+        if (ref.startsWith('CT-')) {
+          await env.DB.prepare("UPDATE coach_bookings SET payment_status='paid', payment_ref=?1 WHERE booking_ref=?2")
+            .bind('sumup:' + checkoutId, ref).run();
+          await audit(env, 'sumup', 'coach.paid', ref);
+          return json({ ok: true, coach: ref }, 200, h);
+        }
+        const res = await activate(env, ref, 'sumup:' + checkoutId);
         return json(res, 200, h);
       }
       return json({ ok: true, status: chk && chk.status }, 200, h);

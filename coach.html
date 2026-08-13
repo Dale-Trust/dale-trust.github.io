@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach travel | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:21px}.top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:1000px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:10px 0 4px}
+  input,select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:640px){.grid3,.grid2{grid-template-columns:1fr}}
+  button{background:var(--royal);color:#fff;border:0;border-radius:9px;padding:12px 22px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+  button.green{background:var(--green)}button.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line)}
+  button.sm{padding:5px 11px;font-size:11.5px}
+  .trip{border:1px solid var(--line);border-left:5px solid var(--royal);border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;background:#fff}
+  .trip.on{border-left-color:var(--green);background:#F7FCF9}
+  .trip b{font-family:'Oswald';font-size:17px;text-transform:uppercase;color:var(--ink);display:block}
+  .trip small{color:#7A8AA5;display:block;margin-top:2px}
+  .seats{float:right;text-align:right}
+  .seats b{font-size:22px;color:var(--royal)}
+  .seats span{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#7A8AA5}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+  th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+  th{font-size:11px;text-transform:uppercase;color:#7A8AA5}
+  .pill{font-size:10.5px;font-weight:700;text-transform:uppercase;padding:3px 9px;border-radius:100px;color:#fff}
+  .paid{background:var(--green)}.pending{background:var(--gold);color:#3a2c00}.cash{background:var(--royal)}.free{background:#5B6472}.cancelled{background:#C0392B}
+  .msg{font-size:13.5px;font-weight:600;margin-top:10px}
+  .tot{background:var(--wash);border-radius:9px;padding:12px 14px;margin-top:10px;font-size:14px}
+  @media print{.back,.top,.noprint{display:none}.panel{border:0;padding:0}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>Coach travel</h1><small>Set up a coach, take bookings by phone, and print the passenger list</small></div>
+<div class="wrap">
+
+  <div class="panel noprint">
+    <h2>Coaches</h2>
+    <div id="trips">Loading…</div>
+    <div style="margin-top:14px"><button class="ghost" onclick="newTrip()">+ Set up a new coach</button></div>
+  </div>
+
+  <div class="panel noprint" id="tripForm" style="display:none">
+    <h2 id="tfTitle">New coach</h2>
+    <div class="grid2">
+      <div><label>Opponent</label><input id="t_opp" placeholder="e.g. Colchester United"></div>
+      <div><label>Ground</label><input id="t_venue" placeholder="e.g. JobServe Community Stadium"></div>
+    </div>
+    <div class="grid3">
+      <div><label>Match date</label><input id="t_date" type="date"></div>
+      <div><label>Kick-off</label><input id="t_ko" placeholder="15:00"></div>
+      <div><label>Coach departs</label><input id="t_dep" placeholder="07:45"></div>
+    </div>
+    <div class="grid3">
+      <div><label>Departs from</label><input id="t_from" value="Crown Oil Arena"></div>
+      <div><label>Price per seat (£)</label><input id="t_price" value="35"></div>
+      <div><label>Seats on the coach</label><input id="t_seats" value="49"></div>
+    </div>
+    <div class="grid2">
+      <div><label>Status</label><select id="t_status"><option value="open">Open for booking</option><option value="closed">Closed</option><option value="cancelled">Cancelled</option></select></div>
+      <div><label>Notes (shown to passengers)</label><input id="t_notes" placeholder="Stop en route each way"></div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="green" onclick="saveTrip()">Save coach</button>
+      <button class="ghost" onclick="document.getElementById('tripForm').style.display='none'">Cancel</button>
+    </div>
+    <p class="msg" id="tmsg"></p>
+  </div>
+
+  <div id="detail" style="display:none">
+    <div class="panel noprint">
+      <h2>Take a booking</h2>
+      <p style="font-size:13.5px;margin-bottom:6px">For someone who has rung up or paid at the desk.</p>
+      <div class="grid2">
+        <div><label>Name</label><input id="m_name"></div>
+        <div><label>Mobile</label><input id="m_mobile"></div>
+      </div>
+      <div class="grid3">
+        <div><label>Email (optional)</label><input id="m_email"></div>
+        <div><label>Seats</label><input id="m_seats" type="number" value="1" min="1" max="10"></div>
+        <div><label>Payment</label><select id="m_status">
+          <option value="cash">Paid — cash</option><option value="paid">Paid — card/transfer</option>
+          <option value="pending">Not paid yet</option><option value="free">Free seat</option></select></div>
+      </div>
+      <label>Notes (optional)</label><input id="m_notes" placeholder="e.g. wheelchair space, paying on the day">
+      <div style="margin-top:14px"><button class="green" onclick="addManual()">Add to the coach</button></div>
+      <p class="msg" id="mmsg"></p>
+    </div>
+
+    <div class="panel">
+      <h2 id="listTitle">Passenger list</h2>
+      <div id="totals"></div>
+      <div id="bookings"></div>
+      <div style="margin-top:14px" class="noprint"><button class="ghost" onclick="window.print()">Print / save the list</button></div>
+    </div>
+  </div>
+
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
+let trips=[], bookings=[], current=null, editing=null;
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const money=n=>'£'+Number(n||0).toFixed(2);
+const dfmt=d=>new Date(d+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long'});
+
+async function load(tripId){
+  const r=await fetch(EP+'/coach/admin'+(tripId?('?trip_id='+tripId):''),{headers:H()});
+  if(r.status===401){location.href='admin.html';return;}
+  const d=await r.json();
+  if(!d.ok){$('trips').textContent=d.error||'Could not load.';return;}
+  trips=d.trips; bookings=d.bookings||[];
+  drawTrips();
+  if(tripId) drawBookings();
+}
+
+function drawTrips(){
+  if(!trips.length){$('trips').innerHTML='<p style="color:#7A8AA5">No coaches set up yet.</p>';return;}
+  $('trips').innerHTML=trips.map(t=>
+    '<div class="trip'+(current&&current.id===t.id?' on':'')+'" onclick="openTrip('+t.id+')">'+
+    '<div class="seats"><b>'+t.remaining+'</b><span>seats left</span></div>'+
+    '<b>'+esc(t.opponent)+'</b>'+
+    '<small>'+dfmt(t.match_date)+' · departs '+esc(t.depart_time)+' from '+esc(t.depart_from)+' · '+money(t.price)+' a seat'+
+    (t.status!=='open'?' · <b style="color:#C0392B">'+t.status+'</b>':'')+'</small>'+
+    '<small>'+t.taken+' of '+t.seats+' seats taken '+
+    '<button class="ghost sm noprint" style="margin-left:8px" onclick="event.stopPropagation();editTrip('+t.id+')">Edit</button></small>'+
+    '</div>').join('');
+}
+
+function openTrip(id){
+  current=trips.find(t=>t.id===id);
+  $('detail').style.display='block';
+  $('listTitle').textContent='Passenger list — '+current.opponent+', '+dfmt(current.match_date);
+  load(id);
+  $('detail').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function drawBookings(){
+  drawTrips();
+  const live=bookings.filter(b=>b.payment_status!=='cancelled');
+  const seats=live.reduce((a,b)=>a+b.seats,0);
+  const paid=live.filter(b=>b.payment_status==='paid'||b.payment_status==='cash').reduce((a,b)=>a+b.amount,0);
+  const owed=live.filter(b=>b.payment_status==='pending').reduce((a,b)=>a+b.amount,0);
+  $('totals').innerHTML='<div class="tot"><b>'+seats+'</b> seats booked · <b>'+money(paid)+'</b> taken'+
+    (owed>0?' · <b style="color:#C0392B">'+money(owed)+'</b> still to pay':'')+
+    ' · <b>'+(current.seats-seats)+'</b> seats left</div>';
+  if(!bookings.length){$('bookings').innerHTML='<p style="color:#7A8AA5;margin-top:10px">Nobody booked yet.</p>';return;}
+  $('bookings').innerHTML='<table><tr><th>Name</th><th>Mobile</th><th>Seats</th><th>Paid</th><th class="noprint">Ref</th><th class="noprint"></th></tr>'+
+    bookings.map(b=>'<tr'+(b.payment_status==='cancelled'?' style="opacity:.45"':'')+'>'+
+      '<td><b>'+esc(b.name)+'</b>'+(b.notes?'<br><small style="color:#7A8AA5">'+esc(b.notes)+'</small>':'')+'</td>'+
+      '<td>'+esc(b.mobile||'—')+'</td><td>'+b.seats+'</td>'+
+      '<td><span class="pill '+b.payment_status+'">'+b.payment_status+'</span></td>'+
+      '<td class="noprint"><small>'+esc(b.booking_ref)+'</small></td>'+
+      '<td class="noprint">'+(b.payment_status==='pending'?'<button class="green sm" onclick="mark('+b.id+',&quot;cash&quot;)">Mark paid</button> ':'')+
+      (b.payment_status!=='cancelled'?'<button class="ghost sm" onclick="mark('+b.id+',&quot;cancelled&quot;)">Cancel</button>':'')+'</td></tr>').join('')+'</table>';
+}
+
+async function mark(id,status){
+  if(status==='cancelled'&&!confirm('Cancel this booking?'))return;
+  await fetch(EP+'/coach/booking',{method:'POST',headers:H(),body:JSON.stringify({id,payment_status:status})});
+  load(current.id);
+}
+
+function newTrip(){
+  editing=null; $('tfTitle').textContent='New coach';
+  ['t_opp','t_venue','t_date','t_ko','t_dep','t_notes'].forEach(i=>$(i).value='');
+  $('t_from').value='Crown Oil Arena'; $('t_price').value='35'; $('t_seats').value='49'; $('t_status').value='open';
+  $('tripForm').style.display='block'; $('tripForm').scrollIntoView({behavior:'smooth'});
+}
+function editTrip(id){
+  const t=trips.find(x=>x.id===id); editing=id;
+  $('tfTitle').textContent='Edit — '+t.opponent;
+  $('t_opp').value=t.opponent; $('t_venue').value=t.venue||''; $('t_date').value=t.match_date;
+  $('t_ko').value=t.kickoff||''; $('t_dep').value=t.depart_time; $('t_from').value=t.depart_from;
+  $('t_price').value=t.price; $('t_seats').value=t.seats; $('t_status').value=t.status; $('t_notes').value=t.notes||'';
+  $('tripForm').style.display='block'; $('tripForm').scrollIntoView({behavior:'smooth'});
+}
+async function saveTrip(){
+  const body={id:editing,opponent:$('t_opp').value.trim(),venue:$('t_venue').value.trim(),
+    match_date:$('t_date').value,kickoff:$('t_ko').value.trim(),depart_time:$('t_dep').value.trim(),
+    depart_from:$('t_from').value.trim(),price:$('t_price').value,seats:$('t_seats').value,
+    status:$('t_status').value,notes:$('t_notes').value.trim()};
+  if(!body.opponent||!body.match_date||!body.depart_time){$('tmsg').innerHTML='<span style="color:var(--red)">Opponent, date and departure time are needed.</span>';return;}
+  const d=await (await fetch(EP+'/coach/trip',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+  if(d.ok){$('tripForm').style.display='none';$('tmsg').textContent='';load(current?current.id:null);}
+  else $('tmsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';
+}
+
+async function addManual(){
+  if(!current)return;
+  const body={trip_id:current.id,name:$('m_name').value.trim(),mobile:$('m_mobile').value.trim(),
+    email:$('m_email').value.trim(),seats:$('m_seats').value,payment_status:$('m_status').value,
+    notes:$('m_notes').value.trim()};
+  if(!body.name){$('mmsg').innerHTML='<span style="color:var(--red)">A name is needed.</span>';return;}
+  const d=await (await fetch(EP+'/coach/manual',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+  if(d.ok){
+    $('mmsg').innerHTML='<span style="color:var(--green)">Added — '+esc(d.booking_ref)+'</span>';
+    ['m_name','m_mobile','m_email','m_notes'].forEach(i=>$(i).value=''); $('m_seats').value='1';
+    load(current.id);
+  } else $('mmsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';
+}
+
+load();
+</script>
+</body>
+</html>
