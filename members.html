@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My membership | Dale Supporters Trust</title>
+<meta name="description" content="Sign in to your Dale Supporters Trust membership — your membership card, your details, and renewal.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:15.5px;line-height:1.65}
+  h1,h2,h3{font-family:'Oswald';text-transform:uppercase;color:var(--ink);line-height:1.15}
+  a{color:var(--royal)}
+  .top{background:var(--navy);color:#fff;padding:18px 22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .top h1{color:#fff;font-size:20px}
+  .top a{margin-left:auto;color:#8FC1FF;font-size:13px;text-decoration:none;font-weight:600}
+  .wrap{max-width:620px;margin:0 auto;padding:20px 18px 50px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px}
+  .panel h2{font-size:17px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:12px 0 4px}
+  input,select{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font:inherit;color:var(--ink);background:#fff}
+  input:focus,select:focus{outline:none;border-color:var(--bright)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:520px){.row2{grid-template-columns:1fr}}
+  button{background:var(--royal);color:#fff;border:0;border-radius:10px;padding:14px 26px;font:600 15px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer;width:100%}
+  button:hover{background:var(--bright)}
+  button.green{background:var(--green)}
+  button.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line)}
+  .hint{font-size:13px;color:#7A8AA5;margin-top:8px}
+  .msg{font-size:14px;font-weight:600;margin-top:12px}
+  /* membership card */
+  .card{background:linear-gradient(130deg,var(--navy),#16305C 55%,#00417E);color:#fff;border-radius:16px;padding:24px;position:relative;overflow:hidden;box-shadow:0 16px 40px rgba(4,30,66,.25)}
+  .card::before{content:"";position:absolute;top:0;bottom:0;right:-14%;width:46%;background:var(--royal);transform:skewX(-14deg);opacity:.35}
+  .card .inner{position:relative}
+  .card .brand{font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#8FC1FF}
+  .card .name{font-family:'Oswald';font-size:29px;text-transform:uppercase;margin:8px 0 2px;line-height:1.1}
+  .card .no{font-family:'Oswald';font-size:22px;letter-spacing:3px;color:#fff;margin-top:14px}
+  .card .meta{display:flex;gap:20px;margin-top:14px;flex-wrap:wrap}
+  .card .meta div span{display:block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#8FC1FF}
+  .card .meta div b{font-family:'Oswald';font-size:17px;font-weight:600}
+  .pending{background:var(--gold);color:#3a2c00;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:4px 12px;border-radius:100px;display:inline-block;margin-top:12px;position:relative}
+  .banner{background:#FFF9E8;border:1px solid #EAD198;border-left:5px solid var(--gold);border-radius:10px;padding:16px 18px;margin-bottom:16px;font-size:14.5px}
+  .banner b{color:var(--ink)}
+  .checked{background:#EAF7F0;border:1px solid #B7E0CB;border-left:5px solid var(--green);border-radius:10px;padding:14px 18px;font-size:14px;margin-bottom:16px}
+  .hist{font-size:13.5px;color:#7A8AA5;margin-top:10px}
+  #signin,#area{display:none}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>My membership</h1>
+  <a href="index.html">daletrust.uk &rarr;</a>
+</div>
+<div class="wrap">
+
+  <div id="loading" class="panel">Loading&hellip;</div>
+
+  <!-- SIGN IN -->
+  <div id="signin">
+    <div class="panel">
+      <h2>Sign in</h2>
+      <p>Enter the email address the Trust has for you. We'll send you a link &mdash; no password to remember.</p>
+      <label for="email">Your email address</label>
+      <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
+      <div style="margin-top:14px"><button onclick="requestLink()">Email me a sign-in link</button></div>
+      <p class="msg" id="simsg"></p>
+      <p class="hint">Not a member yet? <a href="join.html">Join the Trust</a> &mdash; &pound;7.50 for the season, juniors free.</p>
+    </div>
+  </div>
+
+  <!-- MEMBER AREA -->
+  <div id="area">
+    <div id="statusBanner"></div>
+
+    <div class="panel">
+      <h2>Your membership card</h2>
+      <div class="card"><div class="inner">
+        <div class="brand">Dale Supporters Trust</div>
+        <div class="name" id="cName">—</div>
+        <div class="no" id="cNo">—</div>
+        <div class="meta">
+          <div><span>Type</span><b id="cType">—</b></div>
+          <div><span>Season</span><b id="cSeason">—</b></div>
+        </div>
+        <div id="cPending"></div>
+      </div></div>
+      <p class="hist" id="cHist"></p>
+    </div>
+
+    <div class="panel">
+      <h2>Your details</h2>
+      <div id="confirmedNote"></div>
+      <p style="font-size:14.5px">Please check these are right. It takes a moment and it means we can always reach you.</p>
+      <div class="row2">
+        <div><label>First name</label><input id="f_first"></div>
+        <div><label>Surname</label><input id="f_last"></div>
+      </div>
+      <div class="row2">
+        <div><label>Date of birth</label><input id="f_dob" type="date"></div>
+        <div><label>Mobile</label><input id="f_mobile"></div>
+      </div>
+      <label>Address</label><input id="f_ad1" placeholder="House and street">
+      <input id="f_ad2" placeholder="(optional)" style="margin-top:8px">
+      <div class="row2">
+        <div><label>Town</label><input id="f_town"></div>
+        <div><label>County</label><input id="f_county"></div>
+      </div>
+      <div class="row2">
+        <div><label>Postcode</label><input id="f_pc"></div>
+        <div><label>Country</label><input id="f_country" placeholder="If outside the UK"></div>
+      </div>
+      <label>Newsletter</label>
+      <select id="f_news"><option value="1">Yes please, keep me posted</option><option value="0">No thanks</option></select>
+      <div id="exileWrap" style="display:none">
+        <label>Happy for nearby exiles to contact you about sharing transport?</label>
+        <select id="f_share"><option>Yes</option><option>No</option></select>
+      </div>
+      <div style="margin-top:16px"><button class="green" onclick="saveDetails()">These are correct &mdash; save</button></div>
+      <p class="msg" id="dmsg"></p>
+    </div>
+
+    <div class="panel" id="renewPanel" style="display:none">
+      <h2 id="renewTitle">Renew your membership</h2>
+      <p id="renewIntro"></p>
+      <label>Membership type</label>
+      <select id="r_type"><option>Adult</option><option>Exile</option><option>Junior</option></select>
+      <p class="hint">Adult and Exile &pound;7.50 &middot; Junior free</p>
+      <label>Add a donation? (optional)</label>
+      <select id="r_don"><option value="0">No thanks</option><option value="2.5">+ &pound;2.50</option><option value="5">+ &pound;5</option><option value="10">+ &pound;10</option></select>
+      <div style="margin-top:16px"><button class="green" onclick="renew()" id="renewBtn">Renew &mdash; check your details above first</button></div>
+      <p class="msg" id="rmsg"></p>
+    </div>
+
+    <div class="panel">
+      <p style="font-size:14px">Something not right? Email <a href="mailto:membership@daletrust.co.uk">membership@daletrust.co.uk</a> and we'll sort it.</p>
+      <div style="margin-top:12px"><button class="ghost" onclick="signOut()">Sign out</button></div>
+    </div>
+  </div>
+
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null, data=null;
+try{session=localStorage.getItem('dt_member');}catch(e){}
+const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+async function requestLink(){
+  const email=$('email').value.trim();
+  if(!email){$('simsg').textContent='Please enter your email address.';return;}
+  await fetch(EP+'/member/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+  $('simsg').innerHTML='<span style="color:var(--green)">Check your email.</span> If we hold that address for a member, a sign-in link is on its way. It lasts 30 minutes.';
+}
+
+async function verifyFromHash(){
+  const m=location.hash.match(/in=([a-f0-9]{64})/);
+  if(!m) return false;
+  history.replaceState(null,'',location.pathname);
+  const d=await (await fetch(EP+'/member/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:m[1]})})).json();
+  if(!d.ok){show('signin');$('simsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return true;}
+  session=d.session; try{localStorage.setItem('dt_member',session);}catch(e){}
+  return false;
+}
+
+function show(which){
+  $('loading').style.display='none';
+  $('signin').style.display = which==='signin'?'block':'none';
+  $('area').style.display   = which==='area'?'block':'none';
+}
+
+async function load(){
+  if(await verifyFromHash()) return;
+  if(!session){show('signin');return;}
+  const r=await fetch(EP+'/member/me',{headers:H()});
+  if(!r.ok){signOut();return;}
+  data=await r.json();
+  if(!data.ok){signOut();return;}
+  render();
+  show('area');
+}
+
+function render(){
+  const rec=data.record, cur=data.isMember;
+  $('cName').textContent=(rec.first_name+' '+rec.last_name).trim();
+  $('cNo').textContent=rec.member_no || 'Application '+rec.app_ref;
+  $('cType').textContent=rec.membership_type;
+  $('cSeason').textContent=rec.season;
+  $('cPending').innerHTML = rec.payment_status==='pending'
+    ? '<span class="pending">Awaiting payment</span>' : '';
+  if(data.history.length>1){
+    $('cHist').textContent='Member since '+data.history[data.history.length-1].season+' \u00b7 '+data.history.length+' seasons on record';
+  }
+
+  // status banner
+  if(cur){
+    $('statusBanner').innerHTML='<div class="checked"><b>You\u2019re a member for '+esc(data.season)+'.</b> Thanks for backing the Trust.</div>';
+    $('renewPanel').style.display='none';
+  } else {
+    $('statusBanner').innerHTML='<div class="banner"><b>Your membership has lapsed.</b> Your last season with us was '+
+      esc(rec.season)+'. Renewing takes a minute \u2014 check your details below, then renew for '+esc(data.season)+'.</div>';
+    $('renewPanel').style.display='block';
+    $('renewTitle').textContent='Renew for '+data.season;
+    $('renewIntro').textContent='Your details are already filled in above \u2014 just check them, then choose your membership below.';
+    $('r_type').value=rec.membership_type;
+    $('renewBtn').textContent='Renew for '+data.season;
+  }
+
+  // details form
+  $('f_first').value=rec.first_name||''; $('f_last').value=rec.last_name||'';
+  $('f_dob').value=(rec.dob||'').slice(0,10); $('f_mobile').value=rec.mobile||'';
+  $('f_ad1').value=rec.address1||''; $('f_ad2').value=rec.address2||'';
+  $('f_town').value=rec.town||''; $('f_county').value=rec.county||'';
+  $('f_pc').value=rec.postcode||''; $('f_country').value=rec.country||'';
+  $('f_news').value=rec.newsletter_optin?'1':'0';
+  if(rec.membership_type==='Exile'){$('exileWrap').style.display='block';$('f_share').value=rec.exile_transport_share||'No';}
+  $('confirmedNote').innerHTML = rec.details_confirmed_at
+    ? '<div class="checked">You last confirmed these on '+new Date(rec.details_confirmed_at.replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'.</div>'
+    : '';
+}
+
+function formValues(){
+  return {first_name:$('f_first').value.trim(), last_name:$('f_last').value.trim(),
+    dob:$('f_dob').value||null, mobile:$('f_mobile').value.trim(),
+    address1:$('f_ad1').value.trim(), address2:$('f_ad2').value.trim(),
+    town:$('f_town').value.trim(), county:$('f_county').value.trim(),
+    postcode:$('f_pc').value.trim(), country:$('f_country').value.trim(),
+    newsletter_optin:$('f_news').value==='1',
+    exile_transport_share:$('f_share')?$('f_share').value:null};
+}
+
+async function saveDetails(){
+  const d=await (await fetch(EP+'/member/update',{method:'POST',headers:H(),body:JSON.stringify(formValues())})).json();
+  $('dmsg').innerHTML=d.ok?'<span style="color:var(--green)">Saved \u2014 thank you.</span>':'<span style="color:var(--red)">'+esc(d.error||'Could not save')+'</span>';
+  if(d.ok){const r=await fetch(EP+'/member/me',{headers:H()});data=await r.json();render();}
+}
+
+async function renew(){
+  const body=Object.assign(formValues(),{membership_type:$('r_type').value,donation:parseFloat($('r_don').value)||0});
+  $('rmsg').textContent='One moment\u2026';
+  const d=await (await fetch(EP+'/member/renew',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+  if(!d.ok){$('rmsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return;}
+  if(d.pay_url){
+    $('rmsg').innerHTML='<span style="color:var(--green)">Almost there</span> \u2014 one step left. <a href="'+d.pay_url+'" style="font-weight:700">Pay \u00a3'+d.amount.toFixed(2)+' to complete your renewal &rarr;</a>';
+    window.location.href=d.pay_url;
+  } else {
+    $('rmsg').innerHTML='<span style="color:var(--green)">Renewed \u2014 welcome back!</span> Your membership number is '+esc(d.member_no)+'.';
+    setTimeout(()=>location.reload(),2500);
+  }
+}
+
+function signOut(){try{localStorage.removeItem('dt_member');}catch(e){}location.reload();}
+load();
+</script>
+</body>
+</html>
