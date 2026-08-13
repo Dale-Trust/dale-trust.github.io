@@ -70,7 +70,7 @@
 <footer>Dale Supporters Trust &middot; board use</footer>
 <script>
 const EP='https://join.daletrust.uk';
-const KEY='TASKS_KEY_FOR_DALE';
+const KEY='REPLACE_WITH_TASKS_KEY';
 const $=id=>document.getElementById(id);
 let tasks=[], filter='all', who='';
 const NAMES=['— your name —','Emma Loynd','Scott Goulding','Murray Knight','Vince Ashall','Michael Shepherd',
@@ -85,18 +85,16 @@ async function load(){
     const d=await (await fetch(EP+'/tasks?key='+encodeURIComponent(KEY))).json();
     if(!d.ok){$('msg').textContent=d.error||'Could not load the list.';return;}
     tasks=d.tasks;
-    const open=tasks.filter(t=>t.status==='open').length, settled=tasks.filter(t=>isSettled(t)).length;
-    $('counts').textContent=tasks.length+' items \u00b7 '+open+' still open \u00b7 '+settled+' settled';
+    const open=tasks.filter(t=>t.status==='open').length;
+    $('counts').textContent=tasks.length+' items \u00b7 '+open+' still open \u00b7 '+(tasks.length-open)+' answered';
     $('msg').style.display='none';$('content').style.display='block';
     draw();
   }catch(e){$('msg').textContent='Could not reach the server — please try again.';}
 }
 
-const isSettled=t=>t.status==='confirmed'||t.status==='live';
-
 function card(t){
-  const settled=isSettled(t);
-  return '<div class="item'+(settled?' settled':'')+'">'+
+  const openItem = t.status==='open';
+  return '<div class="item'+(openItem?'':' settled')+'">'+
     '<div class="head"><span class="ref">'+esc(t.ref)+'</span>'+
     '<span class="title">'+esc(t.title)+'</span>'+
     (t.owner?'<span class="with">'+esc(t.owner)+'</span>':'')+
@@ -104,32 +102,42 @@ function card(t){
     (t.detail?'<div class="detail">'+esc(t.detail)+'</div>':'')+
     t.responses.map(r=>'<div class="reply"><b>'+esc(r.author)+':</b> '+esc(r.body)+
       '<small>'+new Date(r.at.replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</small></div>').join('')+
-    (settled
-      ? '<p class="locked">Settled \u2014 no further comments needed. <button class="link" style="margin:0" onclick="setStatus('+t.id+',&quot;answered&quot;)">Reopen</button></p>'
-      : '<button class="link" onclick="toggle('+t.id+')">'+(t.responses.length?'Add a comment':'Answer this')+'</button>'+
+    (openItem
+      ? '<button class="link" onclick="toggle('+t.id+')">Answer this</button>'+
         '<div class="answer" id="a'+t.id+'"><textarea id="t'+t.id+'" placeholder="Type your answer…"></textarea>'+
         '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px">'+
         '<select id="w'+t.id+'" class="namesel">'+NAMES.map(n=>'<option'+(n===who?' selected':'')+'>'+n+'</option>').join('')+'</select>'+
-        '<button onclick="send('+t.id+')">Save</button></div></div>'+
-        '<div class="status"><em>Mark as:</em>'+['answered','confirmed','live','parked'].map(s=>
-          '<button onclick="setStatus('+t.id+',&quot;'+s+'&quot;)">'+s+'</button>').join('')+'</div>')+
+        '<button onclick="send('+t.id+')">Save</button></div></div>'
+      : '<p class="locked">Answered. <button class="link" style="margin:0" onclick="setStatus('+t.id+',&quot;open&quot;)">Reopen if this needs revisiting</button></p>')+
+    '<div class="status"><em>Mark as:</em>'+['open','answered','confirmed','live','parked'].map(s=>
+      '<button onclick="setStatus('+t.id+',&quot;'+s+'&quot;)">'+s+'</button>').join('')+'</div>'+
     '</div>';
 }
 
 function draw(){
-  let live=tasks.filter(t=>!isSettled(t)), settled=tasks.filter(isSettled);
-  if(filter==='open'){live=live.filter(t=>t.status==='open');settled=[];}
-  else if(filter==='answered'){live=live.filter(t=>t.status==='answered');settled=[];}
-  else if(filter==='settled'){live=[];}
-  let html='',section='';
-  live.forEach(t=>{
-    if(t.section!==section){section=t.section;html+='<h2 class="sec">'+esc(section)+'</h2>';}
-    html+=card(t);
-  });
-  if(!live.length && filter!=='settled') html+='<p style="padding:20px;color:#7A8AA5">Nothing outstanding here.</p>';
-  if(settled.length){
-    html+='<div class="settledhead"><h2>Settled</h2><p>Decided and closed \u2014 kept here for the record.</p></div>';
-    settled.forEach(t=>{html+=card(t);});
+  let openItems=tasks.filter(t=>t.status==='open');
+  let rest=tasks.filter(t=>t.status!=='open');
+  if(filter==='open') rest=[];
+  else if(filter==='answered'){openItems=[];rest=rest.filter(t=>t.status==='answered');}
+  else if(filter==='settled'){openItems=[];rest=rest.filter(t=>t.status==='confirmed'||t.status==='live');}
+  let html='';
+  if(openItems.length){
+    html+='<div class="settledhead" style="margin-top:0;padding-top:0;border-top:0"><h2>Still open</h2><p>These need an answer.</p></div>';
+    let section='';
+    openItems.forEach(t=>{
+      if(t.section!==section){section=t.section;html+='<h2 class="sec">'+esc(section)+'</h2>';}
+      html+=card(t);
+    });
+  } else if(filter!=='answered' && filter!=='settled'){
+    html+='<p style="padding:20px;color:#7A8AA5">Nothing outstanding — everything has an answer.</p>';
+  }
+  if(rest.length){
+    html+='<div class="settledhead"><h2>Answered</h2><p>Kept here for the record.</p></div>';
+    let section='';
+    rest.forEach(t=>{
+      if(t.section!==section){section=t.section;html+='<h2 class="sec">'+esc(section)+'</h2>';}
+      html+=card(t);
+    });
   }
   $('list').innerHTML=html;
 }
