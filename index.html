@@ -78,6 +78,17 @@
   .btn:focus-visible,a:focus-visible{outline:3px solid var(--royal-bright);outline-offset:3px}
 
   /* ===== Top bar + Nav (club-style navy chrome) ===== */
+  .coachband{background:#fff;border-bottom:1px solid var(--line);display:none}
+  .coachband .wrap{display:flex;align-items:center;gap:18px;padding:14px 28px;flex-wrap:wrap}
+  .coachband .cb-icon{width:44px;height:44px;border-radius:10px;background:var(--royal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+  .coachband .cb-text{flex:1;min-width:220px}
+  .coachband b{font-family:'Oswald';text-transform:uppercase;font-size:17px;color:var(--ink);display:block;letter-spacing:.02em}
+  .coachband span{font-size:14px;color:var(--body);display:block;margin-top:1px}
+  .coachband .cb-seats{font-size:13px;font-weight:700;padding:5px 12px;border-radius:100px;background:#EAF7F0;color:#14653F;flex:none}
+  .coachband .cb-seats.low{background:#FFF3E4;color:#8A4B00}
+  .coachband a.cb-btn{background:var(--royal);color:#fff;text-decoration:none;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:12px 22px;border-radius:8px;flex:none}
+  .coachband a.cb-btn:hover{background:var(--bright)}
+  @media(max-width:620px){.coachband .wrap{padding:14px 20px}.coachband a.cb-btn{width:100%;text-align:center}}
   .memberstrip{background:linear-gradient(120deg,var(--navy),#16305C 60%,#00417E);color:#fff;border-bottom:3px solid var(--royal)}
   .memberstrip .wrap{display:flex;align-items:center;gap:18px;padding:16px 28px;flex-wrap:wrap}
   .memberstrip .ms-text{flex:1;min-width:220px}
@@ -365,6 +376,18 @@
       <a class="ms ms-in" href="members.html">My membership &rarr;</a>
       <a class="ms ms-join" href="join.html">Join &mdash; &pound;7.50</a>
     </div>
+  </div>
+</div>
+
+<div class="coachband" id="coachBand">
+  <div class="wrap">
+    <div class="cb-icon">&#128652;</div>
+    <div class="cb-text">
+      <b id="cbTitle">Coach travel</b>
+      <span id="cbWhen"></span>
+    </div>
+    <span class="cb-seats" id="cbSeats"></span>
+    <a class="cb-btn" href="travel.html">Book a seat &rarr;</a>
   </div>
 </div>
 
@@ -844,6 +867,23 @@ loadHub();
 
 
 <script>
+// Next coach band
+(async () => {
+  try{
+    const d = await (await fetch('https://join.daletrust.uk/coach/trips')).json();
+    if(!d.ok || !d.trips.length) return;
+    const t = d.trips[0];
+    const when = new Date(t.match_date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+    document.getElementById('cbTitle').textContent = 'Coach to ' + t.opponent;
+    document.getElementById('cbWhen').textContent =
+      when + ' \u00b7 departs ' + t.depart_time + ' from ' + t.depart_from + ' \u00b7 \u00a3' + Number(t.price).toFixed(2) + ' a seat';
+    const s = document.getElementById('cbSeats');
+    if(t.remaining === 0){ s.textContent='Fully booked'; s.className='cb-seats low'; }
+    else { s.textContent = t.remaining + ' seats left'; s.className = 'cb-seats' + (t.remaining<=6?' low':''); }
+    document.getElementById('coachBand').style.display='block';
+  }catch(e){}
+})();
+
 // Live news feed — pulls the latest published stories from the Trust's own database
 (async () => {
   const grid = document.getElementById('newsGrid');
