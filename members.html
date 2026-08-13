@@ -60,6 +60,14 @@
   .perk span{font-size:13px;color:#C7D6EC;display:block;margin-top:3px;line-height:1.5}
   .benfoot{font-size:13px;color:#7A8AA5;margin-top:14px}
   .lapsedben{opacity:.6}
+  .coach{background:linear-gradient(130deg,var(--navy),#16305C 55%,#00417E);color:#fff;border-radius:14px;padding:22px;margin-bottom:16px;position:relative;overflow:hidden;display:block;text-decoration:none}
+  .coach::before{content:"";position:absolute;top:0;bottom:0;right:-14%;width:46%;background:var(--royal);transform:skewX(-14deg);opacity:.35}
+  .coach .in{position:relative}
+  .coach .kick{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#8FC1FF}
+  .coach h2{color:#fff;font-size:22px;border:0;padding:0;margin:6px 0 4px}
+  .coach p{color:#C7D6EC;font-size:14.5px;margin-bottom:14px}
+  .coach .go{display:inline-block;background:#fff;color:var(--navy);font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:12px 22px;border-radius:9px}
+  .coach:hover .go{background:#E8F1FC}
   .pbtn{background:#fff;border:1.5px solid var(--line);border-radius:100px;padding:10px 18px;font:600 14px 'Montserrat';color:var(--body);cursor:pointer;width:auto}
   .pbtn.on{background:var(--royal);border-color:var(--royal);color:#fff}
   #signin,#area{display:none}
@@ -89,6 +97,14 @@
 
   <!-- MEMBER AREA -->
   <div id="area">
+    <a class="coach" href="travel.html">
+      <div class="in">
+        <div class="kick">Coach travel</div>
+        <h2>Book your seat on the Dale coach</h2>
+        <p>The official supporters&rsquo; coach to every away game &mdash; your details fill in automatically.</p>
+        <span class="go">See the coaches &rarr;</span>
+      </div>
+    </a>
     <div id="peopleBar" style="display:none" class="panel">
       <h2>Memberships on this email</h2>
       <p style="font-size:14px;margin-bottom:10px">More than one membership uses this address. Choose whose you'd like to see.</p>
@@ -187,7 +203,7 @@
         <div class="perk"><b>A vote</b><span>Player of the Month, Player of the Season, and at the AGM</span></div>
         <div class="perk"><b>A voice</b><span>Trust shares and a supporter director on the club board</span></div>
         <div class="perk"><b>Both leagues free</b><span>Fantasy Football and Super 6</span></div>
-        <a class="perk" href="travel.html" style="text-decoration:none"><b>Coach travel</b><span>Book your seat on the Trust coach &rarr;</span></a>
+        
       </div>
     </div>
 
