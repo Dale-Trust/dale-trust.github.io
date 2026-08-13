@@ -78,6 +78,18 @@
   .btn:focus-visible,a:focus-visible{outline:3px solid var(--royal-bright);outline-offset:3px}
 
   /* ===== Top bar + Nav (club-style navy chrome) ===== */
+  .memberstrip{background:linear-gradient(120deg,var(--navy),#16305C 60%,#00417E);color:#fff;border-bottom:3px solid var(--royal)}
+  .memberstrip .wrap{display:flex;align-items:center;gap:18px;padding:16px 28px;flex-wrap:wrap}
+  .memberstrip .ms-text{flex:1;min-width:220px}
+  .memberstrip b{font-family:'Oswald';text-transform:uppercase;font-size:19px;display:block;letter-spacing:.02em}
+  .memberstrip span{font-size:14px;color:#C7D6EC;display:block;margin-top:2px}
+  .memberstrip .ms-btns{display:flex;gap:10px;flex-wrap:wrap}
+  .memberstrip a.ms{display:inline-block;text-decoration:none;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:12px 22px;border-radius:8px}
+  .memberstrip a.ms-in{background:#fff;color:var(--navy)}
+  .memberstrip a.ms-in:hover{background:#E8F1FC}
+  .memberstrip a.ms-join{background:var(--royal);color:#fff;border:2px solid #8FC1FF}
+  .memberstrip a.ms-join:hover{background:var(--bright)}
+  @media(max-width:620px){.memberstrip .wrap{padding:14px 20px}.memberstrip .ms-btns{width:100%}.memberstrip a.ms{flex:1;text-align:center}}
   .topbar{background:var(--navy);color:#B9CCE8;font-size:12.5px}
   .topbar-inner{display:flex;align-items:center;gap:22px;height:36px}
   .topbar a{color:#fff;text-decoration:none;font-weight:600}
@@ -342,6 +354,19 @@
     <a class="btn btn-royal" style="margin-left:18px;padding:11px 24px" href="join.html"><span>Join</span></a>
   </div>
 </header>
+
+<div class="memberstrip">
+  <div class="wrap">
+    <div class="ms-text">
+      <b>Already a member?</b>
+      <span>Your membership card, your details and your renewal &mdash; all in one place.</span>
+    </div>
+    <div class="ms-btns">
+      <a class="ms ms-in" href="members.html">My membership &rarr;</a>
+      <a class="ms ms-join" href="join.html">Join &mdash; &pound;7.50</a>
+    </div>
+  </div>
+</div>
 
 <div class="hero" id="matchday">
   <div class="wrap hero-inner">
