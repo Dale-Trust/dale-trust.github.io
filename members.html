@@ -68,6 +68,12 @@
   .coach p{color:#C7D6EC;font-size:14.5px;margin-bottom:14px}
   .coach .go{display:inline-block;background:#fff;color:var(--navy);font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:12px 22px;border-radius:9px}
   .coach:hover .go{background:#E8F1FC}
+  .mybook{background:rgba(255,255,255,.12);border-radius:10px;padding:12px 14px;margin-bottom:9px;position:relative}
+  .mybook b{font-family:'Oswald';font-size:16px;text-transform:uppercase;color:#fff;display:block}
+  .mybook span{font-size:13.5px;color:#C7D6EC;display:block;margin-top:2px}
+  .mybook .st{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 10px;border-radius:100px;margin-top:7px}
+  .st.paid{background:#1E8E5A;color:#fff}.st.pending{background:#E8B84B;color:#3a2c00}
+  .st.cash{background:#0057A7;color:#fff}.st.free{background:rgba(255,255,255,.25);color:#fff}
   .pbtn{background:#fff;border:1.5px solid var(--line);border-radius:100px;padding:10px 18px;font:600 14px 'Montserrat';color:var(--body);cursor:pointer;width:auto}
   .pbtn.on{background:var(--royal);border-color:var(--royal);color:#fff}
   #signin,#area{display:none}
@@ -101,8 +107,9 @@
       <div class="in">
         <div class="kick">Coach travel</div>
         <h2>Book your seat on the Dale coach</h2>
-        <p>The official supporters&rsquo; coach to every away game &mdash; your details fill in automatically.</p>
-        <span class="go">See the coaches &rarr;</span>
+        <p id="coachIntro">The official supporters&rsquo; coach to every away game &mdash; your details fill in automatically.</p>
+        <div id="myBookings"></div>
+        <span class="go" id="coachGo">See the coaches &rarr;</span>
       </div>
     </a>
     <div id="peopleBar" style="display:none" class="panel">
@@ -267,7 +274,24 @@ function drawPeople(){
 }
 function pick(i){who=i;render();window.scrollTo({top:0,behavior:'smooth'});}
 
+function drawBookings(){
+  const box=$('myBookings'); if(!box) return;
+  const list=(data.coach||[]);
+  if(!list.length){box.innerHTML='';$('coachIntro').textContent='The official supporters\u2019 coach to every away game \u2014 your details fill in automatically.';$('coachGo').textContent='See the coaches \u2192';return;}
+  $('coachIntro').textContent='Your seats booked so far:';
+  $('coachGo').textContent='Book another coach \u2192';
+  box.innerHTML=list.map(b=>{
+    const when=new Date(b.match_date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+    const label=b.payment_status==='pending'?'Not paid yet':(b.payment_status==='free'?'Free seat':'Paid');
+    return '<div class="mybook"><b>'+esc(b.opponent)+' (A)</b>'+
+      '<span>'+when+' \u00b7 departs '+esc(b.depart_time)+' from '+esc(b.depart_from)+'</span>'+
+      '<span>'+b.seats+' seat'+(b.seats>1?'s':'')+' \u00b7 \u00a3'+Number(b.amount).toFixed(2)+' \u00b7 ref '+esc(b.booking_ref)+'</span>'+
+      '<span class="st '+b.payment_status+'">'+label+'</span></div>';
+  }).join('');
+}
+
 function render(){
+  drawBookings();
   drawPeople();
   const p=person(), rec=p.record, cur=p.isMember;
   $('cName').textContent=p.name;
