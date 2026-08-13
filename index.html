@@ -78,29 +78,22 @@
   .btn:focus-visible,a:focus-visible{outline:3px solid var(--royal-bright);outline-offset:3px}
 
   /* ===== Top bar + Nav (club-style navy chrome) ===== */
-  .coachband{background:#fff;border-bottom:1px solid var(--line);display:none}
-  .coachband .wrap{display:flex;align-items:center;gap:18px;padding:14px 28px;flex-wrap:wrap}
-  .coachband .cb-icon{width:44px;height:44px;border-radius:10px;background:var(--royal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
-  .coachband .cb-text{flex:1;min-width:220px}
-  .coachband b{font-family:'Oswald';text-transform:uppercase;font-size:17px;color:var(--ink);display:block;letter-spacing:.02em}
-  .coachband span{font-size:14px;color:var(--body);display:block;margin-top:1px}
-  .coachband .cb-seats{font-size:13px;font-weight:700;padding:5px 12px;border-radius:100px;background:#EAF7F0;color:#14653F;flex:none}
-  .coachband .cb-seats.low{background:#FFF3E4;color:#8A4B00}
-  .coachband a.cb-btn{background:var(--royal);color:#fff;text-decoration:none;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:12px 22px;border-radius:8px;flex:none}
-  .coachband a.cb-btn:hover{background:var(--bright)}
-  @media(max-width:620px){.coachband .wrap{padding:14px 20px}.coachband a.cb-btn{width:100%;text-align:center}}
-  .memberstrip{background:linear-gradient(120deg,var(--navy),#16305C 60%,#00417E);color:#fff;border-bottom:3px solid var(--royal)}
-  .memberstrip .wrap{display:flex;align-items:center;gap:18px;padding:16px 28px;flex-wrap:wrap}
-  .memberstrip .ms-text{flex:1;min-width:220px}
-  .memberstrip b{font-family:'Oswald';text-transform:uppercase;font-size:19px;display:block;letter-spacing:.02em}
-  .memberstrip span{font-size:14px;color:#C7D6EC;display:block;margin-top:2px}
-  .memberstrip .ms-btns{display:flex;gap:10px;flex-wrap:wrap}
-  .memberstrip a.ms{display:inline-block;text-decoration:none;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:12px 22px;border-radius:8px}
-  .memberstrip a.ms-in{background:#fff;color:var(--navy)}
-  .memberstrip a.ms-in:hover{background:#E8F1FC}
-  .memberstrip a.ms-join{background:var(--royal);color:#fff;border:2px solid #8FC1FF}
-  .memberstrip a.ms-join:hover{background:var(--bright)}
-  @media(max-width:620px){.memberstrip .wrap{padding:14px 20px}.memberstrip .ms-btns{width:100%}.memberstrip a.ms{flex:1;text-align:center}}
+  .topband{background:linear-gradient(120deg,var(--navy),#16305C 62%,#00417E);color:#fff;border-bottom:3px solid var(--royal)}
+  .tb-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;padding:0 28px}
+  @media(max-width:760px){.tb-grid{grid-template-columns:1fr;padding:0 20px}}
+  .tb-col{padding:18px 26px 18px 0}
+  .tb-col + .tb-col{border-left:1px solid rgba(255,255,255,.16);padding-left:26px}
+  @media(max-width:760px){.tb-col + .tb-col{border-left:0;border-top:1px solid rgba(255,255,255,.16);padding-left:0}}
+  .topband b{font-family:'Oswald';text-transform:uppercase;font-size:18px;display:block;letter-spacing:.02em;color:#fff}
+  .topband span{font-size:14px;color:#C7D6EC;display:block;margin-top:2px}
+  .tb-btns{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .topband a.tb-btn{display:inline-block;text-decoration:none;font:600 13.5px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:11px 20px;border-radius:8px;transition:background .15s,color .15s}
+  .topband a.tb-btn.light{background:#fff;color:#0E1F3D}
+  .topband a.tb-btn.light:hover{background:#CFE3FA;color:#0E1F3D}
+  .topband a.tb-btn.outline{background:transparent;color:#fff;border:2px solid #8FC1FF;padding:9px 18px}
+  .topband a.tb-btn.outline:hover{background:#0057A7;color:#fff;border-color:#0057A7}
+  .tb-seats{font-size:12.5px;font-weight:700;padding:5px 12px;border-radius:100px;background:rgba(255,255,255,.14);color:#fff}
+  .tb-seats.low{background:var(--gold);color:#3a2c00}
   .topbar{background:var(--navy);color:#B9CCE8;font-size:12.5px}
   .topbar-inner{display:flex;align-items:center;gap:22px;height:36px}
   .topbar a{color:#fff;text-decoration:none;font-weight:600}
@@ -366,41 +359,35 @@
   </div>
 </header>
 
-<div class="memberstrip">
-  <div class="wrap">
-    <div class="ms-text">
-      <b>Already a member?</b>
-      <span>Your membership card, your details and your renewal &mdash; all in one place.</span>
-    </div>
-    <div class="ms-btns">
-      <a class="ms ms-in" href="members.html">My membership &rarr;</a>
-      <a class="ms ms-join" href="join.html">Join &mdash; &pound;7.50</a>
-    </div>
-  </div>
-</div>
+<div class="topband">
+  <div class="wrap tb-grid">
 
-<div class="coachband" id="coachBand">
-  <div class="wrap">
-    <div class="cb-icon">&#128652;</div>
-    <div class="cb-text">
+    <div class="tb-col">
+      <b>Already a member?</b>
+      <span>Your card, your details and your renewal &mdash; in one place.</span>
+      <div class="tb-btns">
+        <a class="tb-btn light" href="members.html">My membership &rarr;</a>
+        <a class="tb-btn outline" href="join.html">Join &mdash; &pound;7.50</a>
+      </div>
+    </div>
+
+    <div class="tb-col tb-coach" id="coachCol" style="display:none">
       <b id="cbTitle">Coach travel</b>
       <span id="cbWhen"></span>
+      <div class="tb-btns">
+        <a class="tb-btn light" href="travel.html">Book a seat &rarr;</a>
+        <span class="tb-seats" id="cbSeats"></span>
+      </div>
     </div>
-    <span class="cb-seats" id="cbSeats"></span>
-    <a class="cb-btn" href="travel.html">Book a seat &rarr;</a>
+
+    <div class="tb-col tb-coach" id="coachFallback">
+      <b>Coach travel</b>
+      <span>The official supporters&rsquo; coach to every away game.</span>
+      <div class="tb-btns"><a class="tb-btn light" href="travel.html">See the coaches &rarr;</a></div>
+    </div>
+
   </div>
 </div>
-
-<div class="hero" id="matchday">
-  <div class="wrap hero-inner">
-    <div>
-      <p class="kicker on-dark">Est. by supporters &middot; Back in the EFL</p>
-      <h1>The place for<br>all <em>Daleys</em></h1>
-      <p class="lede">Coach travel to every away end, a voice for fans at the Crown Oil Arena, and charity work that matters — from Spotland to supporters across the world. Membership for 2026/27 is open now.</p>
-      <div class="hero-ctas">
-        <a class="btn btn-royal" href="#membership"><span>Join for 2026/27</span></a>
-        <a class="btn btn-line on-dark" href="#news"><span>Latest news</span></a>
-      </div>
       <div class="stats">
         <div class="stat"><b>2,500+</b><span>Season tickets sold</span></div>
         <div class="stat"><b>&pound;10,118</b><span>Raised for charity</span></div>
@@ -867,7 +854,7 @@ loadHub();
 
 
 <script>
-// Next coach band
+// Next coach — fills the right-hand side of the top band
 (async () => {
   try{
     const d = await (await fetch('https://join.daletrust.uk/coach/trips')).json();
@@ -876,11 +863,12 @@ loadHub();
     const when = new Date(t.match_date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
     document.getElementById('cbTitle').textContent = 'Coach to ' + t.opponent;
     document.getElementById('cbWhen').textContent =
-      when + ' \u00b7 departs ' + t.depart_time + ' from ' + t.depart_from + ' \u00b7 \u00a3' + Number(t.price).toFixed(2) + ' a seat';
+      when + ' \u00b7 departs ' + t.depart_time + ' \u00b7 \u00a3' + Number(t.price).toFixed(2) + ' a seat';
     const s = document.getElementById('cbSeats');
-    if(t.remaining === 0){ s.textContent='Fully booked'; s.className='cb-seats low'; }
-    else { s.textContent = t.remaining + ' seats left'; s.className = 'cb-seats' + (t.remaining<=6?' low':''); }
-    document.getElementById('coachBand').style.display='block';
+    if(t.remaining === 0){ s.textContent='Fully booked'; s.className='tb-seats low'; }
+    else { s.textContent = t.remaining + ' seats left'; s.className = 'tb-seats' + (t.remaining<=6?' low':''); }
+    document.getElementById('coachFallback').style.display='none';
+    document.getElementById('coachCol').style.display='block';
   }catch(e){}
 })();
 
