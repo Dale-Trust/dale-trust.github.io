@@ -152,10 +152,10 @@ async function book(id){
       body:JSON.stringify({trip_id:id,name,mobile,email,seats,member_no:member&&member.record?member.record.member_no:null})})).json();
     if(!d.ok){msg.innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return;}
     if(d.pay_url){
-      msg.innerHTML='<span style="color:var(--green)">Seat reserved</span> — taking you to payment…';
+      msg.innerHTML='<span style="color:var(--green)">Almost there</span> — one step left. Taking you to payment…';
       window.location.href=d.pay_url;
     } else {
-      msg.innerHTML='<span style="color:var(--green)">Booked — reference '+esc(d.booking_ref)+'.</span> We&rsquo;ll be in touch about payment.';
+      msg.innerHTML='<span style="color:var(--green)">Booking taken — reference '+esc(d.booking_ref)+'.</span> Your seat is held but not confirmed until payment. We&rsquo;ll be in touch.';
     }
   }catch(e){msg.innerHTML='<span style="color:var(--red)">Could not book just now — please try again.</span>';}
 }
