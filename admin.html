@@ -127,6 +127,7 @@ function show(){
   const tile=(href,title,desc)=>t.insertAdjacentHTML('beforeend','<a class="tile" href="'+href+'"><b>'+title+'</b><small>'+desc+'</small></a>');
   if(me.can_members){
     tile('dashboard.html','Membership dashboard','Live register analysis \u2014 drop the sheet, press Connect');
+    tile('register.html','Membership register','Look someone up, correct details, add a member by hand');
     tile('import.html','Member import','Load spreadsheet tabs into the database');
   }
   if(me.can_posts) tile('tools/compose.html','Post composer','Write once \u2014 publish or schedule in the Trust style');

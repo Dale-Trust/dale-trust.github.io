@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Membership register | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:21px}.top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:1000px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:10px 0 4px}
+  input,select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
+  .searchrow{display:grid;grid-template-columns:1fr 180px auto;gap:10px;align-items:end}
+  @media(max-width:700px){.searchrow{grid-template-columns:1fr}}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media(max-width:640px){.g2,.g3{grid-template-columns:1fr}}
+  button{background:var(--royal);color:#fff;border:0;border-radius:9px;padding:11px 20px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+  button.green{background:var(--green)}button.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line)}
+  button.sm{padding:6px 12px;font-size:11.5px}
+  .row{display:flex;gap:12px;align-items:center;padding:11px 6px;border-bottom:1px solid var(--line);cursor:pointer}
+  .row:hover{background:#F7FAFF}
+  .row b{color:var(--ink)}
+  .row small{color:#7A8AA5;display:block;font-size:12.5px;margin-top:1px}
+  .grow{flex:1;min-width:0}
+  .pill{font-size:10.5px;font-weight:700;text-transform:uppercase;padding:3px 9px;border-radius:100px;color:#fff;flex:none}
+  .paid{background:var(--green)}.desk{background:var(--royal)}.free{background:#5B6472}.pending{background:var(--gold);color:#3a2c00}.cancelled{background:var(--red)}.cash{background:var(--royal)}
+  .tag{font-size:11px;background:var(--wash);border:1px solid var(--line);padding:2px 8px;border-radius:100px;color:#7A8AA5;flex:none}
+  .msg{font-size:13.5px;font-weight:600;margin-top:10px}
+  .warn{background:#FFF9E8;border:1px solid #EAD198;border-left:4px solid var(--gold);padding:11px 14px;border-radius:0 8px 8px 0;font-size:13.5px;margin-top:10px}
+  #editor,#adder{display:none}
+  .hist{font-size:13px;color:#7A8AA5;margin-top:8px}
+  .hist a{color:var(--royal);cursor:pointer}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>Membership register</h1><small>Look someone up, correct their details, or add a member who joined at the desk or by post</small></div>
+<div class="wrap">
+
+<div class="panel">
+  <div class="searchrow">
+    <div><label>Search by name, email, member number, postcode or town</label>
+      <input id="q" placeholder="e.g. Culshaw, OL11, DT-2026-1002" onkeydown="if(event.key==='Enter')search()"></div>
+    <div><label>Season</label><select id="season" onchange="search()"><option value="">All seasons</option></select></div>
+    <div><button onclick="search()">Search</button></div>
+  </div>
+  <p class="msg" id="count"></p>
+  <div id="list"></div>
+  <div style="margin-top:14px"><button class="ghost" onclick="openAdder()">+ Add a member by hand</button></div>
+</div>
+
+<!-- ADD -->
+<div class="panel" id="adder">
+  <h2>Add a member</h2>
+  <p style="font-size:13.5px;margin-bottom:6px">For someone who joined at the Trust Desk, paid by cheque or standing order, or rang up. An email address is optional &mdash; leave it blank if they haven't got one.</p>
+  <div class="g3">
+    <div><label>First name</label><input id="a_first"></div>
+    <div><label>Surname</label><input id="a_last"></div>
+    <div><label>Membership</label><select id="a_type"><option>Adult</option><option>Exile</option><option>Junior</option></select></div>
+  </div>
+  <div class="g3">
+    <div><label>Season</label><select id="a_season"></select></div>
+    <div><label>Date of birth</label><input id="a_dob" type="date"></div>
+    <div><label>Gender</label><input id="a_gender" placeholder="Optional"></div>
+  </div>
+  <div class="g2">
+    <div><label>Email (optional)</label><input id="a_email" type="email"></div>
+    <div><label>Mobile</label><input id="a_mobile"></div>
+  </div>
+  <label>Address</label><input id="a_ad1" placeholder="House and street">
+  <input id="a_ad2" placeholder="(optional)" style="margin-top:8px">
+  <div class="g3">
+    <div><label>Town</label><input id="a_town"></div>
+    <div><label>County</label><input id="a_county"></div>
+    <div><label>Postcode</label><input id="a_pc"></div>
+  </div>
+  <div class="g3">
+    <div><label>How did they pay?</label><select id="a_status">
+      <option value="desk">Trust Desk / cash</option><option value="paid">Cheque or bank transfer</option>
+      <option value="free">Free (junior or honorary)</option><option value="pending">Not paid yet</option></select></div>
+    <div><label>Method note</label><input id="a_method" placeholder="e.g. standing order, cheque"></div>
+    <div><label>Donation (£)</label><input id="a_don" value="0"></div>
+  </div>
+  <div class="g2">
+    <div><label>Newsletter</label><select id="a_news"><option value="1">Yes</option><option value="0">No</option></select></div>
+    <div><label>Date joined</label><input id="a_date" type="date"></div>
+  </div>
+  <label>Notes</label><input id="a_notes" placeholder="Anything worth recording">
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="green" onclick="addMember(false)">Add to the register</button>
+    <button class="ghost" onclick="document.getElementById('adder').style.display='none'">Cancel</button>
+  </div>
+  <p class="msg" id="amsg"></p>
+</div>
+
+<!-- EDIT -->
+<div class="panel" id="editor">
+  <h2 id="eTitle">Member record</h2>
+  <p class="hist" id="eHist"></p>
+  <div class="g3">
+    <div><label>First name</label><input id="e_first"></div>
+    <div><label>Surname</label><input id="e_last"></div>
+    <div><label>Membership</label><select id="e_type"><option>Adult</option><option>Exile</option><option>Junior</option></select></div>
+  </div>
+  <div class="g3">
+    <div><label>Date of birth</label><input id="e_dob" type="date"></div>
+    <div><label>Gender</label><input id="e_gender"></div>
+    <div><label>Mobile</label><input id="e_mobile"></div>
+  </div>
+  <div class="g2">
+    <div><label>Email (blank if none)</label><input id="e_email"></div>
+    <div><label>Home phone</label><input id="e_tel"></div>
+  </div>
+  <label>Address</label><input id="e_ad1">
+  <input id="e_ad2" placeholder="(optional)" style="margin-top:8px">
+  <div class="g3">
+    <div><label>Town</label><input id="e_town"></div>
+    <div><label>County</label><input id="e_county"></div>
+    <div><label>Postcode</label><input id="e_pc"></div>
+  </div>
+  <div class="g3">
+    <div><label>Country</label><input id="e_country"></div>
+    <div><label>Payment</label><select id="e_status">
+      <option value="paid">Paid</option><option value="desk">Desk / cash</option><option value="free">Free</option>
+      <option value="pending">Not paid yet</option><option value="cancelled">Cancelled</option></select></div>
+    <div><label>Method</label><input id="e_method"></div>
+  </div>
+  <div class="g3">
+    <div><label>Newsletter</label><select id="e_news"><option value="1">Yes</option><option value="0">No</option></select></div>
+    <div><label>Donation (£)</label><input id="e_don"></div>
+    <div id="e_shareWrap" style="display:none"><label>Exile transport share</label><select id="e_share"><option>Yes</option><option>No</option></select></div>
+  </div>
+  <label>Notes</label><input id="e_comments">
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="green" onclick="saveMember()">Save changes</button>
+    <button class="ghost" onclick="document.getElementById('editor').style.display='none'">Close</button>
+  </div>
+  <p class="msg" id="emsg"></p>
+</div>
+
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
+let current=null, seasons=[];
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const noEmail=e=>!e||e==='none@daletrust.uk';
+
+async function search(){
+  const q=encodeURIComponent($('q').value.trim()), s=encodeURIComponent($('season').value);
+  try{
+    const r=await fetch(EP+'/members/search?q='+q+'&season='+s,{headers:H()});
+    if(r.status===401||r.status===403){location.href='admin.html';return;}
+    const d=await r.json();
+    if(!d.ok){$('count').textContent=d.error;return;}
+    if(!seasons.length&&d.seasons){seasons=d.seasons;
+      $('season').innerHTML='<option value="">All seasons</option>'+seasons.map(x=>'<option>'+x+'</option>').join('');
+      $('a_season').innerHTML=seasons.map(x=>'<option>'+x+'</option>').join('');}
+    $('count').innerHTML='<b>'+d.total+'</b> record'+(d.total===1?'':'s')+(d.total>60?' — showing the first 60':'');
+    $('list').innerHTML=d.members.map(m=>
+      '<div class="row" onclick="openMember('+m.id+')">'+
+      '<div class="grow"><b>'+esc(m.first_name+' '+m.last_name)+'</b>'+
+      '<small>'+esc(m.member_no||m.app_ref)+' · '+esc(m.membership_type)+' · '+esc(m.season)+
+      ' · '+esc(m.town||'')+' '+esc(m.postcode||'')+
+      (noEmail(m.email)?' · <span style="color:#C0392B">no email</span>':' · '+esc(m.email))+'</small></div>'+
+      (m.joined_via==='manual'?'<span class="tag">by hand</span>':'')+
+      '<span class="pill '+m.payment_status+'">'+m.payment_status+'</span></div>').join('')
+      || '<p style="padding:14px 6px;color:#7A8AA5">Nobody found.</p>';
+  }catch(e){$('count').textContent='Could not reach the server.';}
+}
+
+async function openMember(id){
+  const d=await (await fetch(EP+'/members/one?id='+id,{headers:H()})).json();
+  if(!d.ok){alert(d.error);return;}
+  current=d.member;
+  const m=current;
+  $('eTitle').textContent=m.first_name+' '+m.last_name+' — '+(m.member_no||m.app_ref);
+  $('eHist').innerHTML = m.season+' · joined '+(m.joined_via||'—')+
+    (m.details_confirmed_at?' · details confirmed '+new Date(m.details_confirmed_at.replace(' ','T')+'Z').toLocaleDateString('en-GB'):' · details never confirmed')+
+    (d.other.length?'<br>Other seasons: '+d.other.map(o=>'<a onclick="openMember('+o.id+')">'+o.season+'</a>').join(', '):'');
+  $('e_first').value=m.first_name||''; $('e_last').value=m.last_name||'';
+  $('e_type').value=m.membership_type||'Adult';
+  $('e_dob').value=(m.dob||'').slice(0,10); $('e_gender').value=m.gender||'';
+  $('e_mobile').value=m.mobile||''; $('e_tel').value=m.home_tel||'';
+  $('e_email').value=noEmail(m.email)?'':m.email;
+  $('e_ad1').value=m.address1||''; $('e_ad2').value=m.address2||'';
+  $('e_town').value=m.town||''; $('e_county').value=m.county||'';
+  $('e_pc').value=m.postcode||''; $('e_country').value=m.country||'';
+  $('e_status').value=m.payment_status||'desk'; $('e_method').value=m.payment_method||'';
+  $('e_news').value=m.newsletter_optin?'1':'0'; $('e_don').value=m.donation||0;
+  $('e_comments').value=m.comments||'';
+  $('e_shareWrap').style.display=m.membership_type==='Exile'?'block':'none';
+  if(m.membership_type==='Exile')$('e_share').value=m.exile_transport_share||'No';
+  $('emsg').textContent='';
+  $('editor').style.display='block'; $('adder').style.display='none';
+  $('editor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function saveMember(){
+  const b={id:current.id,first_name:$('e_first').value.trim(),last_name:$('e_last').value.trim(),
+    membership_type:$('e_type').value,dob:$('e_dob').value||null,gender:$('e_gender').value.trim(),
+    email:$('e_email').value.trim(),mobile:$('e_mobile').value.trim(),home_tel:$('e_tel').value.trim(),
+    address1:$('e_ad1').value.trim(),address2:$('e_ad2').value.trim(),town:$('e_town').value.trim(),
+    county:$('e_county').value.trim(),postcode:$('e_pc').value.trim(),country:$('e_country').value.trim(),
+    payment_status:$('e_status').value,payment_method:$('e_method').value.trim(),
+    newsletter_optin:$('e_news').value==='1',donation:$('e_don').value,
+    exile_transport_share:$('e_share').value,comments:$('e_comments').value.trim()};
+  const d=await (await fetch(EP+'/members/save',{method:'POST',headers:H(),body:JSON.stringify(b)})).json();
+  $('emsg').innerHTML=d.ok?'<span style="color:var(--green)">Saved.</span>':'<span style="color:var(--red)">'+esc(d.error)+'</span>';
+  if(d.ok) search();
+}
+
+function openAdder(){
+  $('adder').style.display='block'; $('editor').style.display='none';
+  $('a_date').value=new Date().toISOString().slice(0,10);
+  $('amsg').textContent='';
+  $('adder').scrollIntoView({behavior:'smooth',block:'start'});
+  $('a_first').focus();
+}
+
+async function addMember(force){
+  const b={first_name:$('a_first').value.trim(),last_name:$('a_last').value.trim(),
+    membership_type:$('a_type').value,season:$('a_season').value,
+    dob:$('a_dob').value||null,gender:$('a_gender').value.trim(),
+    email:$('a_email').value.trim(),mobile:$('a_mobile').value.trim(),
+    address1:$('a_ad1').value.trim(),address2:$('a_ad2').value.trim(),
+    town:$('a_town').value.trim(),county:$('a_county').value.trim(),postcode:$('a_pc').value.trim(),
+    payment_status:$('a_status').value,payment_method:$('a_method').value.trim(),
+    donation:$('a_don').value,newsletter_optin:$('a_news').value==='1',
+    date_joined:$('a_date').value||null,comments:$('a_notes').value.trim(),force:!!force};
+  if(!b.first_name||!b.last_name){$('amsg').innerHTML='<span style="color:var(--red)">First name and surname are needed.</span>';return;}
+  const r=await fetch(EP+'/members/add',{method:'POST',headers:H(),body:JSON.stringify(b)});
+  const d=await r.json();
+  if(d.duplicate){
+    $('amsg').innerHTML='<div class="warn"><b>Already on the register</b> — '+esc(d.error)+' ('+esc(d.existing)+').<br>'+
+      '<button class="sm" style="margin-top:8px" onclick="addMember(true)">Add anyway</button></div>';
+    return;
+  }
+  if(!d.ok){$('amsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return;}
+  $('amsg').innerHTML='<span style="color:var(--green)">Added — '+esc(d.member_no||d.app_ref)+'</span>';
+  ['a_first','a_last','a_email','a_mobile','a_ad1','a_ad2','a_town','a_county','a_pc','a_gender','a_dob','a_notes','a_method'].forEach(i=>$(i).value='');
+  $('a_don').value='0';
+  search();
+}
+
+search();
+</script>
+</body>
+</html>
