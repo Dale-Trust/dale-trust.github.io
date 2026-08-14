@@ -144,8 +144,21 @@
   <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
     <button class="green" onclick="saveMember()">Save changes</button>
     <button class="ghost" onclick="document.getElementById('editor').style.display='none'">Close</button>
+    <button style="background:var(--red);margin-left:auto" onclick="deleteMember()">Delete this record</button>
   </div>
   <p class="msg" id="emsg"></p>
+  <div id="delBox" style="display:none" class="warn">
+    <b>Delete this record permanently?</b><br>
+    This cannot be undone. If the member has simply left, set their payment status to <b>cancelled</b> instead &mdash; that keeps their history.
+    <label style="margin-top:10px">Why are you deleting it?</label>
+    <input id="delReason" placeholder="e.g. added by mistake, duplicate, member asked us to remove their data">
+    <label style="margin-top:10px">Type DELETE to confirm</label>
+    <input id="delConfirm" placeholder="DELETE">
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button style="background:var(--red)" class="sm" onclick="reallyDelete()">Delete permanently</button>
+      <button class="ghost sm" onclick="document.getElementById('delBox').style.display='none'">Keep it</button>
+    </div>
+  </div>
 </div>
 
 </div>
@@ -204,7 +217,7 @@ async function openMember(id){
   $('e_comments').value=m.comments||'';
   $('e_shareWrap').style.display=m.membership_type==='Exile'?'block':'none';
   if(m.membership_type==='Exile')$('e_share').value=m.exile_transport_share||'No';
-  $('emsg').textContent='';
+  $('emsg').textContent=''; $('delBox').style.display='none';
   $('editor').style.display='block';
   $('editor').scrollIntoView({behavior:'smooth',block:'start'});
 }
@@ -221,6 +234,28 @@ async function saveMember(){
   const d=await (await fetch(EP+'/members/save',{method:'POST',headers:H(),body:JSON.stringify(b)})).json();
   $('emsg').innerHTML=d.ok?'<span style="color:var(--green)">Saved.</span>':'<span style="color:var(--red)">'+esc(d.error)+'</span>';
   if(d.ok) search();
+}
+
+function deleteMember(){
+  if(!current)return;
+  $('delReason').value=''; $('delConfirm').value='';
+  $('delBox').style.display='block';
+  $('delConfirm').focus();
+}
+
+async function reallyDelete(){
+  if($('delConfirm').value.trim().toUpperCase()!=='DELETE'){
+    $('emsg').innerHTML='<span style="color:var(--red)">Type DELETE to confirm.</span>';return;
+  }
+  if(!confirm('Last check — permanently delete '+current.first_name+' '+current.last_name+'?'))return;
+  const d=await (await fetch(EP+'/members/delete',{method:'POST',headers:H(),
+    body:JSON.stringify({id:current.id,confirm:'DELETE',reason:$('delReason').value.trim()})})).json();
+  if(d.ok){
+    $('delBox').style.display='none';
+    $('editor').style.display='none';
+    $('count').innerHTML='<span style="color:var(--green)">Deleted '+esc(d.removed)+'.</span>';
+    current=null; search();
+  } else $('emsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';
 }
 
 function clearAdder(){
