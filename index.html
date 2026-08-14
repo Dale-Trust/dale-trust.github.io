@@ -380,6 +380,12 @@
       </div>
     </div>
 
+    <div class="tb-col tb-coach" id="voteCol" style="display:none">
+      <b id="vbTitle">Have your say</b>
+      <span id="vbSub"></span>
+      <div class="tb-btns"><a class="tb-btn light" id="vbBtn" href="vote.html">Vote now &rarr;</a></div>
+    </div>
+
     <div class="tb-col tb-coach" id="coachFallback">
       <b>Coach travel</b>
       <span>The official supporters&rsquo; coach to every away game.</span>
@@ -865,6 +871,24 @@ loadHub();
 
 
 <script>
+// Anything open to vote on takes the right-hand side
+(async () => {
+  try{
+    const d = await (await fetch('https://join.daletrust.uk/surveys')).json();
+    if(!d.ok || !d.surveys.length) return;
+    const s = d.surveys[0];
+    document.getElementById('vbTitle').textContent = s.title;
+    document.getElementById('vbSub').textContent = s.intro ||
+      (s.kind==='potm' ? 'Who gets your vote this month?' : 'Tell us what you think');
+    document.getElementById('vbBtn').href = 'vote.html?s=' + encodeURIComponent(s.slug);
+    document.getElementById('vbBtn').textContent = (s.kind==='potm'?'Cast your vote':'Have your say') + ' \u2192';
+    document.getElementById('coachFallback').style.display='none';
+    document.getElementById('voteCol').style.display='block';
+    const cc = document.getElementById('coachCol');
+    if(cc && cc.style.display==='block'){ document.getElementById('voteCol').style.display='none'; }
+  }catch(e){}
+})();
+
 // Next coach — fills the right-hand side of the top band
 (async () => {
   try{

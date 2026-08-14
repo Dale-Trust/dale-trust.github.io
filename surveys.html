@@ -75,6 +75,40 @@
     <a id="viewLink" href="#" target="_blank" style="display:none"><button class="ghost" type="button">Open the public page &rarr;</button></a>
   </div>
   <p class="msg" id="emsg"></p>
+
+  <div id="sendPanel" style="display:none;border-top:1px solid var(--line);margin-top:18px;padding-top:16px">
+    <h2 style="font-size:15px;border:0;padding:0">Email it out</h2>
+    <p style="font-size:13.5px;margin-bottom:10px">Choose who should get it. The number updates as you narrow it down.</p>
+    <div class="g2">
+      <div><label>Who</label><select id="aud_who" onchange="audChanged()">
+        <option value="current">Current members</option>
+        <option value="lapsed">Lapsed members</option>
+        <option value="season">Members from a past season</option></select></div>
+      <div id="seasonWrap" style="display:none"><label>Season</label><select id="aud_season" onchange="audCount()"></select></div>
+    </div>
+    <label>Membership type</label>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:2px" id="typeBoxes"></div>
+    <div class="g2" style="margin-top:8px">
+      <div><label>Where</label><select id="aud_place" onchange="audChanged()">
+        <option value="">Anywhere</option><option value="uk">UK</option><option value="overseas">Overseas</option>
+        <option value="county">A county</option><option value="country">A country</option></select></div>
+      <div id="placeWrap" style="display:none"><label>Which</label><select id="aud_which" onchange="audCount()"></select></div>
+    </div>
+    <div class="g2" style="margin-top:8px">
+      <div><label>Age</label><select id="aud_age" onchange="audCount()">
+        <option value="">Any age</option><option value="u16">Under 16</option><option value="16-39">16 to 39</option>
+        <option value="40-59">40 to 59</option><option value="60plus">60 or over</option>
+        <option value="unknown">No date of birth recorded</option></select></div>
+      <div><label>Newsletter</label><select id="aud_news" onchange="audCount()">
+        <option value="in">Opted in only</option><option value="">Everyone with an email</option></select></div>
+    </div>
+    <div id="audCount" style="background:var(--wash);border-left:4px solid var(--royal);padding:12px 14px;margin-top:14px;border-radius:0 8px 8px 0"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="ghost" onclick="sendSurvey(true)">Send me a test</button>
+      <button id="sendBtn" onclick="sendSurvey(false)">Send it</button>
+    </div>
+    <p class="msg" id="smsg"></p>
+  </div>
 </div>
 
 <div class="panel" id="results">
@@ -112,7 +146,7 @@ function newSurvey(kind){
   $('s_title').value = kind==='potm' ? 'Player of the Month' : '';
   $('s_intro').value = kind==='potm' ? 'Who was your pick this month?' : '';
   $('s_status').value='draft'; $('s_members').value='0'; $('s_closes').value='';
-  $('viewLink').style.display='none'; $('emsg').textContent='';
+  $('viewLink').style.display='none'; $('sendPanel').style.display='none'; $('emsg').textContent='';
   window._kind=kind;
   if(kind==='potm') qs=[{question:'Who is your Player of the Month?',kind:'single',options:['','','',''],required:true}];
   drawQuestions();
@@ -132,6 +166,8 @@ async function editSurvey(id){
   drawQuestions();
   $('viewLink').href='vote.html?s='+encodeURIComponent(s.slug);
   $('viewLink').style.display=s.status==='open'?'inline-block':'none';
+  $('sendPanel').style.display=s.status==='open'?'block':'none';
+  if(s.status==='open') loadAudOptions();
   $('emsg').textContent='';
   $('editor').style.display='block'; $('results').style.display='none';
   $('editor').scrollIntoView({behavior:'smooth',block:'start'});
@@ -169,7 +205,76 @@ async function saveSurvey(){
     (body.status==='open'?' Share it: <b>daletrust.uk/vote.html?s='+esc(d.slug)+'</b>':'');
   $('viewLink').href='vote.html?s='+encodeURIComponent(d.slug);
   $('viewLink').style.display=body.status==='open'?'inline-block':'none';
+  $('sendPanel').style.display=body.status==='open'?'block':'none';
+  if(body.status==='open'&&!audOptions) loadAudOptions();
   load();
+}
+
+let audOptions=null;
+
+function audFilters(){
+  const who=$('aud_who').value, place=$('aud_place').value;
+  const f={who, newsletter:$('aud_news').value, age:$('aud_age').value, place,
+    types:[...document.querySelectorAll('.audType:checked')].map(x=>x.value)};
+  if(who==='lapsed'||who==='season') f.season=$('aud_season').value;
+  if(place==='county') f.county=$('aud_which').value;
+  if(place==='country') f.country=$('aud_which').value;
+  return f;
+}
+async function audChanged(){
+  const who=$('aud_who').value, place=$('aud_place').value;
+  $('seasonWrap').style.display=(who==='lapsed'||who==='season')?'block':'none';
+  if((place==='county'||place==='country')&&audOptions){
+    const list=place==='county'?audOptions.counties:audOptions.countries;
+    $('aud_which').innerHTML=list.map(x=>'<option>'+esc(x)+'</option>').join('');
+    $('placeWrap').style.display='block';
+  } else $('placeWrap').style.display='none';
+  audCount();
+}
+let audTimer=null;
+function audCount(){
+  clearTimeout(audTimer);
+  audTimer=setTimeout(async()=>{
+    const box=$('audCount'); box.innerHTML='Counting\u2026';
+    try{
+      const d=await (await fetch(EP+'/audience/count',{method:'POST',headers:H(),body:JSON.stringify(audFilters())})).json();
+      if(!d.ok){box.textContent=d.error;return;}
+      box.innerHTML='<b style="font-family:Oswald;font-size:26px;color:var(--ink)">'+d.count+'</b> <span style="font-size:14px">will get this</span>'+
+        '<div style="font-size:13px;color:#7A8AA5;margin-top:4px">'+esc(d.description)+'</div>'+
+        (d.without_email?'<div style="font-size:13px;color:#7A8AA5">'+d.without_email+' members have no email address and are left out automatically.</div>':'');
+      $('sendBtn').textContent = d.count ? ('Send to '+d.count+' people') : 'Nobody to send to';
+      $('sendBtn').disabled = !d.count;
+    }catch(e){box.textContent='Could not count just now.';}
+  },250);
+}
+async function loadAudOptions(){
+  try{
+    audOptions=await (await fetch(EP+'/audience/options',{headers:H()})).json();
+    if(!audOptions.ok)return;
+    $('typeBoxes').innerHTML=['Adult','Exile','Junior'].map(t=>
+      '<label style="font-size:14px;text-transform:none;letter-spacing:0;font-weight:500;margin:0"><input type="checkbox" class="audType" value="'+t+'" checked onchange="audCount()" style="width:auto;margin-right:6px">'+t+'</label>').join('');
+    $('aud_season').innerHTML=audOptions.seasons.map(s=>'<option>'+s+'</option>').join('');
+    const prev=audOptions.seasons.filter(s=>s!==audOptions.current)[0];
+    if(prev)$('aud_season').value=prev;
+    audCount();
+  }catch(e){}
+}
+
+async function sendSurvey(test){
+  if(!editing){$('smsg').innerHTML='<span style="color:var(--red)">Save it first.</span>';return;}
+  const body={survey_id:editing, filters:audFilters()};
+  if(test){
+    const to=prompt('Send a test to which email?'); if(!to)return; body.test_to=to;
+  } else {
+    const d0=await (await fetch(EP+'/audience/count',{method:'POST',headers:H(),body:JSON.stringify(body.filters)})).json();
+    if(!confirm('Send this to '+d0.count+' people?\n\n'+d0.description+'\n\nThis cannot be unsent.'))return;
+    if(body.filters.who==='lapsed' && !confirm('Emailing lapsed members relies on the board\u2019s legitimate-interest minute, and every message carries an opt-out. Is that agreed?'))return;
+  }
+  $('smsg').textContent='Sending\u2026';
+  const d=await (await fetch(EP+'/survey/send',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+  $('smsg').innerHTML = d.ok
+    ? '<span style="color:var(--green)">'+(d.test?'Test sent.':'Sent to '+d.sent+' people.')+'</span>'
+    : '<span style="color:var(--red)">'+esc(d.error)+'</span>';
 }
 
 async function showResults(id){

@@ -60,6 +60,11 @@
   .perk span{font-size:13px;color:#C7D6EC;display:block;margin-top:3px;line-height:1.5}
   .benfoot{font-size:13px;color:#7A8AA5;margin-top:14px}
   .lapsedben{opacity:.6}
+  .votecard{background:#fff;border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:0 14px 14px 0;padding:18px 20px;margin-bottom:16px}
+  .votecard b{font-family:'Oswald';text-transform:uppercase;font-size:18px;color:var(--ink);display:block}
+  .votecard p{font-size:14.5px;margin:4px 0 12px}
+  .votecard a.go{display:inline-block;background:var(--royal);color:#fff;text-decoration:none;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:11px 20px;border-radius:9px}
+  .votecard .done{display:inline-block;background:#EAF7F0;color:#14653F;font-size:13px;font-weight:700;padding:6px 14px;border-radius:100px}
   .coach{background:linear-gradient(130deg,var(--navy),#16305C 55%,#00417E);color:#fff;border-radius:14px;padding:22px;margin-bottom:16px;position:relative;overflow:hidden;display:block;text-decoration:none}
   .coach::before{content:"";position:absolute;top:0;bottom:0;right:-14%;width:46%;background:var(--royal);transform:skewX(-14deg);opacity:.35}
   .coach .in{position:relative}
@@ -103,6 +108,8 @@
 
   <!-- MEMBER AREA -->
   <div id="area">
+    <div id="votePanel"></div>
+
     <a class="coach" href="travel.html">
       <div class="in">
         <div class="kick">Coach travel</div>
@@ -274,6 +281,22 @@ function drawPeople(){
 }
 function pick(i){who=i;render();window.scrollTo({top:0,behavior:'smooth'});}
 
+async function drawVotes(){
+  const box=$('votePanel'); if(!box) return;
+  try{
+    const d=await (await fetch(EP+'/surveys/mine',{headers:H()})).json();
+    if(!d.ok||!d.surveys.length){box.innerHTML='';return;}
+    box.innerHTML=d.surveys.map(s=>
+      '<div class="votecard"><b>'+esc(s.title)+'</b>'+
+      (s.intro?'<p>'+esc(s.intro)+'</p>':'<p>'+(s.kind==='potm'?'Who gets your vote this month?':'Tell us what you think.')+'</p>')+
+      (s.voted
+        ? '<span class="done">\u2713 You\u2019ve taken part \u2014 thank you</span>'
+        : '<a class="go" href="vote.html?s='+encodeURIComponent(s.slug)+'">'+(s.kind==='potm'?'Cast your vote':'Have your say')+' \u2192</a>')+
+      (s.closes_at?'<p style="font-size:13px;color:#7A8AA5;margin:8px 0 0">Closes '+new Date(s.closes_at).toLocaleDateString('en-GB',{day:'numeric',month:'long'})+'</p>':'')+
+      '</div>').join('');
+  }catch(e){}
+}
+
 function drawBookings(){
   const box=$('myBookings'); if(!box) return;
   const list=(data.coach||[]);
@@ -291,6 +314,7 @@ function drawBookings(){
 }
 
 function render(){
+  drawVotes();
   drawBookings();
   drawPeople();
   const p=person(), rec=p.record, cur=p.isMember;
