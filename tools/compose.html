@@ -199,15 +199,42 @@ async function publish(){
       '<div><b>'+$('title').value+'</b><small>'+$('cat').value+' \u00b7 <a href="'+url+'" target="_blank">view on the website</a></small></div></div>'+
       '<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">'+
       '<b style="font-family:Oswald;text-transform:uppercase">Email it out?</b>'+
-      '<p class="hint" id="audienceNote" style="margin:4px 0 10px"></p>'+
-      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
-      '<button class="go" style="width:auto;background:#46536B" onclick="mailshot(\'members\',true)">Send me a test</button>'+
-      '<button class="go" style="width:auto" onclick="mailshot(\'members\',false)">Email '+audience.members+' members</button>'+
-      '<button class="go" style="width:auto;background:#E8B84B;color:#3a2c00" onclick="mailshot(\'lapsed\',false)">Email '+audience.lapsed+' lapsed members</button>'+
-      '</div><p class="hint" style="margin-top:8px">Emails are short and link back to the website \u2014 the full piece always lives on daletrust.uk.</p>'+
+      '<p class="hint" style="margin:4px 0 12px">Choose who should get it. The number updates as you narrow it down.</p>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
+        '<div><label>Who</label><select id="aud_who" onchange="audChanged()">'+
+          '<option value="current">Current members</option>'+
+          '<option value="lapsed">Lapsed members</option>'+
+          '<option value="season">Members from a past season</option></select></div>'+
+        '<div id="seasonWrap" style="display:none"><label>Season</label><select id="aud_season" onchange="audCount()"></select></div>'+
+      '</div>'+
+      '<label>Membership type</label>'+
+      '<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:2px">'+
+        ['Adult','Exile','Junior'].map(t=>'<label style="font-size:14px;text-transform:none;letter-spacing:0;font-weight:500;margin:0"><input type="checkbox" class="audType" value="'+t+'" checked onchange="audCount()" style="width:auto;margin-right:6px">'+t+'</label>').join('')+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">'+
+        '<div><label>Where</label><select id="aud_place" onchange="audChanged()">'+
+          '<option value="">Anywhere</option><option value="uk">UK</option><option value="overseas">Overseas</option>'+
+          '<option value="county">A county</option><option value="country">A country</option></select></div>'+
+        '<div id="placeWrap" style="display:none"><label>Which</label><select id="aud_which" onchange="audCount()"></select></div>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">'+
+        '<div><label>Age</label><select id="aud_age" onchange="audCount()">'+
+          '<option value="">Any age</option><option value="u16">Under 16</option><option value="16-39">16 to 39</option>'+
+          '<option value="40-59">40 to 59</option><option value="60plus">60 or over</option>'+
+          '<option value="unknown">No date of birth recorded</option></select></div>'+
+        '<div><label>Newsletter</label><select id="aud_news" onchange="audCount()">'+
+          '<option value="in">Opted in only</option><option value="">Everyone with an email</option></select></div>'+
+      '</div>'+
+      '<div id="audCount" style="background:var(--wash);border-left:4px solid var(--royal);padding:12px 14px;margin-top:14px;border-radius:0 8px 8px 0"></div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'+
+      '<button class="go" style="width:auto;background:#46536B" onclick="mailshot(true)">Send me a test</button>'+
+      '<button class="go" style="width:auto" id="sendBtn" onclick="mailshot(false)">Send it</button>'+
+      '</div>'+
+      '<p class="hint" style="margin-top:8px">Emails are short and link back to the website \u2014 the full piece always lives on daletrust.uk.</p>'+
       '<p id="mailmsg" style="margin-top:8px;font-weight:600"></p></div>'+
       '<div id="sharePanel" style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px"></div>';
     buildShare(url);
+    loadAudOptions();
   }catch(e){alert('Could not reach the server.');}
 }
 
@@ -266,7 +293,79 @@ function copyShare(i){
   }).catch(()=>document.execCommand('copy'));
 }
 
-async function mailshot(segment, test){
+let audOptions=null;
+
+function audFilters(){
+  const who=$('aud_who').value;
+  const place=$('aud_place').value;
+  const f={who, newsletter:$('aud_news').value, age:$('aud_age').value, place,
+    types:[...document.querySelectorAll('.audType:checked')].map(x=>x.value)};
+  if(who==='lapsed'||who==='season') f.season=$('aud_season').value;
+  if(place==='county') f.county=$('aud_which').value;
+  if(place==='country') f.country=$('aud_which').value;
+  return f;
+}
+
+async function audChanged(){
+  const who=$('aud_who').value, place=$('aud_place').value;
+  $('seasonWrap').style.display=(who==='lapsed'||who==='season')?'block':'none';
+  const pw=$('placeWrap');
+  if(place==='county'||place==='country'){
+    const list=place==='county'?audOptions.counties:audOptions.countries;
+    $('aud_which').innerHTML=list.map(x=>'<option>'+x+'</option>').join('');
+    pw.style.display='block';
+  } else pw.style.display='none';
+  audCount();
+}
+
+let audTimer=null;
+function audCount(){
+  clearTimeout(audTimer);
+  audTimer=setTimeout(async()=>{
+    const box=$('audCount');
+    box.innerHTML='Counting\u2026';
+    try{
+      const d=await (await fetch(CMS_ENDPOINT+'/audience/count',{method:'POST',headers:HDRS(),body:JSON.stringify(audFilters())})).json();
+      if(!d.ok){box.textContent=d.error;return;}
+      box.innerHTML='<b style="font-family:Oswald;font-size:26px;color:var(--ink)">'+d.count+'</b> '+
+        '<span style="font-size:14px">will get this email</span>'+
+        '<div class="hint" style="margin-top:4px">'+d.description+'</div>'+
+        (d.without_email?'<div class="hint">'+d.without_email+' members have no email address and are left out automatically.</div>':'');
+      $('sendBtn').textContent = d.count ? ('Send to '+d.count+' people') : 'Nobody to send to';
+      $('sendBtn').disabled = !d.count;
+    }catch(e){box.textContent='Could not count just now.';}
+  },250);
+}
+
+async function loadAudOptions(){
+  try{
+    audOptions=await (await fetch(CMS_ENDPOINT+'/audience/options',{headers:HDRS()})).json();
+    if(!audOptions.ok)return;
+    $('aud_season').innerHTML=audOptions.seasons.map(s=>'<option>'+s+'</option>').join('');
+    const prev=audOptions.seasons.filter(s=>s!==audOptions.current)[0];
+    if(prev)$('aud_season').value=prev;
+    audCount();
+  }catch(e){}
+}
+
+async function mailshot(test){
+  const f=audFilters();
+  const body={post_id:currentPostId, filters:f};
+  if(!currentPostId){alert('Publish it first.');return;}
+  if(test){
+    const to=prompt('Send a test to which email?', $('author').value.includes('@')?$('author').value:'');
+    if(!to)return; body.test_to=to;
+  } else {
+    const d0=await (await fetch(CMS_ENDPOINT+'/audience/count',{method:'POST',headers:HDRS(),body:JSON.stringify(f)})).json();
+    if(!confirm('Send this to '+d0.count+' people?\n\n'+d0.description+'\n\nThis cannot be unsent.'))return;
+    if(f.who==='lapsed' && !confirm('Emailing lapsed members relies on the board\u2019s legitimate-interest minute, and every message carries an opt-out. Is that agreed?'))return;
+  }
+  $('mailmsg').textContent='Sending\u2026';
+  const d=await (await fetch(CMS_ENDPOINT+'/mailshot',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
+  $('mailmsg').textContent = d.ok ? (d.test?'Test sent.':'Sent to '+d.sent+' people.') : (d.error||'Failed.');
+}
+
+async function oldMailshot(segment, test){
   if(!currentPostId){alert('Publish it first.');return;}
   if(!test){
     const n = segment==='lapsed'?audience.lapsed:audience.members;
