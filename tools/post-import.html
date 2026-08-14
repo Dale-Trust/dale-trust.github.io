@@ -61,6 +61,26 @@
   <div id="preview"></div>
 </div>
 
+<div class="panel">
+  <h2>Photographs</h2>
+  <p style="font-size:13.5px">Articles still load their photographs from the old website. Find out which files you need, fetch those, then swap the addresses over.</p>
+
+  <button class="ghost" style="background:#fff;color:#46536B;border:1.5px solid #DCE3EC" onclick="listMedia()">List the photographs I need</button>
+  <p style="font-size:12.5px;color:#7A8AA5;margin-top:6px">Works out exactly which files the articles use, so you only fetch those &mdash; not every copy WordPress made.</p>
+  <div id="mediaOut" style="margin-top:10px"></div>
+
+  <label style="margin-top:16px">Replace this</label>
+  <input id="rwFrom" value="https://www.daletrust.co.uk/wp-content/uploads/">
+  <label>With this</label>
+  <input id="rwTo" value="img/uploads/">
+  <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="ghost" style="background:#fff;color:#46536B;border:1.5px solid #DCE3EC" onclick="rewrite(true)">Check how many</button>
+    <button onclick="rewrite(false)">Swap them over</button>
+  </div>
+  <p id="rwMsg" style="margin-top:10px;font-size:13.5px"></p>
+</div>
+
+
 </div>
 <script>
 const EP='https://join.daletrust.uk';
@@ -149,6 +169,42 @@ function refresh(){
   const newest=sel.slice(-8).reverse();
   $('preview').innerHTML='<table><tr><th>Date</th><th>Title</th><th>Category</th></tr>'+
     newest.map(p=>'<tr><td>'+p.publish_at.slice(0,10)+'</td><td>'+p.title.replace(/</g,'&lt;')+'</td><td>'+p.category+'</td></tr>').join('')+'</table>';
+}
+
+async function listMedia(){
+  const out=$('mediaOut');
+  out.innerHTML='Working through the articles\u2026';
+  try{
+    const d=await (await fetch(EP+'/posts/media',{headers:HDRS()})).json();
+    if(!d.ok){out.innerHTML='<span class="bad">'+d.error+'</span>';return;}
+    const byFolder={};
+    d.files.forEach(f=>{const k=f.slice(0,7);(byFolder[k]=byFolder[k]||[]).push(f);});
+    const folders=Object.keys(byFolder).sort();
+    out.innerHTML='<b>'+d.files.length+' files</b> are used across '+d.articles+' articles, in '+folders.length+' folders:'+
+      '<div style="margin-top:8px;font-size:13px;max-height:180px;overflow:auto">'+
+      folders.map(f=>f+' &mdash; '+byFolder[f].length+' files').join('<br>')+'</div>'+
+      '<button class="ghost" style="margin-top:10px;background:#fff;color:#46536B;border:1.5px solid #DCE3EC" onclick="downloadList()">Download the list</button>';
+    window._mediaFiles=d.files;
+  }catch(e){out.innerHTML='<span class="bad">Could not reach the server.</span>';}
+}
+
+function downloadList(){
+  const txt=(window._mediaFiles||[]).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
+  a.download='photographs-needed.txt'; a.click();
+}
+
+async function rewrite(preview){
+  const from=$('rwFrom').value.trim(), to=$('rwTo').value.trim();
+  if(!from){$('rwMsg').textContent='Nothing to replace.';return;}
+  if(!preview && !confirm('Swap the addresses in every article? Worth checking the count first.'))return;
+  const d=await (await fetch(EP+'/posts/rewrite',{method:'POST',headers:HDRS(),
+    body:JSON.stringify({from,to,preview})})).json();
+  if(!d.ok){$('rwMsg').innerHTML='<span class="bad">'+d.error+'</span>';return;}
+  $('rwMsg').innerHTML = preview
+    ? '<b>'+d.affected+'</b> article'+(d.affected===1?'':'s')+' contain that address.'
+    : '<span class="ok">Swapped in '+d.changed+' articles.</span>';
 }
 
 async function run(){
