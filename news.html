@@ -47,6 +47,8 @@
   article h2{font-size:clamp(24px,4vw,34px);text-transform:none;margin-bottom:6px}
   article .body{margin-top:22px}
   article .body p{margin:0 0 14px}
+  article .body img{max-width:100%;height:auto;border-radius:10px;margin:8px 0 18px;display:block}
+  article .body a{text-decoration:underline;text-underline-offset:2px}
   article .body h3{font-size:20px;text-transform:none;margin:22px 0 8px}
   article .body ul{margin:0 0 14px 22px}
   footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:20px}
@@ -70,9 +72,18 @@ function md(t){
     if(b.split('\n').every(l=>l.trim().startsWith('- ')))
       return '<ul>'+b.split('\n').map(l=>'<li>'+inline(l.trim().slice(2))+'</li>').join('')+'</ul>';
     if(b.startsWith('# ')) return '<h3>'+inline(b.slice(2))+'</h3>';
-    return '<p>'+inline(b).replace(/\n/g,'<br>')+'</p>';
+    const only=/^!\[[^\]]*\]\([^)]+\)$/.test(b);
+    return only ? inline(b) : '<p>'+inline(b).replace(/\n/g,'<br>')+'</p>';
   }).join('');
-  function inline(s){return s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');}
+  function inline(s){
+    return s
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1" loading="lazy">')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g,(m,t,u)=>{
+        const ext=/^https?:\/\//i.test(u)&&!/daletrust\.(uk|co\.uk)/i.test(u);
+        return '<a href="'+u+'"'+(ext?' target="_blank" rel="noopener"':'')+'>'+t+'</a>';
+      })
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  }
 }
 const fmt=d=>new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 const slug=new URLSearchParams(location.search).get('p');
