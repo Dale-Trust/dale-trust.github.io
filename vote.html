@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Have your say | Dale Supporters Trust</title>
+<meta name="description" content="Surveys and votes from the Dale Supporters Trust — Player of the Month, consultations and your say on Rochdale AFC.">
+<link rel="canonical" href="https://daletrust.uk/vote.html">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;color:var(--body);font-size:15.5px;line-height:1.65;background:#fff}
+  h1,h2,h3{font-family:'Oswald';text-transform:uppercase;color:var(--ink);line-height:1.15}
+  a{color:var(--royal)}
+  .hero{background:linear-gradient(120deg,var(--navy),#16305C 58%,#00417E);color:#fff;padding:42px 24px;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:0;bottom:0;right:-12%;width:42%;background:var(--royal);transform:skewX(-14deg);opacity:.35}
+  .wrap{max-width:700px;margin:0 auto;padding:0 24px}
+  .hero .wrap{position:relative}
+  .kicker{font-size:12.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#8FC1FF;margin-bottom:8px}
+  .hero h1{color:#fff;font-size:clamp(28px,5vw,44px)}
+  .hero p{color:#C7D6EC;margin-top:10px}
+  .back{display:inline-block;margin-top:12px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.07em;color:#8FC1FF;text-decoration:none}
+  section{padding:36px 0 60px}
+  .card{border:1px solid var(--line);border-left:5px solid var(--royal);border-radius:12px;padding:20px 22px;margin-bottom:14px;background:#fff}
+  .card h2{font-size:21px}
+  .card p{font-size:14.5px;margin-top:4px}
+  .tagm{display:inline-block;background:#E8F1FC;color:var(--royal);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 10px;border-radius:100px;margin-top:8px}
+  .q{border-top:1px solid var(--line);padding-top:18px;margin-top:18px}
+  .q h3{font-size:17px;text-transform:none;margin-bottom:10px}
+  .opt{display:block;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;font-size:15px}
+  .opt:hover{border-color:var(--bright);background:#F7FAFF}
+  .opt input{margin-right:10px}
+  .opt.sel{border-color:var(--royal);background:#E8F1FC}
+  input[type=text],input[type=email],textarea{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font:inherit}
+  textarea{min-height:90px}
+  label.f{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:12px 0 4px}
+  button{background:var(--royal);color:#fff;border:0;border-radius:10px;padding:14px 28px;font:600 15px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer;width:100%;margin-top:18px}
+  button:hover{background:var(--bright)}
+  .who{background:var(--wash);border-radius:10px;padding:14px 16px;font-size:14px;margin-bottom:16px}
+  .who b{color:var(--ink)}
+  .msg{font-size:15px;font-weight:600;margin-top:14px}
+  .rate{display:flex;gap:8px;flex-wrap:wrap}
+  .rate button{width:auto;margin:0;padding:10px 18px;background:#fff;color:var(--body);border:1.5px solid var(--line);font-family:'Oswald';font-size:16px}
+  .rate button.on{background:var(--royal);color:#fff;border-color:var(--royal)}
+  footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:22px}
+</style>
+</head>
+<body>
+<div class="hero"><div class="wrap">
+  <p class="kicker">Have your say</p>
+  <h1 id="heroTitle">Your view counts</h1>
+  <p id="heroSub">Votes and surveys from the Dale Supporters Trust.</p>
+  <a class="back" href="index.html">&larr; Back to the Trust</a>
+</div></div>
+<section><div class="wrap" id="out">Loading&hellip;</div></section>
+<footer>Dale Trust is the trading name of Rochdale Supporters Club Limited, a registered society (29690R).</footer>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+let survey=null, member=null, answers={};
+let msession=null; try{msession=localStorage.getItem('dt_member');}catch(e){}
+
+(async()=>{
+  if(msession){
+    try{
+      const d=await (await fetch(EP+'/member/me',{headers:{'Authorization':'Bearer '+msession}})).json();
+      if(d.ok&&d.people&&d.people.length&&d.people[0].isMember) member=d.people[0];
+    }catch(e){}
+  }
+  const slug=new URLSearchParams(location.search).get('s');
+  slug ? loadOne(slug) : loadList();
+})();
+
+async function loadList(){
+  try{
+    const d=await (await fetch(EP+'/surveys')).json();
+    if(!d.ok||!d.surveys.length){
+      $('out').innerHTML='<p>Nothing open at the moment &mdash; check back soon.</p>';return;
+    }
+    $('out').innerHTML=d.surveys.map(s=>
+      '<div class="card"><h2>'+esc(s.title)+'</h2>'+
+      (s.intro?'<p>'+esc(s.intro)+'</p>':'')+
+      (s.members_only?'<span class="tagm">Members only</span>':'')+
+      (s.closes_at?'<p style="font-size:13px;color:#7A8AA5;margin-top:6px">Closes '+new Date(s.closes_at).toLocaleDateString('en-GB',{day:'numeric',month:'long'})+'</p>':'')+
+      '<a href="vote.html?s='+encodeURIComponent(s.slug)+'"><button>'+(s.kind==='potm'?'Cast your vote':'Take part')+' &rarr;</button></a></div>').join('');
+  }catch(e){$('out').textContent='Could not load just now.';}
+}
+
+async function loadOne(slug){
+  try{
+    const r=await fetch(EP+'/survey?slug='+encodeURIComponent(slug));
+    const d=await r.json();
+    if(!d.ok){$('out').innerHTML='<div class="card"><p>'+esc(d.error)+'</p><p style="margin-top:10px"><a href="vote.html">See what else is open</a></p></div>';return;}
+    survey=d.survey;
+    $('heroTitle').textContent=survey.title;
+    $('heroSub').textContent=survey.intro||'';
+    document.title=survey.title+' | Dale Supporters Trust';
+    render();
+  }catch(e){$('out').textContent='Could not load just now.';}
+}
+
+function render(){
+  let html='<div class="card">';
+  html += member
+    ? '<div class="who"><b>Signed in as '+esc(member.name)+'</b> &mdash; your vote will be counted as a verified member.</div>'
+    : (survey.members_only
+        ? '<div class="who"><b>This one is for Trust members.</b> <a href="members.html">Sign in</a> to take part.</div>'
+        : '<div class="who">You can take part as a supporter. <a href="members.html">Sign in</a> first if you&rsquo;re a Trust member and your response will be marked as verified.</div>');
+
+  survey.questions.forEach(q=>{
+    html+='<div class="q"><h3>'+esc(q.question)+(q.required?'':' <span style="color:#7A8AA5;font-weight:400;font-size:14px">(optional)</span>')+'</h3>';
+    if(q.kind==='single'||q.kind==='multi'){
+      html+=q.options.map((o,i)=>
+        '<label class="opt" id="o'+q.id+'_'+i+'"><input type="'+(q.kind==='single'?'radio':'checkbox')+'" name="q'+q.id+'" value="'+esc(o)+'" onchange="pick('+q.id+','+(q.kind==='single')+')">'+esc(o)+'</label>').join('');
+    } else if(q.kind==='rating'){
+      html+='<div class="rate" id="r'+q.id+'">'+[1,2,3,4,5].map(n=>'<button type="button" onclick="rate('+q.id+','+n+')">'+n+'</button>').join('')+'</div>';
+    } else {
+      html+='<textarea id="t'+q.id+'" placeholder="Your answer" oninput="answers['+q.id+']=this.value"></textarea>';
+    }
+    html+='</div>';
+  });
+
+  if(!member && !survey.members_only){
+    html+='<div class="q"><label class="f">Your name</label><input type="text" id="vName">'+
+      '<label class="f">Your email</label><input type="email" id="vEmail">'+
+      '<p style="font-size:13px;color:#7A8AA5;margin-top:6px">Only used to make sure everyone answers once. We won&rsquo;t add you to any mailing list.</p></div>';
+  }
+  html+=(survey.members_only&&!member) ? '' : '<button onclick="submit()">Send my answers</button>';
+  html+='<p class="msg" id="vmsg"></p></div>';
+  $('out').innerHTML=html;
+}
+
+function pick(qid,single){
+  const boxes=[...document.querySelectorAll('[name=q'+qid+']')];
+  boxes.forEach(b=>b.closest('.opt').classList.toggle('sel',b.checked));
+  answers[qid]= single ? (boxes.find(b=>b.checked)||{}).value : boxes.filter(b=>b.checked).map(b=>b.value);
+}
+function rate(qid,n){
+  answers[qid]=n;
+  [...document.querySelectorAll('#r'+qid+' button')].forEach((b,i)=>b.classList.toggle('on',i<n));
+}
+
+async function submit(){
+  const msg=$('vmsg');
+  for(const q of survey.questions){
+    if(q.required){
+      const a=answers[q.id];
+      if(a===undefined||a===''||(Array.isArray(a)&&!a.length)){
+        msg.innerHTML='<span style="color:var(--red)">Please answer: '+esc(q.question)+'</span>';return;
+      }
+    }
+  }
+  const body={survey_id:survey.id, answers};
+  if(!member){
+    body.name=($('vName')||{}).value||''; body.email=($('vEmail')||{}).value||'';
+    if(!body.name.trim()||!body.email.trim()){msg.innerHTML='<span style="color:var(--red)">Please give your name and email.</span>';return;}
+  }
+  msg.textContent='Sending…';
+  const headers={'Content-Type':'application/json'};
+  if(msession) headers['Authorization']='Bearer '+msession;
+  const d=await (await fetch(EP+'/survey/respond',{method:'POST',headers,body:JSON.stringify(body)})).json();
+  if(!d.ok){msg.innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return;}
+  $('out').innerHTML='<div class="card"><h2>Thank you</h2><p>Your '+(survey.kind==='potm'?'vote':'answers')+' '+
+    (d.verified?'have been counted as a verified member.':'have been recorded.')+'</p>'+
+    '<p style="margin-top:12px"><a href="vote.html">See what else is open</a> &middot; <a href="index.html">Back to the Trust</a></p></div>';
+}
+</script>
+</body>
+</html>

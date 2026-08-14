@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surveys &amp; voting | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:21px}.top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:900px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:10px 0 4px}
+  input,select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
+  textarea{min-height:70px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media(max-width:640px){.g2,.g3{grid-template-columns:1fr}}
+  button{background:var(--royal);color:#fff;border:0;border-radius:9px;padding:11px 20px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+  button.green{background:var(--green)}button.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line)}
+  button.sm{padding:6px 12px;font-size:11.5px}
+  .row{display:flex;gap:12px;align-items:center;padding:12px 6px;border-bottom:1px solid var(--line)}
+  .row b{color:var(--ink)}.row small{color:#7A8AA5;display:block;font-size:12.5px}
+  .grow{flex:1;min-width:0}
+  .pill{font-size:10.5px;font-weight:700;text-transform:uppercase;padding:3px 9px;border-radius:100px;color:#fff}
+  .draft{background:#8C9299}.open{background:var(--green)}.closed{background:#5B6472}
+  .qbox{border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:0 10px 10px 0;padding:12px 14px;margin-bottom:10px}
+  .bar{background:var(--wash);border-radius:6px;height:26px;position:relative;overflow:hidden;margin-top:4px}
+  .bar i{display:block;height:100%;background:var(--royal)}
+  .bar span{position:absolute;left:10px;top:3px;font-size:13px;font-weight:600;color:var(--ink)}
+  .msg{font-size:13.5px;font-weight:600;margin-top:10px}
+  #editor,#results{display:none}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>Surveys &amp; voting</h1><small>Player of the Month, consultations, and anything else you want to ask</small></div>
+<div class="wrap">
+
+<div class="panel">
+  <h2>Surveys and votes</h2>
+  <div id="list">Loading…</div>
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="ghost" onclick="newSurvey('potm')">+ New Player of the Month vote</button>
+    <button class="ghost" onclick="newSurvey('survey')">+ New survey</button>
+  </div>
+</div>
+
+<div class="panel" id="editor">
+  <h2 id="eTitle">New</h2>
+  <label>Title</label><input id="s_title" placeholder="e.g. Player of the Month — August">
+  <label>Introduction (optional)</label><textarea id="s_intro" placeholder="A line or two explaining what this is about"></textarea>
+  <div class="g3">
+    <div><label>Status</label><select id="s_status">
+      <option value="draft">Draft — not visible</option><option value="open">Open</option><option value="closed">Closed</option></select></div>
+    <div><label>Who can take part</label><select id="s_members"><option value="0">Any Dale supporter</option><option value="1">Trust members only</option></select></div>
+    <div><label>Closes (optional)</label><input id="s_closes" type="datetime-local"></div>
+  </div>
+
+  <h2 style="margin-top:20px">Questions</h2>
+  <div id="questions"></div>
+  <button class="ghost sm" onclick="addQuestion()">+ Add a question</button>
+
+  <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="green" onclick="saveSurvey()">Save</button>
+    <button class="ghost" onclick="document.getElementById('editor').style.display='none'">Close</button>
+    <a id="viewLink" href="#" target="_blank" style="display:none"><button class="ghost" type="button">Open the public page &rarr;</button></a>
+  </div>
+  <p class="msg" id="emsg"></p>
+</div>
+
+<div class="panel" id="results">
+  <h2 id="rTitle">Results</h2>
+  <div id="rBody"></div>
+  <div style="margin-top:14px"><button class="ghost" onclick="document.getElementById('results').style.display='none'">Close</button></div>
+</div>
+
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
+let editing=null, qs=[];
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+
+async function load(){
+  const d=await (await fetch(EP+'/surveys/admin',{headers:H()})).json();
+  if(!d.ok){$('list').textContent=d.error;return;}
+  $('list').innerHTML=d.surveys.length? d.surveys.map(s=>
+    '<div class="row"><span class="pill '+s.status+'">'+s.status+'</span>'+
+    '<div class="grow"><b>'+esc(s.title)+'</b><small>'+(s.kind==='potm'?'Player of the Month':'Survey')+
+    ' · '+s.responses+' response'+(s.responses===1?'':'s')+' ('+s.members+' verified members)'+
+    (s.members_only?' · members only':'')+'</small></div>'+
+    '<button class="sm ghost" onclick="editSurvey('+s.id+')">Edit</button> '+
+    '<button class="sm" onclick="showResults('+s.id+')">Results</button></div>').join('')
+    : '<p style="color:#7A8AA5">Nothing set up yet.</p>';
+}
+
+function newSurvey(kind){
+  editing=null; qs=[];
+  $('eTitle').textContent = kind==='potm' ? 'New Player of the Month vote' : 'New survey';
+  $('s_title').value = kind==='potm' ? 'Player of the Month' : '';
+  $('s_intro').value = kind==='potm' ? 'Who was your pick this month?' : '';
+  $('s_status').value='draft'; $('s_members').value='0'; $('s_closes').value='';
+  $('viewLink').style.display='none'; $('emsg').textContent='';
+  window._kind=kind;
+  if(kind==='potm') qs=[{question:'Who is your Player of the Month?',kind:'single',options:['','','',''],required:true}];
+  drawQuestions();
+  $('editor').style.display='block'; $('results').style.display='none';
+  $('editor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function editSurvey(id){
+  const d=await (await fetch(EP+'/survey/admin?id='+id,{headers:H()})).json();
+  if(!d.ok){alert(d.error);return;}
+  const s=d.survey; editing=s.id; window._kind=s.kind;
+  $('eTitle').textContent=s.title;
+  $('s_title').value=s.title; $('s_intro').value=s.intro||'';
+  $('s_status').value=s.status; $('s_members').value=String(s.members_only||0);
+  $('s_closes').value=s.closes_at?s.closes_at.replace(' ','T').slice(0,16):'';
+  qs=s.questions.map(q=>({question:q.question,kind:q.kind,options:q.options.length?q.options:['',''],required:!!q.required}));
+  drawQuestions();
+  $('viewLink').href='vote.html?s='+encodeURIComponent(s.slug);
+  $('viewLink').style.display=s.status==='open'?'inline-block':'none';
+  $('emsg').textContent='';
+  $('editor').style.display='block'; $('results').style.display='none';
+  $('editor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function drawQuestions(){
+  $('questions').innerHTML=qs.map((q,i)=>
+    '<div class="qbox">'+
+    '<label>Question '+(i+1)+'</label><input value="'+esc(q.question)+'" oninput="qs['+i+'].question=this.value">'+
+    '<div class="g2"><div><label>Type of answer</label><select onchange="setKind('+i+',this.value)">'+
+      ['single|One choice','multi|Several choices','rating|Rating out of 5','text|Written answer']
+      .map(o=>{const[v,l]=o.split('|');return '<option value="'+v+'"'+(q.kind===v?' selected':'')+'>'+l+'</option>';}).join('')+
+    '</select></div>'+
+    '<div><label>Must be answered?</label><select onchange="setReq('+i+',this.value)">'+
+      '<option value="1"'+(q.required?' selected':'')+'>Yes</option><option value="0"'+(!q.required?' selected':'')+'>Optional</option></select></div></div>'+
+    ((q.kind==='single'||q.kind==='multi') ?
+      '<label>Choices (one per line)</label><textarea oninput="qs['+i+'].options=this.value.split(String.fromCharCode(10))">'+esc(q.options.join('\n'))+'</textarea>' : '')+
+    '<div style="margin-top:8px"><button class="ghost sm" onclick="qs.splice('+i+',1);drawQuestions()">Remove</button></div>'+
+    '</div>').join('');
+}
+function setReq(i,v){qs[i].required=(v==='1');}
+function setKind(i,v){qs[i].kind=v;if((v==='single'||v==='multi')&&!qs[i].options.length)qs[i].options=['',''];drawQuestions();}
+function addQuestion(){qs.push({question:'',kind:'single',options:['',''],required:true});drawQuestions();}
+
+async function saveSurvey(){
+  const body={id:editing,title:$('s_title').value.trim(),intro:$('s_intro').value.trim(),
+    kind:window._kind||'survey',status:$('s_status').value,members_only:$('s_members').value==='1',
+    closes_at:$('s_closes').value?new Date($('s_closes').value).toISOString():null,
+    questions:qs.map(q=>({...q,options:(q.options||[]).map(o=>String(o).trim()).filter(Boolean)}))};
+  if(!body.title){$('emsg').innerHTML='<span style="color:var(--red)">A title is needed.</span>';return;}
+  const d=await (await fetch(EP+'/survey/save',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+  if(!d.ok){$('emsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return;}
+  editing=d.id;
+  $('emsg').innerHTML='<span style="color:var(--green)">Saved.</span>'+
+    (body.status==='open'?' Share it: <b>daletrust.uk/vote.html?s='+esc(d.slug)+'</b>':'');
+  $('viewLink').href='vote.html?s='+encodeURIComponent(d.slug);
+  $('viewLink').style.display=body.status==='open'?'inline-block':'none';
+  load();
+}
+
+async function showResults(id){
+  const d=await (await fetch(EP+'/survey/results?id='+id,{headers:H()})).json();
+  if(!d.ok){alert(d.error);return;}
+  $('rTitle').textContent='Results — '+d.survey.title;
+  let html='<p style="font-size:15px"><b style="font-family:Oswald;font-size:26px;color:var(--ink)">'+d.total+'</b> response'+(d.total===1?'':'s')+
+    ' &middot; <b>'+d.verified_members+'</b> from verified members</p>';
+  d.results.forEach(r=>{
+    html+='<div style="margin-top:18px"><b style="color:var(--ink)">'+esc(r.question)+'</b>';
+    if(r.kind==='text'){
+      html+= r.answers.length ? '<div style="margin-top:6px;max-height:260px;overflow:auto">'+r.answers.map(a=>
+        '<div style="background:var(--wash);border-left:3px solid var(--royal);padding:8px 12px;margin-bottom:6px;border-radius:0 6px 6px 0;font-size:14px">'+
+        esc(a.text)+(a.member?' <span style="color:#1E8E5A;font-size:11.5px;font-weight:700">VERIFIED MEMBER</span>':'')+'</div>').join('')+'</div>'
+        : '<p style="color:#7A8AA5;font-size:14px">No answers yet.</p>';
+    } else {
+      const max=Math.max(1,...r.tally.map(t=>t.all));
+      html+= r.tally.length ? r.tally.map(t=>
+        '<div style="margin-top:6px"><div class="bar"><i style="width:'+Math.round(t.all/max*100)+'%"></i>'+
+        '<span>'+esc(t.option)+' &mdash; '+t.all+(t.members?' ('+t.members+' members)':'')+'</span></div></div>').join('')
+        : '<p style="color:#7A8AA5;font-size:14px">No answers yet.</p>';
+    }
+    html+='</div>';
+  });
+  $('rBody').innerHTML=html;
+  $('results').style.display='block'; $('editor').style.display='none';
+  $('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+load();
+</script>
+</body>
+</html>
