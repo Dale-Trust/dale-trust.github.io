@@ -75,6 +75,21 @@ function htmlToText(html){
     .replace(/<!--[\s\S]*?-->/g,'')
     .replace(/<script[\s\S]*?<\/script>/gi,'')
     .replace(/<style[\s\S]*?<\/style>/gi,'')
+    .replace(/<figcaption[\s\S]*?<\/figcaption>/gi,'')
+    .replace(/<img[^>]*>/gi, tag => {
+      const src=(tag.match(/src=["']([^"']+)["']/i)||[])[1];
+      if(!src) return '';
+      const alt=(tag.match(/alt=["']([^"']*)["']/i)||[])[1]||'';
+      return '\n\n!['+alt+']('+src+')\n\n';
+    })
+    .replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, (m,inner) => {
+      const href=(m.match(/href=["']([^"']+)["']/i)||[])[1];
+      const label=inner.replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+      if(!href) return label;
+      if(!label) return '';
+      if(label.replace(/\/$/,'')===href.replace(/\/$/,'')) return href;
+      return '['+label+']('+href+')';
+    })
     .replace(/<h[1-6][^>]*>/gi,'\n\n# ').replace(/<\/h[1-6]>/gi,'\n\n')
     .replace(/<li[^>]*>/gi,'\n- ').replace(/<\/li>/gi,'')
     .replace(/<(ul|ol)[^>]*>/gi,'\n').replace(/<\/(ul|ol)>/gi,'\n')
