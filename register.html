@@ -38,7 +38,7 @@
   .tag{font-size:11px;background:var(--wash);border:1px solid var(--line);padding:2px 8px;border-radius:100px;color:#7A8AA5;flex:none}
   .msg{font-size:13.5px;font-weight:600;margin-top:10px}
   .warn{background:#FFF9E8;border:1px solid #EAD198;border-left:4px solid var(--gold);padding:11px 14px;border-radius:0 8px 8px 0;font-size:13.5px;margin-top:10px}
-  #editor,#adder{display:none}
+  #editor{display:none}
   .hist{font-size:13px;color:#7A8AA5;margin-top:8px}
   .hist a{color:var(--royal);cursor:pointer}
 </style>
@@ -47,18 +47,6 @@
 <div class="back"><a href="admin.html">&larr; Back to admin</a></div>
 <div class="top"><h1>Membership register</h1><small>Look someone up, correct their details, or add a member who joined at the desk or by post</small></div>
 <div class="wrap">
-
-<div class="panel">
-  <div class="searchrow">
-    <div><label>Search by name, email, member number, postcode or town</label>
-      <input id="q" placeholder="e.g. Culshaw, OL11, DT-2026-1002" onkeydown="if(event.key==='Enter')search()"></div>
-    <div><label>Season</label><select id="season" onchange="search()"><option value="">All seasons</option></select></div>
-    <div><button onclick="search()">Search</button></div>
-  </div>
-  <p class="msg" id="count"></p>
-  <div id="list"></div>
-  <div style="margin-top:14px"><button class="ghost" onclick="openAdder()">+ Add a member by hand</button></div>
-</div>
 
 <!-- ADD -->
 <div class="panel" id="adder">
@@ -99,9 +87,20 @@
   <label>Notes</label><input id="a_notes" placeholder="Anything worth recording">
   <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
     <button class="green" onclick="addMember(false)">Add to the register</button>
-    <button class="ghost" onclick="document.getElementById('adder').style.display='none'">Cancel</button>
+    <button class="ghost" onclick="clearAdder()">Clear the form</button>
   </div>
   <p class="msg" id="amsg"></p>
+</div>
+
+<div class="panel">
+  <div class="searchrow">
+    <div><label>Search by name, email, member number, postcode or town</label>
+      <input id="q" placeholder="e.g. Culshaw, OL11, DT-2026-1002" onkeydown="if(event.key==='Enter')search()"></div>
+    <div><label>Season</label><select id="season" onchange="search()"><option value="">All seasons</option></select></div>
+    <div><button onclick="search()">Search</button></div>
+  </div>
+  <p class="msg" id="count"></p>
+  <div id="list"></div>
 </div>
 
 <!-- EDIT -->
@@ -206,7 +205,7 @@ async function openMember(id){
   $('e_shareWrap').style.display=m.membership_type==='Exile'?'block':'none';
   if(m.membership_type==='Exile')$('e_share').value=m.exile_transport_share||'No';
   $('emsg').textContent='';
-  $('editor').style.display='block'; $('adder').style.display='none';
+  $('editor').style.display='block';
   $('editor').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -224,12 +223,9 @@ async function saveMember(){
   if(d.ok) search();
 }
 
-function openAdder(){
-  $('adder').style.display='block'; $('editor').style.display='none';
-  $('a_date').value=new Date().toISOString().slice(0,10);
-  $('amsg').textContent='';
-  $('adder').scrollIntoView({behavior:'smooth',block:'start'});
-  $('a_first').focus();
+function clearAdder(){
+  ['a_first','a_last','a_email','a_mobile','a_ad1','a_ad2','a_town','a_county','a_pc','a_gender','a_dob','a_notes','a_method'].forEach(i=>$(i).value='');
+  $('a_don').value='0'; $('amsg').textContent=''; $('a_first').focus();
 }
 
 async function addMember(force){
@@ -257,6 +253,7 @@ async function addMember(force){
   search();
 }
 
+$('a_date').value=new Date().toISOString().slice(0,10);
 search();
 </script>
 </body>
