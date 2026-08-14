@@ -91,7 +91,9 @@
     <textarea id="body" placeholder="Just write. Blank line = new paragraph.
 # A line starting with # becomes a heading
 **bold** for emphasis
-- lines starting with - become a bullet list"></textarea>
+- lines starting with - become a bullet list
+[link text](https://example.com) makes a link
+![](https://example.com/photo.jpg) adds a photo"></textarea>
     <p class="hint">No formatting skills needed &mdash; the preview shows exactly how it publishes.</p>
     <div class="pubrow">
       <div class="seg" id="mode">
@@ -161,7 +163,12 @@ function md(t){
     if(b.startsWith('# ')) return '<h3>'+inline(b.slice(2))+'</h3>';
     return '<p>'+inline(b).replace(/\n/g,'<br>')+'</p>';
   }).join('');
-  function inline(s){return s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');}
+  function inline(s){
+    return s
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:6px 0">')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  }
 }
 function render(){
   $('pvCat').textContent=$('cat').value;
