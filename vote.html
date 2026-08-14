@@ -44,6 +44,13 @@
   .rate{display:flex;gap:8px;flex-wrap:wrap}
   .rate button{width:auto;margin:0;padding:10px 18px;background:#fff;color:var(--body);border:1.5px solid var(--line);font-family:'Oswald';font-size:16px}
   .rate button.on{background:var(--royal);color:#fff;border-color:var(--royal)}
+  .rbar{background:var(--wash);border-radius:8px;height:34px;position:relative;overflow:hidden;margin-bottom:8px}
+  .rbar i{display:block;height:100%;background:var(--royal)}
+  .rbar.win i{background:var(--green)}
+  .rbar span{position:absolute;left:12px;top:6px;font-size:14.5px;font-weight:600;color:var(--ink)}
+  .rbar em{position:absolute;right:12px;top:6px;font-size:14px;font-style:normal;color:var(--ink);font-weight:700}
+  .winner{background:#EAF7F0;border:1px solid #B7E0CB;border-left:5px solid var(--green);border-radius:0 12px 12px 0;padding:16px 18px;margin-bottom:16px}
+  .winner b{font-family:'Oswald';font-size:24px;text-transform:uppercase;color:var(--ink);display:block}
   footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:22px}
 </style>
 </head>
@@ -70,8 +77,10 @@ let msession=null; try{msession=localStorage.getItem('dt_member');}catch(e){}
       if(d.ok&&d.people&&d.people.length&&d.people[0].isMember) member=d.people[0];
     }catch(e){}
   }
-  const slug=new URLSearchParams(location.search).get('s');
-  slug ? loadOne(slug) : loadList();
+  const p=new URLSearchParams(location.search);
+  if(p.get('r')) showResults(p.get('r'));
+  else if(p.get('s')) loadOne(p.get('s'));
+  else loadList();
 })();
 
 async function loadList(){
@@ -85,8 +94,44 @@ async function loadList(){
       (s.intro?'<p>'+esc(s.intro)+'</p>':'')+
       (s.members_only?'<span class="tagm">Members only</span>':'')+
       (s.closes_at?'<p style="font-size:13px;color:#7A8AA5;margin-top:6px">Closes '+new Date(s.closes_at).toLocaleDateString('en-GB',{day:'numeric',month:'long'})+'</p>':'')+
-      '<a href="vote.html?s='+encodeURIComponent(s.slug)+'"><button>'+(s.kind==='potm'?'Cast your vote':'Take part')+' &rarr;</button></a></div>').join('');
+      '<a href="vote.html?s='+encodeURIComponent(s.slug)+'"><button>'+(s.kind==='potm'?'Cast your vote':'Take part')+' &rarr;</button></a>'+
+      '<p style="margin-top:10px;font-size:14px"><a href="vote.html?r='+encodeURIComponent(s.slug)+'">See the results</a></p></div>').join('');
   }catch(e){$('out').textContent='Could not load just now.';}
+}
+
+async function showResults(slug){
+  try{
+    const d=await (await fetch(EP+'/survey/public-results?slug='+encodeURIComponent(slug))).json();
+    if(!d.ok){
+      $('out').innerHTML='<div class="card"><p>'+esc(d.error)+'</p>'+
+        '<p style="margin-top:10px"><a href="vote.html">See what else is open</a></p></div>';
+      return;
+    }
+    $('heroTitle').textContent=d.title;
+    $('heroSub').textContent=d.closed?'Results':'Results so far';
+    document.title=d.title+' — results | Dale Supporters Trust';
+    let html='<div class="card">';
+    html+='<p style="font-size:15px"><b style="font-family:Oswald;font-size:30px;color:var(--ink)">'+d.total+'</b> '+
+      (d.total===1?'response':'responses')+' &middot; <b>'+d.verified_members+'</b> from verified Trust members</p>';
+    d.results.forEach((r,i)=>{
+      if(r.kind==='text'){
+        html+='<div class="q"><h3>'+esc(r.question)+'</h3><p style="color:#7A8AA5">'+r.count+' written answer'+(r.count===1?'':'s')+' \u2014 not published.</p></div>';
+        return;
+      }
+      const max=Math.max(1,...r.tally.map(t=>t.all));
+      if(i===0&&d.kind==='potm'&&d.closed&&r.tally.length){
+        html+='<div class="winner"><span style="font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:#14653F;font-weight:700">Winner</span>'+
+          '<b>'+esc(r.tally[0].option)+'</b><span style="font-size:14px">'+r.tally[0].all+' votes</span></div>';
+      }
+      html+='<div class="q"><h3>'+esc(r.question)+'</h3>';
+      html+=r.tally.map((t,j)=>'<div class="rbar'+(j===0&&d.closed?' win':'')+'">'+
+        '<i style="width:'+Math.round(t.all/max*100)+'%"></i>'+
+        '<span>'+esc(t.option)+'</span><em>'+t.all+'</em></div>').join('');
+      html+='</div>';
+    });
+    html+='<p style="margin-top:18px;font-size:14px"><a href="vote.html">See what else is open</a> &middot; <a href="index.html">Back to the Trust</a></p></div>';
+    $('out').innerHTML=html;
+  }catch(e){$('out').textContent='Could not load the results just now.';}
 }
 
 async function loadOne(slug){
@@ -165,7 +210,7 @@ async function submit(){
   if(!d.ok){msg.innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return;}
   $('out').innerHTML='<div class="card"><h2>Thank you</h2><p>Your '+(survey.kind==='potm'?'vote':'answers')+' '+
     (d.verified?'have been counted as a verified member.':'have been recorded.')+'</p>'+
-    '<p style="margin-top:12px"><a href="vote.html">See what else is open</a> &middot; <a href="index.html">Back to the Trust</a></p></div>';
+    '<p style="margin-top:12px"><a href="vote.html?r='+encodeURIComponent(survey.slug)+'">See the results</a> &middot; <a href="vote.html">What else is open</a> &middot; <a href="index.html">Back to the Trust</a></p></div>';
 }
 </script>
 </body>

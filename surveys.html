@@ -64,6 +64,13 @@
     <div><label>Who can take part</label><select id="s_members"><option value="0">Any Dale supporter</option><option value="1">Trust members only</option></select></div>
     <div><label>Closes (optional)</label><input id="s_closes" type="datetime-local"></div>
   </div>
+  <label>Show the results publicly</label>
+  <select id="s_results">
+    <option value="closed">Once voting has closed</option>
+    <option value="always">Straight away, as votes come in</option>
+    <option value="never">Never &mdash; officers only</option>
+  </select>
+  <p style="font-size:12.5px;color:#7A8AA5;margin-top:4px">Written answers are never published, whichever you choose &mdash; only the counts.</p>
 
   <h2 style="margin-top:20px">Questions</h2>
   <div id="questions"></div>
@@ -145,7 +152,7 @@ function newSurvey(kind){
   $('eTitle').textContent = kind==='potm' ? 'New Player of the Month vote' : 'New survey';
   $('s_title').value = kind==='potm' ? 'Player of the Month' : '';
   $('s_intro').value = kind==='potm' ? 'Who was your pick this month?' : '';
-  $('s_status').value='draft'; $('s_members').value='0'; $('s_closes').value='';
+  $('s_status').value='draft'; $('s_members').value='0'; $('s_closes').value=''; $('s_results').value='closed';
   $('viewLink').style.display='none'; $('sendPanel').style.display='none'; $('emsg').textContent='';
   window._kind=kind;
   if(kind==='potm') qs=[{question:'Who is your Player of the Month?',kind:'single',options:['','','',''],required:true}];
@@ -162,6 +169,7 @@ async function editSurvey(id){
   $('s_title').value=s.title; $('s_intro').value=s.intro||'';
   $('s_status').value=s.status; $('s_members').value=String(s.members_only||0);
   $('s_closes').value=s.closes_at?s.closes_at.replace(' ','T').slice(0,16):'';
+  $('s_results').value=s.results_visible||'closed';
   qs=s.questions.map(q=>({question:q.question,kind:q.kind,options:q.options.length?q.options:['',''],required:!!q.required}));
   drawQuestions();
   $('viewLink').href='vote.html?s='+encodeURIComponent(s.slug);
@@ -196,6 +204,7 @@ async function saveSurvey(){
   const body={id:editing,title:$('s_title').value.trim(),intro:$('s_intro').value.trim(),
     kind:window._kind||'survey',status:$('s_status').value,members_only:$('s_members').value==='1',
     closes_at:$('s_closes').value?new Date($('s_closes').value).toISOString():null,
+    results_visible:$('s_results').value,
     questions:qs.map(q=>({...q,options:(q.options||[]).map(o=>String(o).trim()).filter(Boolean)}))};
   if(!body.title){$('emsg').innerHTML='<span style="color:var(--red)">A title is needed.</span>';return;}
   const d=await (await fetch(EP+'/survey/save',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
