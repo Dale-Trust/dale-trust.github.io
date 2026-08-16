@@ -16,6 +16,11 @@
   .top .who{margin-left:auto;text-align:right;font-size:13px;color:#C7D6EC}
   .top .who a{color:#8FC1FF;font-size:12px}
   .wrap{max-width:980px;margin:0 auto;padding:20px}
+  .waiting{background:#FFF9E8;border:1px solid #EAD198;border-left:5px solid var(--gold);border-radius:0 12px 12px 0;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .waiting b{color:var(--ink);font-family:'Oswald';text-transform:uppercase;font-size:17px;display:block}
+  .waiting span{font-size:14px;display:block;margin-top:2px}
+  .waiting a{margin-left:auto;background:var(--royal);color:#fff;text-decoration:none;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:11px 20px;border-radius:9px;white-space:nowrap}
+  .badge{display:inline-block;background:var(--gold);color:#3a2c00;font-size:12px;font-weight:700;padding:2px 9px;border-radius:100px;margin-left:8px;vertical-align:2px}
   .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
   .card h2{font-size:15px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
   input{padding:11px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);width:100%}
@@ -46,6 +51,7 @@
   <div class="who" id="who"></div>
 </div>
 <div class="wrap">
+  <div id="waitingBanner"></div>
 <div id="login" class="card">
   <h2 style="border:0;padding:0;font-size:18px">Sign in</h2>
   <p style="font-size:13.5px;margin-top:6px">Enter your officer email — we'll send you a one-tap sign-in link. No password to remember, ever.</p>
@@ -146,6 +152,7 @@ function show(){
   if(me.can_posts) tile('fixtures.html','Fixtures &amp; results','Put the score in \u2014 the home page updates itself');
   if(me.can_posts) tile('tools/compose.html','Post composer', me.can_publish ? 'Write, publish and email it out' : 'Write something — it goes for checking before it appears');
   if(me.can_articles) tile('posts.html','Manage articles','Find, edit, approve or archive anything on the site');
+  if(me.can_articles) checkQueue();
   if(me.can_surveys) tile('surveys.html','Surveys &amp; voting','Player of the Month, consultations and results');
   if(me.can_articles) tile('tools/post-import.html','Import old posts','Republish the WordPress archive onto the new site');
   if(me.can_board) tile('board.html','Board figures','Membership at a glance \u2014 live, no personal data');
@@ -154,6 +161,27 @@ function show(){
   tile('tools/coach-poster.html','Coach poster maker','Matchday travel posters in four fields');
   if(me.is_admin){$('officersCard').style.display='block';loadOfficers();$('backupCard').style.display='block';loadBackupCounts();$('retentionCard').style.display='block';loadRetention();}
 }
+async function checkQueue(){
+  try{
+    const d=await (await fetch(EP+'/posts/queue',{headers:HDRS()})).json();
+    if(!d.ok || !d.waiting.length) return;
+    const n=d.waiting.length;
+    const names=[...new Set(d.waiting.map(p=>p.submitted_by||p.author))];
+    $('waitingBanner').innerHTML='<div class="waiting"><div>'+
+      '<b>'+n+' piece'+(n===1?'':'s')+' waiting to be checked</b>'+
+      '<span>Written by '+names.join(' and ')+'. '+
+      (d.canApprove?'Nothing appears on the website until you approve it.':'Waiting for someone who can publish.')+'</span></div>'+
+      '<a href="posts.html">'+(d.canApprove?'Read and decide':'Take a look')+' &rarr;</a></div>';
+    // and a badge on the tile itself
+    document.querySelectorAll('.tile').forEach(t=>{
+      if(t.getAttribute('href')==='posts.html'){
+        const hh=t.querySelector('b');
+        if(hh && !hh.querySelector('.badge')) hh.insertAdjacentHTML('beforeend','<span class="badge">'+n+'</span>');
+      }
+    });
+  }catch(e){}
+}
+
 async function loadBackupCounts(){
   try{
     const d=await (await fetch(EP+'/backup/summary',{headers:HDRS()})).json();
