@@ -72,7 +72,11 @@
 <footer>Dale Supporters Trust &middot; board use</footer>
 <script>
 const EP='https://join.daletrust.uk';
+// Signed in to the admin area? Use that. Otherwise fall back to the page key.
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
 const KEY='REPLACE_WITH_TASKS_KEY';
+const AUTH=()=>session?{'Authorization':'Bearer '+session}:{};
+const KEYQ=()=>session?'':('?key='+encodeURIComponent(KEY));
 const $=id=>document.getElementById(id);
 let tasks=[], filter='all', who='';
 const NAMES=['— your name —','Emma Loynd','Scott Goulding','Murray Knight','Vince Ashall','Michael Shepherd',
@@ -84,8 +88,13 @@ function setFilter(b){document.querySelectorAll('.filters button').forEach(x=>x.
 
 async function load(){
   try{
-    const d=await (await fetch(EP+'/tasks?key='+encodeURIComponent(KEY))).json();
-    if(!d.ok){$('msg').textContent=d.error||'Could not load the list.';return;}
+    const d=await (await fetch(EP+'/tasks'+KEYQ(),{headers:AUTH()})).json();
+    if(!d.ok){
+      $('msg').innerHTML = session
+        ? (d.error||'Could not load the list.')
+        : 'Please <a href="admin.html" style="color:#0057A7">sign in to the admin area</a> first, then come back to this page.';
+      return;
+    }
     tasks=d.tasks;
     const open=tasks.filter(t=>t.status==='open').length;
     $('counts').textContent=tasks.length+' items \u00b7 '+open+' still open \u00b7 '+(tasks.length-open)+' answered';
@@ -151,13 +160,13 @@ async function send(id){
   if(name.indexOf('—')===0){alert('Please choose your name next to the Save button.');return;}
   who=name; try{localStorage.setItem('dt_who',who);}catch(e){}
   const body=$('t'+id).value.trim(); if(!body)return;
-  const d=await (await fetch(EP+'/tasks/respond?key='+encodeURIComponent(KEY),{method:'POST',
-    headers:{'Content-Type':'application/json'},body:JSON.stringify({task_id:id,body,author:name})})).json();
+  const d=await (await fetch(EP+'/tasks/respond'+KEYQ(),{method:'POST',
+    headers:Object.assign({'Content-Type':'application/json'},AUTH()),body:JSON.stringify({task_id:id,body,author:name})})).json();
   if(d.ok) load(); else alert(d.error||'Could not save.');
 }
 async function setStatus(id,status){
-  const d=await (await fetch(EP+'/tasks/status?key='+encodeURIComponent(KEY),{method:'POST',
-    headers:{'Content-Type':'application/json'},body:JSON.stringify({task_id:id,status,author:who})})).json();
+  const d=await (await fetch(EP+'/tasks/status'+KEYQ(),{method:'POST',
+    headers:Object.assign({'Content-Type':'application/json'},AUTH()),body:JSON.stringify({task_id:id,status,author:who})})).json();
   if(d.ok) load();
 }
 load();
