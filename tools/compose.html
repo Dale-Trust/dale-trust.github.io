@@ -91,9 +91,9 @@
     <label>Header image <small style="text-transform:none">(optional)</small></label>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <input type="file" id="img" accept="image/*" onchange="uploadImage(this)" style="flex:1;min-width:180px">
-      <button type="button" class="save" style="margin:0" onclick="uploadImage(document.getElementById('img'))">Add the picture</button>
+      <button type="button" class="save" id="addPicBtn" style="margin:0" onclick="uploadImage(document.getElementById('img'))">Add the picture</button>
     </div>
-    <p class="hint" id="imgMsg" style="margin-top:6px">A picture at the top of the piece. It is added to your words automatically.</p>
+    <p class="hint" id="imgMsg" style="margin-top:6px">A picture at the top of the piece. It is kept separate from your words.</p>
     <div id="imgPreview"></div>
     <label>Your words</label>
     <textarea id="body" lang="en-GB" spellcheck="true" placeholder="Just write. Blank line = new paragraph.
@@ -110,8 +110,8 @@
         <button type="button" data-m="later">Schedule</button>
       </div>
       <input type="datetime-local" id="when">
-      <button class="save" onclick="saveDraft()">Save</button>
-      <button class="go" onclick="publish()" id="mainBtn">Send it &rarr;</button>
+      <button class="save" onclick="saveDraft()" id="saveBtn">Save</button>
+      <button class="go" onclick="publish()" id="mainBtn" style="display:none">Send it &rarr;</button>
     </div>
   </div>
 
@@ -123,6 +123,7 @@
         <h2 id="pvTitle">Your headline appears here</h2>
         <div class="meta" id="pvMeta">By you &middot; today</div>
       </div>
+      <div id="pvImg"></div>
       <div class="pv-body" id="pvBody"><p>Start typing and watch this update live&hellip;</p></div>
     </div>
   </div>
@@ -142,7 +143,7 @@ const $=id=>document.getElementById(id);
 const CMS_ENDPOINT = 'https://join.daletrust.uk';
 let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
 const HDRS=()=>({'Content-Type':'application/json',...(session?{'Authorization':'Bearer '+session}:{})});
-let currentPostId=null, currentSlug=null, audience={members:0,lapsed:0};
+let currentPostId=null, currentSlug=null, headerImage=null, audience={members:0,lapsed:0};
 if(!session){ location.href='../admin.html'; }
 (async()=>{
   try{
@@ -203,6 +204,7 @@ function render(){
   $('pvMeta').textContent='By '+who+' \u00B7 '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
   let html = imgData?'<img src="'+imgData+'" alt="">':'';
   html += md($('body').value)||'<p>Start typing and watch this update live\u2026</p>';
+  $('pvImg').innerHTML = headerImage ? '<img src="'+headerImage+'" style="width:100%;display:block">' : '';
   $('pvBody').innerHTML=html;
 }
 ['title','cat','author','body'].forEach(id=>$(id).addEventListener('input',()=>{render();runChecks();}));
@@ -236,7 +238,7 @@ async function publish(){
   if(!$('title').value.trim()){alert('Give it a title first.');return;}
   const at = mode==='later' && $('when').value ? new Date($('when').value).toISOString() : new Date().toISOString();
   const body={ id: currentPostId, title:$('title').value, category:$('cat').value, body:$('body').value,
-               status: mode==='later' ? 'scheduled' : 'published', publish_at: at };
+               status: mode==='later' ? 'scheduled' : 'published', publish_at: at ,image:headerImage};
   try{
     const d = await (await fetch(CMS_ENDPOINT+'/posts/save',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
     if(!d.ok){alert(d.error||'Could not save.');return;}
@@ -408,7 +410,7 @@ async function loadAudOptions(){
 async function saveDraft(){
   const t=$('title').value.trim(), b=$('body').value.trim();
   if(!t||!b){alert('It needs a title and some words before it can be saved.');return;}
-  const body={id:currentPostId,title:t,category:$('cat').value,body:b,status:'draft'};
+  const body={id:currentPostId,title:t,category:$('cat').value,body:b,status:'draft',image:headerImage};
   try{
     const d=await (await fetch(CMS_ENDPOINT+'/posts/save',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
     if(!d.ok){alert(d.error||'Could not save.');return;}
@@ -418,9 +420,34 @@ async function saveDraft(){
     n.textContent='Saved as a draft at '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+
       ' \u2014 nobody can see it yet. Add pictures, then send it when you\u2019re ready.';
     const main=$('mainBtn');
-    if(main) main.innerHTML = (window._perm && window._perm.can_publish===false)
-      ? 'Send for approval \u2192' : 'Publish it \u2192';
+    if(main){
+      main.style.display='inline-block';
+      main.innerHTML = (window._perm && window._perm.can_publish===false)
+        ? 'Send for approval \u2192' : 'Publish it \u2192';
+    }
+    $('saveBtn').textContent='Save again';
   }catch(e){alert('Could not reach the server.');}
+}
+
+function showPicture(){
+  const box=$('imgPreview');
+  const btn=$('addPicBtn');
+  if(!headerImage){
+    box.innerHTML='';
+    if(btn){btn.textContent='Add the picture';btn.style.background='';btn.style.color='';btn.style.borderColor='';}
+    return;
+  }
+  box.innerHTML='<div style="display:flex;gap:12px;align-items:center;margin-top:10px">'+
+    '<img src="'+headerImage+'" style="width:150px;border-radius:8px;display:block">'+
+    '<button type="button" class="save" style="margin:0;color:#C0392B;border-color:#EDBDB7" onclick="removePicture()">Remove picture</button></div>';
+  if(btn){btn.textContent='Change the picture';btn.style.background='#EAF7F0';btn.style.color='#14653F';btn.style.borderColor='#B7E0CB';}
+}
+
+function removePicture(){
+  headerImage=null;
+  const el=$('img'); if(el) el.value='';
+  $('imgMsg').textContent='A picture at the top of the piece. It is kept separate from your words.';
+  showPicture(); render();
 }
 
 let uploading=false;
@@ -430,6 +457,8 @@ async function uploadImage(input){
   if(uploading) return;
   uploading=true;
   const f=input.files[0];
+  const abtn=$('addPicBtn');
+  if(abtn){abtn.textContent='Working\u2026';abtn.style.background='#FFF3E4';abtn.style.color='#8A4B00';abtn.style.borderColor='#EAD198';}
   msg.textContent='Getting the picture ready\u2026';
   try{
     const dataUrl=await new Promise((res,rej)=>{
@@ -454,18 +483,15 @@ async function uploadImage(input){
     try{ d=await r.json(); }
     catch(err){ msg.innerHTML='<span style="color:var(--red)">The server did not understand that (HTTP '+r.status+'). Tell Chris.</span>'; return; }
     if(!r.ok||!d.ok){msg.innerHTML='<span style="color:var(--red)">'+(d.error||('Upload failed \u2014 HTTP '+r.status))+'</span>';return;}
-    // put it at the top of the words unless one is already there
+    // remove any picture the old way put into the words
     const body=$('body');
-    if(!/^!\[/.test(body.value.trim())){
-      body.value='!['+($('title').value||'Dale Trust')+']('+d.url+')\n\n'+body.value;
-    } else {
-      body.value=body.value.replace(/^!\[[^\]]*\]\([^)]*\)/,'!['+($('title').value||'Dale Trust')+']('+d.url+')');
-    }
+    body.value = body.value.replace(/^!\[[^\]]*\]\([^)]*\)\s*\n*/, '');
+    headerImage = d.url;
     render(); runChecks();
-    msg.innerHTML='<span style="color:var(--green)">Picture added to the top of your piece.</span>';
-    $('imgPreview').innerHTML='<img src="'+d.url+'" style="max-width:180px;border-radius:8px;margin-top:8px">';
+    msg.innerHTML='<span style="color:var(--green)">Picture added.</span>';
+    showPicture();
   }catch(e){ msg.innerHTML='<span style="color:var(--red)">Could not use that picture \u2014 '+(e && e.message ? e.message : 'unknown problem')+'</span>'; }
-  finally{ uploading=false; }
+  finally{ uploading=false; if(!headerImage){const a=$('addPicBtn'); if(a){a.textContent='Add the picture';a.style.background='';a.style.color='';a.style.borderColor='';}} }
 }
 
 async function mailshot(test){
