@@ -70,7 +70,7 @@
   <div class="panel">
     <h2>Write</h2>
     <label>Title</label>
-    <input id="title" placeholder="e.g. Coach booking open for Newport away">
+    <input id="title" lang="en-GB" spellcheck="true" placeholder="e.g. Coach booking open for Newport away">
     <div class="row">
       <div>
         <label>Category</label>
@@ -88,13 +88,14 @@
     <label>Header image <small style="text-transform:none">(optional)</small></label>
     <input type="file" id="img" accept="image/*">
     <label>Your words</label>
-    <textarea id="body" placeholder="Just write. Blank line = new paragraph.
+    <textarea id="body" lang="en-GB" spellcheck="true" placeholder="Just write. Blank line = new paragraph.
 # A line starting with # becomes a heading
 **bold** for emphasis
 - lines starting with - become a bullet list
 [link text](https://example.com) makes a link
 ![](https://example.com/photo.jpg) adds a photo"></textarea>
-    <p class="hint">No formatting skills needed &mdash; the preview shows exactly how it publishes.</p>
+    <div id="checks" style="margin-top:8px"></div>
+    <p class="hint">No formatting skills needed &mdash; the preview shows exactly how it publishes. Spelling is checked as you type (British English).</p>
     <div class="pubrow">
       <div class="seg" id="mode">
         <button type="button" class="sel" data-m="now">Publish now</button>
@@ -136,7 +137,18 @@ if(!session){ location.href='../admin.html'; }
 (async()=>{
   try{
     const me=await (await fetch(CMS_ENDPOINT+'/auth/me',{headers:HDRS()})).json();
-    if(me.ok){ $('author').value=me.officer.name; $('whoami').textContent=me.officer.name; render(); }
+    if(me.ok){
+      $('author').value=me.officer.name; $('whoami').textContent=me.officer.name; render(); runChecks();
+      window._perm=me.officer;
+      if(!me.officer.can_publish){
+        document.querySelector('.go').textContent='Send for approval \u2192';
+        const n=document.createElement('p'); n.className='hint';
+        n.style.cssText='margin-top:8px;background:#E8F1FC;padding:10px 12px;border-radius:8px';
+        n.innerHTML='Your writing goes to <b>Ruby</b> to be checked before it appears. You\u2019ll see it in the queue until then.';
+        document.querySelector('.pubrow').insertAdjacentElement('afterend',n);
+        const seg=document.getElementById('mode'); if(seg) seg.style.display='none';
+      }
+    }
     const a=await (await fetch(CMS_ENDPOINT+'/audience',{headers:HDRS()})).json();
     if(a.ok){ audience=a; const el=$('audienceNote'); if(el) el.textContent='Current audience: '+a.members+' members opted in \u00b7 '+a.lapsed+' lapsed to win back'; }
   }catch(e){}
@@ -180,7 +192,27 @@ function render(){
   html += md($('body').value)||'<p>Start typing and watch this update live\u2026</p>';
   $('pvBody').innerHTML=html;
 }
-['title','cat','author','body'].forEach(id=>$(id).addEventListener('input',render));
+['title','cat','author','body'].forEach(id=>$(id).addEventListener('input',()=>{render();runChecks();}));
+
+function runChecks(){
+  const box=$('checks'); if(!box) return;
+  const title=$('title').value.trim(), body=$('body').value;
+  const words=body.trim()?body.trim().split(/\s+/).length:0;
+  const first=(body.replace(/[#*]/g,'').split(/\n{2,}/)[0]||'').replace(/\n/g,' ').trim();
+  const notes=[];
+  if(!title) notes.push(['bad','It needs a title before it can go anywhere']);
+  else if(title.length>75) notes.push(['warn','That title is long \u2014 it may be cut short in the email and on the home page']);
+  if(words&&words<25) notes.push(['warn','Very short \u2014 is there more to say?']);
+  if(first.length>220) notes.push(['warn','The opening paragraph is long. Its first part becomes the summary in the email and on the home page, so a short opening reads better']);
+  const bad=[...body.matchAll(/\]\(([^)]+)\)/g)].map(m=>m[1]).filter(u=>!/^(https?:\/\/|mailto:|\/|[a-z0-9._-]+\.html)/i.test(u));
+  if(bad.length) notes.push(['bad','A link does not look right: '+bad[0]+' \u2014 web addresses should start with https://']);
+  const stray=[...body.matchAll(/\[([^\]]+)\](?!\()/g)];
+  if(stray.length) notes.push(['warn','\u201c'+stray[0][1]+'\u201d looks like a link but has no web address after it']);
+  if(/\bhttps?:\/\/\S+/.test(body.replace(/\]\([^)]+\)/g,''))) notes.push(['warn','There is a bare web address in the text \u2014 [words like this](the address) reads better']);
+  box.innerHTML = (words?('<span class="hint">'+words+' word'+(words===1?'':'s')+'</span>'):'') +
+    notes.map(n=>'<div style="font-size:13px;margin-top:5px;padding:7px 11px;border-radius:7px;background:'+
+      (n[0]==='bad'?'#FBE9E7;color:#9B2B20':'#FFF9E8;color:#8A4B00')+'">'+n[1]+'</div>').join('');
+}
 
 // queue (device-local for the prototype)
 function load(){try{return JSON.parse(localStorage.getItem('dtq')||'[]')}catch(e){return[]}}
@@ -194,6 +226,11 @@ async function publish(){
     const d = await (await fetch(CMS_ENDPOINT+'/posts/save',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
     if(!d.ok){alert(d.error||'Could not save.');return;}
     currentPostId=d.id;
+    if(d.queued){
+      $('queue').innerHTML='<div class="qi"><span class="pill sched">Waiting</span>'+
+        '<div><b>'+$('title').value+'</b><small>Sent to Ruby to be checked. It will go on the website once approved.</small></div></div>';
+      return;
+    }
     const url='https://dale-trust.github.io/news.html?p='+d.slug;
     $('queue').innerHTML='<div class="qi"><span class="pill '+(mode==='later'?'sched':'live')+'">'+(mode==='later'?'Scheduled':'Live')+'</span>'+
       '<div><b>'+$('title').value+'</b><small>'+$('cat').value+' \u00b7 <a href="'+url+'" target="_blank">view on the website</a></small></div></div>'+
