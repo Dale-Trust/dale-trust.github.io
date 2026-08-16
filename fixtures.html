@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fixtures &amp; results | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:21px}.top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:880px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:10px 0 4px}
+  input,select{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media(max-width:640px){.g2,.g3{grid-template-columns:1fr}}
+  button{background:var(--royal);color:#fff;border:0;border-radius:9px;padding:11px 20px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+  button.green{background:var(--green)}button.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line)}
+  button.sm{padding:6px 12px;font-size:11.5px}
+  .fx{display:flex;gap:12px;align-items:center;padding:11px 8px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .fx:hover{background:#F7FAFF}
+  .fx .dt{font-size:12.5px;color:#7A8AA5;flex:none;width:130px}
+  .fx .tm{flex:1;min-width:180px;color:var(--ink)}
+  .fx .tm b{font-weight:700}
+  .fx .sc{font-family:'Oswald';font-size:17px;color:var(--ink);flex:none;min-width:58px;text-align:center}
+  .fx .sc.none{color:#C0392B;font-size:12px;font-family:Montserrat;font-weight:600}
+  .fx .comp{font-size:11px;color:#7A8AA5;flex:none}
+  .needs{background:#FFF9E8;border:1px solid #EAD198;border-left:5px solid var(--gold);border-radius:0 10px 10px 0;padding:14px 16px;margin-bottom:14px;font-size:14px}
+  .quick{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .quick input{width:90px;text-align:center;font-family:'Oswald';font-size:18px}
+  .msg{font-size:13.5px;font-weight:600;margin-top:10px}
+  #editor{display:none}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>Fixtures &amp; results</h1><small>Put the score in after a game and the home page updates itself</small></div>
+<div class="wrap">
+
+<div id="needsBox"></div>
+
+<div class="panel">
+  <h2>The season</h2>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+    <button class="ghost sm" onclick="setView('all')" id="v_all">Everything</button>
+    <button class="ghost sm" onclick="setView('todo')" id="v_todo">Needs a score</button>
+    <button class="ghost sm" onclick="setView('played')" id="v_played">Played</button>
+    <button class="ghost sm" onclick="setView('upcoming')" id="v_upcoming">To come</button>
+  </div>
+  <div id="list">Loading…</div>
+  <div style="margin-top:14px"><button class="ghost" onclick="newFixture()">+ Add a fixture</button></div>
+</div>
+
+<div class="panel" id="editor">
+  <h2 id="eTitle">Fixture</h2>
+  <div class="g2">
+    <div><label>Home team</label><input id="f_home"></div>
+    <div><label>Away team</label><input id="f_away"></div>
+  </div>
+  <div class="g3">
+    <div><label>Date</label><input id="f_date" type="date"></div>
+    <div><label>Kick-off</label><input id="f_time" placeholder="15:00"></div>
+    <div><label>Competition</label><input id="f_comp" value="Sky Bet League Two"></div>
+  </div>
+  <div class="g2">
+    <div><label>Score (leave blank if not played)</label><input id="f_score" placeholder="e.g. 2-1"></div>
+    <div><label>Note (optional)</label><input id="f_note" placeholder="e.g. won 4-2 on penalties"></div>
+  </div>
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="green" onclick="saveFixture()">Save</button>
+    <button class="ghost" onclick="document.getElementById('editor').style.display='none'">Close</button>
+    <button style="background:var(--red);margin-left:auto" onclick="deleteFixture()" id="delBtn">Remove</button>
+  </div>
+  <p class="msg" id="emsg"></p>
+</div>
+
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
+let fixtures=[], editing=null, view='todo';
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const dt=k=>new Date(k.replace(' ','T'));
+const fmt=k=>dt(k).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' · '+k.slice(11,16);
+const isDale=n=>/rochdale/i.test(n);
+
+async function load(){
+  const d=await (await fetch(EP+'/fixtures/admin',{headers:H()})).json();
+  if(!d.ok){$('list').textContent=d.error;return;}
+  fixtures=d.fixtures;
+  const now=new Date();
+  const todo=fixtures.filter(f=>dt(f.kickoff)<=now && !f.score);
+  $('needsBox').innerHTML = todo.length
+    ? '<div class="needs"><b>'+todo.length+' game'+(todo.length===1?'':'s')+' still need'+(todo.length===1?'s':'')+' a score.</b>'+
+      todo.map(f=>'<div class="quick"><span>'+esc(f.home)+' v '+esc(f.away)+' \u00b7 '+fmt(f.kickoff)+'</span>'+
+        '<input id="q'+f.id+'" placeholder="2-1"><button class="green sm" onclick="quickScore('+f.id+')">Save</button></div>').join('')+
+      '</div>'
+    : '';
+  draw();
+}
+
+function setView(v){view=v;draw();}
+
+function draw(){
+  ['all','todo','played','upcoming'].forEach(v=>{
+    const b=$('v_'+v); if(b) b.style.cssText = v===view
+      ? 'background:var(--royal);color:#fff;border:1.5px solid var(--royal)' : '';
+  });
+  const now=new Date();
+  let list=fixtures;
+  if(view==='todo') list=fixtures.filter(f=>dt(f.kickoff)<=now && !f.score);
+  if(view==='played') list=fixtures.filter(f=>f.score);
+  if(view==='upcoming') list=fixtures.filter(f=>dt(f.kickoff)>now);
+  if(!list.length){$('list').innerHTML='<p style="color:#7A8AA5;padding:12px 4px">Nothing here.</p>';return;}
+  $('list').innerHTML=list.map(f=>{
+    const played=dt(f.kickoff)<=now;
+    return '<div class="fx" onclick="editFixture('+f.id+')">'+
+      '<span class="dt">'+fmt(f.kickoff)+'</span>'+
+      '<span class="tm">'+(isDale(f.home)?'<b>'+esc(f.home)+'</b>':esc(f.home))+' v '+
+        (isDale(f.away)?'<b>'+esc(f.away)+'</b>':esc(f.away))+'</span>'+
+      (f.score?'<span class="sc">'+esc(f.score.split(' ')[0])+'</span>'
+             :(played?'<span class="sc none">no score</span>':'<span class="sc" style="color:#C7D6EC">—</span>'))+
+      '<span class="comp">'+esc(f.competition)+'</span></div>';
+  }).join('');
+}
+
+async function quickScore(id){
+  const v=$('q'+id).value.trim();
+  if(!/^\d+\s*-\s*\d+/.test(v)){alert('Type the score like 2-1');return;}
+  const f=fixtures.find(x=>x.id===id);
+  const d=await (await fetch(EP+'/fixtures/save',{method:'POST',headers:H(),
+    body:JSON.stringify({...f,score:v})})).json();
+  if(d.ok) load(); else alert(d.error);
+}
+
+function newFixture(){
+  editing=null; $('eTitle').textContent='New fixture';
+  $('f_home').value='Rochdale'; $('f_away').value=''; $('f_date').value='';
+  $('f_time').value='15:00'; $('f_comp').value='Sky Bet League Two';
+  $('f_score').value=''; $('f_note').value=''; $('emsg').textContent='';
+  $('delBtn').style.display='none';
+  $('editor').style.display='block'; $('editor').scrollIntoView({behavior:'smooth'});
+}
+
+function editFixture(id){
+  const f=fixtures.find(x=>x.id===id); editing=id;
+  $('eTitle').textContent=f.home+' v '+f.away;
+  $('f_home').value=f.home; $('f_away').value=f.away;
+  $('f_date').value=f.kickoff.slice(0,10); $('f_time').value=f.kickoff.slice(11,16);
+  $('f_comp').value=f.competition; $('f_score').value=f.score||''; $('f_note').value=f.note||'';
+  $('emsg').textContent=''; $('delBtn').style.display='inline-block';
+  $('editor').style.display='block'; $('editor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function saveFixture(){
+  const body={id:editing,home:$('f_home').value.trim(),away:$('f_away').value.trim(),
+    kickoff:$('f_date').value+' '+($('f_time').value.trim()||'15:00'),
+    competition:$('f_comp').value.trim(),score:$('f_score').value.trim(),
+    note:$('f_note').value.trim(),
+    venue:/rochdale/i.test($('f_home').value)?'H':'A'};
+  if(!body.home||!body.away||!$('f_date').value){$('emsg').innerHTML='<span style="color:var(--red)">Both teams and a date are needed.</span>';return;}
+  const d=await (await fetch(EP+'/fixtures/save',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+  if(d.ok){$('editor').style.display='none';load();}
+  else $('emsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';
+}
+
+async function deleteFixture(){
+  if(!editing)return;
+  if(!confirm('Remove this fixture?'))return;
+  const d=await (await fetch(EP+'/fixtures/delete',{method:'POST',headers:H(),body:JSON.stringify({id:editing})})).json();
+  if(d.ok){$('editor').style.display='none';load();}
+}
+
+load();
+</script>
+</body>
+</html>

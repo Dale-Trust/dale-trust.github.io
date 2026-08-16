@@ -807,8 +807,8 @@ function startCountdown(target){
 
 async function loadHub(){
   try{
-    const raw = await (await fetch('data/rochdale-fixtures-2026-27.json?v=' + Date.now())).json();
-    const items = (Array.isArray(raw) ? raw : (raw.fixtures || [])).map(f => ({...f, when: parseFixtureDate(f.datetime)})).filter(f => f.when);
+    const raw = await (await fetch('https://join.daletrust.uk/fixtures')).json();
+    const items = (raw.fixtures || []).map(f => ({...f, when: new Date(f.when)})).filter(f => !isNaN(f.when));
     items.sort((a,b) => a.when - b.when);
     const now = Date.now();
     const next = items.find(f => f.when.getTime() > now);
