@@ -244,8 +244,21 @@ async function publish(){
     if(!d.ok){alert(d.error||'Could not save.');return;}
     currentPostId=d.id;
     if(d.queued){
+      const sentTitle=$('title').value;
       $('queue').innerHTML='<div class="qi"><span class="pill sched">Waiting</span>'+
-        '<div><b>'+$('title').value+'</b><small>Sent to Ruby to be checked. It will go on the website once approved.</small></div></div>';
+        '<div><b>'+sentTitle+'</b><small>Sent for checking just now</small></div></div>';
+      $('after').innerHTML=
+        '<div style="background:#EAF7F0;border:1px solid #B7E0CB;border-left:5px solid var(--green);border-radius:0 12px 12px 0;padding:18px 20px;margin-top:14px">'+
+        '<b style="font-family:Oswald;text-transform:uppercase;font-size:18px;color:var(--ink);display:block">Sent for approval</b>'+
+        '<p style="margin-top:6px">Thank you \u2014 <b>'+sentTitle+'</b> has gone off to be checked. '+
+        'Whoever looks after the website has been emailed, and you\u2019ll hear back once they\u2019ve read it. '+
+        'It won\u2019t appear on the site until then.</p>'+
+        '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">'+
+        '<button class="go" style="margin:0;width:auto" onclick="startAnother()">Write another &rarr;</button>'+
+        '<a href="../admin.html"><button class="save" style="margin:0" type="button">Back to admin</button></a>'+
+        '</div></div>';
+      $('after').scrollIntoView({behavior:'smooth',block:'center'});
+      clearComposer();
       return;
     }
     const url='https://daletrust.uk/news.html?p='+d.slug;
@@ -405,6 +418,24 @@ async function loadAudOptions(){
     if(prev)$('aud_season').value=prev;
     audCount();
   }catch(e){}
+}
+
+function clearComposer(){
+  currentPostId=null; currentSlug=null; headerImage=null;
+  $('title').value=''; $('body').value='';
+  const el=$('img'); if(el) el.value='';
+  $('imgMsg').textContent='A picture at the top of the piece. It is kept separate from your words.';
+  showPicture();
+  $('mainBtn').style.display='none';
+  $('saveBtn').textContent='Save';
+  const n=document.querySelector('.savedNote'); if(n) n.remove();
+  render(); runChecks();
+}
+
+function startAnother(){
+  $('after').innerHTML='';
+  $('title').focus();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 async function saveDraft(){
