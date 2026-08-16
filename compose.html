@@ -234,7 +234,7 @@ async function publish(){
         '<div><b>'+$('title').value+'</b><small>Sent to Ruby to be checked. It will go on the website once approved.</small></div></div>';
       return;
     }
-    const url='https://dale-trust.github.io/news.html?p='+d.slug;
+    const url='https://daletrust.uk/news.html?p='+d.slug;
     $('queue').innerHTML='<div class="qi"><span class="pill '+(mode==='later'?'sched':'live')+'">'+(mode==='later'?'Scheduled':'Live')+'</span>'+
       '<div><b>'+$('title').value+'</b><small>'+$('cat').value+' \u00b7 <a href="'+url+'" target="_blank">view on the website</a></small></div></div>'+
       '<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">'+
@@ -280,19 +280,23 @@ async function publish(){
 
 const HASHTAGS = '#RochdaleAFC #UTD #DaleTrust';
 
+function tagged(url, where){
+  return url + (url.includes('?') ? '&' : '?') + 'from=' + where;
+}
+
 function shareTexts(url){
   const title = $('title').value.trim();
   const body  = $('body').value.replace(/[#*]/g,'').trim();
   const first = body.split(/\n{2,}/)[0].replace(/\n/g,' ').trim();
   const short = s => s.length > 180 ? s.slice(0,177).replace(/\s+\S*$/,'') + '\u2026' : s;
   const xBody = (title + ' \u2014 ' + short(first));
-  const xText = (xBody.length > 240 ? xBody.slice(0,237).replace(/\s+\S*$/,'') + '\u2026' : xBody) + '\n\n' + url + '\n' + HASHTAGS;
+  const xText = (xBody.length > 240 ? xBody.slice(0,237).replace(/\s+\S*$/,'') + '\u2026' : xBody) + '\n\n' + tagged(url,'x') + '\n' + HASHTAGS;
   return {
-    facebook: title + '\n\n' + short(first) + '\n\nRead the full story \uD83D\uDC47\n' + url,
+    facebook: title + '\n\n' + short(first) + '\n\nRead the full story \uD83D\uDC47\n' + tagged(url,'facebook'),
     x: xText,
-    linkedin: title + '\n\n' + short(first) + '\n\nDale Supporters Trust is the independent, fan-owned supporters\u2019 trust of Rochdale AFC.\n\n' + url,
+    linkedin: title + '\n\n' + short(first) + '\n\nDale Supporters Trust is the independent, fan-owned supporters\u2019 trust of Rochdale AFC.\n\n' + tagged(url,'linkedin'),
     instagram: title + '\n\n' + short(first) + '\n\n\uD83D\uDD17 Full story via the link in our bio\n\n' + HASHTAGS + ' #Rochdale #EFL #FanOwned',
-    youtube: title + '\n\n' + short(first) + '\n\nFull story: ' + url + '\n\nDale Supporters Trust \u2014 the independent supporters\u2019 trust of Rochdale AFC.\nJoin from \u00A37.50 a season: https://daletrust.uk/join.html'
+    youtube: title + '\n\n' + short(first) + '\n\nFull story: ' + tagged(url,'youtube') + '\n\nDale Supporters Trust \u2014 the independent supporters\u2019 trust of Rochdale AFC.\nJoin from \u00A37.50 a season: https://daletrust.uk/join.html'
   };
 }
 
@@ -300,10 +304,10 @@ function buildShare(url){
   const t = shareTexts(url);
   const enc = encodeURIComponent;
   const rows = [
-    ['Facebook','#1877F2', t.facebook, 'https://www.facebook.com/sharer/sharer.php?u=' + enc(url), 'Opens Facebook with the link \u2014 paste the text in'],
+    ['Facebook','#1877F2', t.facebook, 'https://www.facebook.com/sharer/sharer.php?u=' + enc(tagged(url,'facebook')), 'Opens Facebook with the link \u2014 paste the text in'],
     ['X','#000000', t.x, 'https://twitter.com/intent/tweet?text=' + enc(t.x), 'Opens X with the post ready to send'],
-    ['LinkedIn','#0A66C2', t.linkedin, 'https://www.linkedin.com/sharing/share-offsite/?url=' + enc(url), 'Opens LinkedIn with the link \u2014 paste the text in'],
-    ['Instagram','#C13584', t.instagram, '', 'Copy the caption, then post your image in the app (links don\u2019t work in captions \u2014 use link in bio)'],
+    ['LinkedIn','#0A66C2', t.linkedin, 'https://www.linkedin.com/sharing/share-offsite/?url=' + enc(tagged(url,'linkedin')), 'Opens LinkedIn with the link \u2014 paste the text in'],
+    ['Instagram','#C13584', t.instagram, '', 'Instagram will not allow a clickable link in a caption \u2014 copy this, post your image, and keep daletrust.uk as the link in your bio'],
     ['YouTube','#FF0000', t.youtube, '', 'For a video description or community post']
   ];
   document.getElementById('sharePanel').innerHTML =
