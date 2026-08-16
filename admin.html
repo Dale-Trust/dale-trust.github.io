@@ -167,10 +167,11 @@ async function checkQueue(){
     const d=await (await fetch(EP+'/posts/queue',{headers:HDRS()})).json();
     if(!d.ok || !d.waiting.length) return;
     const n=d.waiting.length;
-    const names=[...new Set(d.waiting.map(p=>p.submitted_by||p.author))];
-    $('waitingBanner').innerHTML='<div class="waiting"><div>'+
-      '<b>'+n+' piece'+(n===1?'':'s')+' waiting to be checked</b>'+
-      '<span>Written by '+names.join(' and ')+'. '+
+    const names=[...new Set(d.waiting.map(p=>p.who||p.submitted_by||p.author))];
+    const edits=d.edits||0;
+    $('waitingBanner').innerHTML='<div class="waiting"'+(edits?' style="border-left-color:#C0392B;background:#FBE9E7;border-color:#EDBDB7"':'')+'><div>'+
+      '<b>'+n+' piece'+(n===1?'':'s')+' waiting to be checked'+(edits?' \u2014 '+edits+' '+(edits===1?'is a change':'are changes')+' to a live article':'')+'</b>'+
+      '<span>'+(edits?'Changes to live articles are shown first. ':'')+'Written by '+names.join(' and ')+'. '+
       (d.canApprove?'Nothing appears on the website until you approve it.':'Waiting for someone who can publish.')+'</span></div>'+
       '<a href="posts.html">'+(d.canApprove?'Read and decide':'Take a look')+' &rarr;</a></div>';
     // and a badge on the tile itself

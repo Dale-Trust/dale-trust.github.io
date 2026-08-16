@@ -45,8 +45,8 @@
 <div class="wrap">
 
 <div class="panel" id="queuePanel" style="display:none;border-left:5px solid var(--gold)">
-  <h2 style="border-left-color:var(--gold)">Waiting to be checked</h2>
-  <p style="font-size:13.5px;margin-bottom:10px">Written by someone else and not yet on the website.</p>
+  <h2 style="border-left-color:var(--gold)" id="queueTitle">Waiting to be checked</h2>
+  <p style="font-size:13.5px;margin-bottom:10px" id="queueNote">Written by someone else and not yet on the website.</p>
   <div id="queueList"></div>
 </div>
 
@@ -129,19 +129,29 @@ async function loadQueue(){
     if(!d.ok||!d.waiting.length){$('queuePanel').style.display='none';return;}
     canApprove=d.canApprove;
     $('queueList').innerHTML=d.waiting.map(p=>
-      '<div style="border-bottom:1px solid var(--line);padding:12px 4px">'+
-      '<b style="color:var(--ink)">'+esc(p.title)+'</b>'+
-      '<small style="display:block;color:#7A8AA5;margin-top:2px">Written by '+esc(p.submitted_by||p.author)+
-      ' \u00b7 '+esc(p.category)+' \u00b7 '+fmt(p.updated_at)+'</small>'+
+      '<div style="border-bottom:1px solid var(--line);padding:12px 4px'+(p.is_edit?';background:#FFFBF2':'')+'">'+
+      (p.is_edit?'<span style="display:inline-block;background:#C0392B;color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:100px;margin-bottom:6px">Change to a live article</span><br>':'')+
+      '<b style="color:var(--ink)">'+esc(p.shown_title||p.title)+'</b>'+
+      '<small style="display:block;color:#7A8AA5;margin-top:2px">'+
+      (p.is_edit?'Changed by ':'Written by ')+esc(p.who)+
+      ' \u00b7 '+esc(p.pending_category||p.category)+' \u00b7 '+fmt(p.pending_at||p.updated_at)+'</small>'+
+      (p.is_edit?'<p style="font-size:13px;color:#8A4B00;margin-top:6px">The version on the website has not changed. Their edit is below.</p>':'')+
       '<div style="background:var(--wash);padding:10px 12px;border-radius:8px;margin-top:8px;font-size:13.5px;max-height:150px;overflow:auto;white-space:pre-wrap">'+
-        esc(String(p.body).slice(0,700))+(String(p.body).length>700?'\u2026':'')+'</div>'+
+        esc(String(p.shown_body||p.body).slice(0,700))+(String(p.shown_body||p.body).length>700?'\u2026':'')+'</div>'+
+      (p.is_edit?'<p style="margin-top:8px;font-size:13px"><a href="news.html?p='+encodeURIComponent(p.slug)+'" target="_blank">Compare with what is on the website &rarr;</a></p>':'')+
       (canApprove
         ? '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">'+
-          '<button class="ok" onclick="approve('+p.id+',&quot;publish&quot;)">Approve and publish</button>'+
+          '<button class="ok" onclick="approve('+p.id+',&quot;publish&quot;)">'+(p.is_edit?'Approve the change':'Approve and publish')+'</button>'+
           '<button class="ghost" onclick="edit('+p.id+')">Read and edit it first</button>'+
           '<button class="ghost" style="color:var(--red)" onclick="approve('+p.id+',&quot;return&quot;)">Send back</button></div>'
         : '<p style="font-size:13px;color:#7A8AA5;margin-top:8px">Waiting for someone who can publish.</p>')+
       '</div>').join('');
+    $('queueTitle').textContent = d.edits
+      ? 'Waiting to be checked \u2014 ' + d.edits + ' change' + (d.edits===1?'':'s') + ' to live articles'
+      : 'Waiting to be checked';
+    $('queueNote').innerHTML = d.edits
+      ? '<b style="color:#C0392B">Changes to articles already on the website are shown first.</b> The live version stays as it is until you approve the change.'
+      : 'Written by someone else and not yet on the website.';
     $('queuePanel').style.display='block';
   }catch(e){}
 }
