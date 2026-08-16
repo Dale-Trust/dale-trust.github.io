@@ -104,6 +104,28 @@
 ![](https://example.com/photo.jpg) adds a photo"></textarea>
     <div id="checks" style="margin-top:8px"></div>
     <p class="hint">No formatting skills needed &mdash; the preview shows exactly how it publishes. Spelling is checked as you type (British English).</p>
+    <div id="suggestBox" style="display:none;border:1px solid var(--line);border-left:4px solid var(--royal);border-radius:0 10px 10px 0;padding:14px 16px;margin-top:16px;background:#F7FAFF">
+      <label style="margin:0"><input type="checkbox" id="wantEmail" onchange="toggleSuggest()" style="width:auto;margin-right:8px">Suggest this is emailed out too</label>
+      <p class="hint" style="margin-top:4px">Choose who you think should get it. Whoever approves your piece can send it in one go, or change your suggestion.</p>
+      <div id="suggestFields" style="display:none;margin-top:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label>Who</label><select id="aud_who" onchange="audChanged()">
+            <option value="current">Current members</option>
+            <option value="lapsed">Lapsed members</option></select></div>
+          <div><label>Membership type</label>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px" id="typeBoxes"></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+          <div><label>Where</label><select id="aud_place" onchange="audChanged()">
+            <option value="">Anywhere</option><option value="uk">UK</option><option value="overseas">Overseas</option>
+            <option value="county">A county</option><option value="country">A country</option></select></div>
+          <div id="placeWrap" style="display:none"><label>Which</label><select id="aud_which" onchange="audCount()"></select></div>
+        </div>
+        <input type="hidden" id="aud_season"><input type="hidden" id="aud_age" value=""><input type="hidden" id="aud_news" value="in">
+        <div id="audCount" style="background:#fff;border:1px solid var(--line);padding:10px 12px;margin-top:10px;border-radius:8px;font-size:14px"></div>
+      </div>
+    </div>
+
     <div class="pubrow">
       <div class="seg" id="mode">
         <button type="button" class="sel" data-m="now">Publish now</button>
@@ -151,6 +173,10 @@ if(!session){ location.href='../admin.html'; }
     if(me.ok){
       $('author').value=me.officer.name; $('whoami').textContent=me.officer.name; render(); runChecks();
       window._perm=me.officer;
+      if(me.officer.can_send === false && me.officer.can_posts){
+        $('suggestBox').style.display='block';
+        loadAudOptions();
+      }
       if(me.officer.can_publish === false){
         const btn=document.querySelector('.go');
         if(btn) btn.textContent='Send for approval \u2192';
@@ -238,7 +264,7 @@ async function publish(){
   if(!$('title').value.trim()){alert('Give it a title first.');return;}
   const at = mode==='later' && $('when').value ? new Date($('when').value).toISOString() : new Date().toISOString();
   const body={ id: currentPostId, title:$('title').value, category:$('cat').value, body:$('body').value,
-               status: mode==='later' ? 'scheduled' : 'published', publish_at: at ,image:headerImage};
+               status: mode==='later' ? 'scheduled' : 'published', publish_at: at ,image:headerImage};Object.assign(body, suggestion()||{});
   try{
     const d = await (await fetch(CMS_ENDPOINT+'/posts/save',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
     if(!d.ok){alert(d.error||'Could not save.');return;}
@@ -253,6 +279,7 @@ async function publish(){
         '<p style="margin-top:6px">Thank you \u2014 <b>'+sentTitle+'</b> has gone off to be checked. '+
         'Whoever looks after the website has been emailed, and you\u2019ll hear back once they\u2019ve read it. '+
         'It won\u2019t appear on the site until then.</p>'+
+        (suggestion() ? '<p style="margin-top:8px">You also suggested it goes out by email \u2014 they can send it when they approve it.</p>' : '')+
         '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">'+
         '<button class="go" style="margin:0;width:auto" onclick="startAnother()">Write another &rarr;</button>'+
         '<a href="../admin.html"><button class="save" style="margin:0" type="button">Back to admin</button></a>'+
@@ -438,10 +465,21 @@ function startAnother(){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+function toggleSuggest(){
+  const on=$('wantEmail').checked;
+  $('suggestFields').style.display=on?'block':'none';
+  if(on) audCount();
+}
+
+function suggestion(){
+  if(!$('wantEmail') || !$('wantEmail').checked) return null;
+  return { proposed_send:1, proposed_audience:audFilters() };
+}
+
 async function saveDraft(){
   const t=$('title').value.trim(), b=$('body').value.trim();
   if(!t||!b){alert('It needs a title and some words before it can be saved.');return;}
-  const body={id:currentPostId,title:t,category:$('cat').value,body:b,status:'draft',image:headerImage};
+  const body=Object.assign({id:currentPostId,title:t,category:$('cat').value,body:b,status:'draft',image:headerImage}, suggestion()||{});
   try{
     const d=await (await fetch(CMS_ENDPOINT+'/posts/save',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
     if(!d.ok){alert(d.error||'Could not save.');return;}
