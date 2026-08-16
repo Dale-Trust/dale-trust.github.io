@@ -431,26 +431,7 @@
 <div class="fx-strip">
   <div class="wrap fx-inner">
     <div class="fx-label">Coming up</div>
-    <div class="fx-rows">
-      <div class="fx">
-        <img class="fxb" src="img/badges/Newport-County.png" alt="">
-        <div><p class="d">Sat 15 Aug &middot; League Two</p>
-        <b>Newport County (A)</b>
-        <span>Rodney Parade &middot; 12:30pm &middot; Live on Sky Sports+</span></div>
-      </div>
-      <div class="fx">
-        <img class="fxb" src="img/badges/Crawley-Town.png" alt="">
-        <div><p class="d">Sat 22 Aug &middot; League Two</p>
-        <b>Crawley Town (H)<span class="tag">First home game</span></b>
-        <span>Crown Oil Arena &middot; 3:00pm</span></div>
-      </div>
-      <div class="fx">
-        <img class="fxb" src="img/badges/Colchester-united.png" alt="" onerror="this.style.display='none'">
-        <div><p class="d">Sat 29 Aug &middot; League Two</p>
-        <b>Colchester United (A)</b>
-        <span>JobServe Community Stadium &middot; 3:00pm</span></div>
-      </div>
-    </div>
+    <div class="fx-rows" id="fxRows"></div>
   </div>
 </div>
 
@@ -828,6 +809,25 @@ async function loadHub(){
       const ko = next.when.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
       set('hubMeta', ground + ' \u00b7 ' + dt + ' \u00b7 ' + ko + ' kick-off');
       startCountdown(next.when.getTime());
+    }
+
+    // the three coming up
+    const upcoming = items.filter(f => f.when.getTime() > now).slice(0, 3);
+    const rows = document.getElementById('fxRows');
+    if (rows && upcoming.length) {
+      rows.innerHTML = upcoming.map(f => {
+        const home = /rochdale/i.test(f.home);
+        const opp = home ? f.away : f.home;
+        const ground = GROUNDS[String(f.home).toLowerCase().trim()] || (home ? 'Crown Oil Arena' : 'Away');
+        const d = f.when.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+        const t = f.when.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+        const firstHome = home && !items.some(x => /rochdale/i.test(x.home) && x.when < f.when && x.when.getTime() > Date.parse('2026-08-01') && /League Two/i.test(x.competition));
+        return '<div class="fx">' +
+          '<img class="fxb" src="' + badgeFor(opp) + '" alt="" onerror="this.style.display=\'none\'">' +
+          '<div><p class="d">' + d + ' \u00b7 ' + (f.competition || '') + '</p>' +
+          '<b>' + opp + ' (' + (home ? 'H' : 'A') + ')' + (firstHome ? '<span class="tag">First home game</span>' : '') + '</b>' +
+          '<span>' + ground + ' \u00b7 ' + t + '</span></div></div>';
+      }).join('');
     }
 
     if(last){

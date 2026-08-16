@@ -92,8 +92,21 @@
     <button class="ghost" onclick="closeEditor()">Cancel</button>
     <a id="eView" href="#" target="_blank" rel="noopener"><button class="ghost" type="button">View on site &rarr;</button></a>
     <button class="warn" style="margin-left:auto" onclick="archiveIt()">Archive this article</button>
+    <button class="ghost" style="color:var(--red);border-color:#EDBDB7" onclick="askDelete()">Delete</button>
   </div>
   <p class="msg" id="eMsg"></p>
+  <div id="delBox" style="display:none;background:#FBE9E7;border:1px solid #EDBDB7;border-left:4px solid var(--red);border-radius:0 8px 8px 0;padding:14px 16px;margin-top:12px;font-size:13.5px">
+    <b>Delete this permanently?</b><br>
+    Archiving is nearly always the better answer &mdash; it takes the article off the website but keeps it. Deleting is for mistakes and test pieces.
+    <label style="margin-top:10px">Why?</label>
+    <input id="delReason" placeholder="e.g. test post, duplicate, published by mistake">
+    <label style="margin-top:10px">Type DELETE to confirm</label>
+    <input id="delConfirm" placeholder="DELETE">
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="warn" onclick="reallyDelete()">Delete permanently</button>
+      <button class="ghost" onclick="document.getElementById('delBox').style.display='none'">Keep it</button>
+    </div>
+  </div>
 </div>
 
 </div>
@@ -177,7 +190,7 @@ async function edit(id){
   sel.value=current.category;
   if(current.publish_at){ const dt=new Date(current.publish_at); if(!isNaN(dt)) $('eWhen').value=new Date(dt-dt.getTimezoneOffset()*60000).toISOString().slice(0,16); }
   $('eView').href='news.html?p='+encodeURIComponent(current.slug);
-  $('eMsg').textContent='';
+  $('eMsg').textContent=''; $('delBox').style.display='none';
   $('editor').style.display='block';
   $('editor').scrollIntoView({behavior:'smooth',block:'start'});
 }
@@ -194,6 +207,26 @@ async function save(){
   $('eMsg').innerHTML=d.ok?'<span style="color:var(--green)">Saved. The website updates immediately.</span>'
                           :'<span style="color:var(--red)">'+(d.error||'Could not save.')+'</span>';
   if(d.ok) load(offset);
+}
+
+function askDelete(){
+  if(!current)return;
+  $('delReason').value=''; $('delConfirm').value='';
+  $('delBox').style.display='block'; $('delConfirm').focus();
+}
+
+async function reallyDelete(){
+  if(!current)return;
+  if($('delConfirm').value.trim().toUpperCase()!=='DELETE'){
+    $('eMsg').innerHTML='<span style="color:var(--red)">Type DELETE to confirm.</span>';return;
+  }
+  if(!confirm('Last check \u2014 permanently delete \u201c'+current.title+'\u201d?'))return;
+  const d=await (await fetch(EP+'/posts/delete',{method:'POST',headers:H(),
+    body:JSON.stringify({id:current.id,confirm:'DELETE',reason:$('delReason').value.trim()})})).json();
+  if(!d.ok){$('eMsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return;}
+  $('delBox').style.display='none'; closeEditor();
+  $('count').innerHTML='<span style="color:var(--green)">Deleted \u201c'+esc(d.removed)+'\u201d.</span>';
+  load(offset); loadQueue();
 }
 
 async function archiveIt(){
