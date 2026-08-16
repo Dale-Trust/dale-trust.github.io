@@ -139,9 +139,17 @@ async function loadQueue(){
       '<div style="background:var(--wash);padding:10px 12px;border-radius:8px;margin-top:8px;font-size:13.5px;max-height:150px;overflow:auto;white-space:pre-wrap">'+
         esc(String(p.shown_body||p.body).slice(0,700))+(String(p.shown_body||p.body).length>700?'\u2026':'')+'</div>'+
       (p.is_edit?'<p style="margin-top:8px;font-size:13px"><a href="news.html?p='+encodeURIComponent(p.slug)+'" target="_blank">Compare with what is on the website &rarr;</a></p>':'')+
+      (p.audience
+        ? '<div style="background:#E8F1FC;border-left:4px solid var(--royal);padding:10px 13px;border-radius:0 8px 8px 0;margin-top:10px;font-size:13.5px">'+
+          '<b>'+esc(p.who)+' suggests emailing this to '+p.audience.count+' people</b><br>'+
+          '<span style="color:#7A8AA5">'+esc(p.audience.description)+'</span></div>'
+        : '')+
       (canApprove
         ? '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">'+
-          '<button class="ok" onclick="approve('+p.id+',&quot;publish&quot;)">'+(p.is_edit?'Approve the change':'Approve and publish')+'</button>'+
+          (p.audience
+            ? '<button class="ok" onclick="approve('+p.id+',&quot;publish&quot;,true)">Approve and email '+p.audience.count+' people</button>'+
+              '<button class="ghost" onclick="approve('+p.id+',&quot;publish&quot;,false)">Approve without emailing</button>'
+            : '<button class="ok" onclick="approve('+p.id+',&quot;publish&quot;)">'+(p.is_edit?'Approve the change':'Approve and publish')+'</button>')+
           '<button class="ghost" onclick="edit('+p.id+')">Read and edit it first</button>'+
           '<button class="ghost" style="color:var(--red)" onclick="approve('+p.id+',&quot;return&quot;)">Send back</button></div>'
         : '<p style="font-size:13px;color:#7A8AA5;margin-top:8px">Waiting for someone who can publish.</p>')+
@@ -156,12 +164,14 @@ async function loadQueue(){
   }catch(e){}
 }
 
-async function approve(id,action){
+async function approve(id,action,send){
   let note='';
   if(action==='return'){
     note=prompt('Send it back to the writer. Anything you want to tell them?')||'';
+  } else if(send){
+    if(!confirm('Approve this, put it on the website, and email it to the people they suggested?\n\nThis cannot be unsent.')) return;
   } else if(!confirm('Approve and publish this? It will appear on the website straight away.')) return;
-  const d=await (await fetch(EP+'/posts/approve',{method:'POST',headers:H(),body:JSON.stringify({id,action,note})})).json();
+  const d=await (await fetch(EP+'/posts/approve',{method:'POST',headers:H(),body:JSON.stringify({id,action,note,send:!!send})})).json();
   if(!d.ok){alert(d.error);return;}
   loadQueue(); load(offset);
 }
