@@ -29,7 +29,10 @@
   .seg button{border:0;background:#fff;padding:10px 18px;font:600 13px 'Montserrat';color:var(--body);cursor:pointer}
   .seg button.sel{background:var(--royal);color:#fff}
   #when{width:auto;display:none}
-  .go{margin-left:auto;background:var(--green);color:#fff;border:0;border-radius:9px;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.07em;padding:12px 26px;cursor:pointer}
+  .save{margin-left:auto;background:#fff;color:var(--body);border:1.5px solid var(--line);border-radius:9px;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.07em;padding:11px 22px;cursor:pointer}
+  .save:hover{border-color:var(--royal);color:var(--royal)}
+  .savedNote{font-size:13px;color:var(--green);font-weight:600;width:100%;margin-top:6px}
+  .go{background:var(--green);color:#fff;border:0;border-radius:9px;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.07em;padding:12px 26px;cursor:pointer}
   .go:hover{filter:brightness(1.08)}
   /* preview styled as the Trust site renders posts */
   .pv{border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -104,7 +107,8 @@
         <button type="button" data-m="later">Schedule</button>
       </div>
       <input type="datetime-local" id="when">
-      <button class="go" onclick="publish()">Send it &rarr;</button>
+      <button class="save" onclick="saveDraft()">Save</button>
+      <button class="go" onclick="publish()" id="mainBtn">Send it &rarr;</button>
     </div>
   </div>
 
@@ -135,7 +139,7 @@ const $=id=>document.getElementById(id);
 const CMS_ENDPOINT = 'https://join.daletrust.uk';
 let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
 const HDRS=()=>({'Content-Type':'application/json',...(session?{'Authorization':'Bearer '+session}:{})});
-let currentPostId=null, audience={members:0,lapsed:0};
+let currentPostId=null, currentSlug=null, audience={members:0,lapsed:0};
 if(!session){ location.href='../admin.html'; }
 (async()=>{
   try{
@@ -199,6 +203,7 @@ function render(){
   $('pvBody').innerHTML=html;
 }
 ['title','cat','author','body'].forEach(id=>$(id).addEventListener('input',()=>{render();runChecks();}));
+const imgEl=$('img'); if(imgEl && !imgEl.onchange) imgEl.onchange=()=>uploadImage(imgEl);
 
 function runChecks(){
   const box=$('checks'); if(!box) return;
@@ -396,6 +401,24 @@ async function loadAudOptions(){
   }catch(e){}
 }
 
+async function saveDraft(){
+  const t=$('title').value.trim(), b=$('body').value.trim();
+  if(!t||!b){alert('It needs a title and some words before it can be saved.');return;}
+  const body={id:currentPostId,title:t,category:$('cat').value,body:b,status:'draft'};
+  try{
+    const d=await (await fetch(CMS_ENDPOINT+'/posts/save',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
+    if(!d.ok){alert(d.error||'Could not save.');return;}
+    currentPostId=d.id; currentSlug=d.slug;
+    let n=document.querySelector('.savedNote');
+    if(!n){ n=document.createElement('p'); n.className='savedNote'; document.querySelector('.pubrow').appendChild(n); }
+    n.textContent='Saved as a draft at '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+
+      ' \u2014 nobody can see it yet. Add pictures, then send it when you\u2019re ready.';
+    const main=$('mainBtn');
+    if(main) main.innerHTML = (window._perm && window._perm.can_publish===false)
+      ? 'Send for approval \u2192' : 'Publish it \u2192';
+  }catch(e){alert('Could not reach the server.');}
+}
+
 async function uploadImage(input){
   const f=input.files && input.files[0];
   if(!f) return;
@@ -416,9 +439,14 @@ async function uploadImage(input){
     c.getContext('2d').drawImage(img,0,0,c.width,c.height);
     const small=c.toDataURL('image/jpeg',0.82);
     msg.textContent='Uploading\u2026';
-    const d=await (await fetch(CMS_ENDPOINT+'/image/upload',{method:'POST',headers:HDRS(),
-      body:JSON.stringify({data:small,filename:f.name})})).json();
-    if(!d.ok){msg.innerHTML='<span style="color:var(--red)">'+d.error+'</span>';return;}
+    const kb=Math.round(small.length*0.75/1024);
+    msg.textContent='Uploading \u2014 '+kb+'KB\u2026';
+    const r=await fetch(CMS_ENDPOINT+'/image/upload',{method:'POST',headers:HDRS(),
+      body:JSON.stringify({data:small,filename:f.name})});
+    let d;
+    try{ d=await r.json(); }
+    catch(err){ msg.innerHTML='<span style="color:var(--red)">The server did not understand that (HTTP '+r.status+'). Tell Chris.</span>'; return; }
+    if(!r.ok||!d.ok){msg.innerHTML='<span style="color:var(--red)">'+(d.error||('Upload failed \u2014 HTTP '+r.status))+'</span>';return;}
     // put it at the top of the words unless one is already there
     const body=$('body');
     if(!/^!\[/.test(body.value.trim())){
