@@ -49,6 +49,9 @@
   .pending{background:var(--gold);color:#3a2c00;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:4px 12px;border-radius:100px;display:inline-block;margin-top:12px;position:relative}
   .banner{background:#FFF9E8;border:1px solid #EAD198;border-left:5px solid var(--gold);border-radius:10px;padding:16px 18px;margin-bottom:16px;font-size:14.5px}
   .banner b{color:var(--ink)}
+  .readrow{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+  .readrow span{color:#7A8AA5;flex:none}
+  .readrow b{color:var(--ink);text-align:right;font-weight:600}
   .checked{background:#EAF7F0;border:1px solid #B7E0CB;border-left:5px solid var(--green);border-radius:10px;padding:14px 18px;font-size:14px;margin-bottom:16px}
   .hist{font-size:13.5px;color:#7A8AA5;margin-top:10px}
   .bengrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
@@ -154,7 +157,9 @@
     <div class="panel">
       <h2>Your details</h2>
       <div id="confirmedNote"></div>
-      <p style="font-size:14.5px">Please check these are right. It takes a moment and it means we can always reach you.</p>
+      <p style="font-size:14.5px" id="detailsIntro">Please check these are right. It takes a moment and it means we can always reach you.</p>
+      <div id="readView"></div>
+      <div id="editView" style="display:none">
       <div class="row2">
         <div><label>First name</label><input id="f_first"></div>
         <div><label>Surname</label><input id="f_last"></div>
@@ -179,7 +184,15 @@
         <label>Happy for nearby exiles to contact you about sharing transport?</label>
         <select id="f_share"><option>Yes</option><option>No</option></select>
       </div>
-      <div style="margin-top:16px"><button class="green" onclick="saveDetails()">These are correct &mdash; save</button></div>
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="green" onclick="saveDetails()" style="flex:1">Save my changes</button>
+        <button class="ghost" onclick="showRead()" style="flex:1">Cancel</button>
+      </div>
+      </div>
+      <div id="confirmBtns" style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="green" onclick="confirmDetails()" style="flex:1">Yes, these are right</button>
+        <button class="ghost" onclick="showEdit()" style="flex:1">Something needs changing</button>
+      </div>
       <p class="msg" id="dmsg"></p>
     </div>
 
@@ -364,10 +377,41 @@ function render(){
   $('f_news').value=rec.newsletter_optin?'1':'0';
   $('exileWrap').style.display = rec.membership_type==='Exile' ? 'block':'none';
   if(rec.membership_type==='Exile') $('f_share').value=rec.exile_transport_share||'No';
+  showRead();
   $('confirmedNote').innerHTML = rec.details_confirmed_at
     ? '<div class="checked">Last confirmed on '+new Date(rec.details_confirmed_at.replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'.</div>'
     : '';
   $('dmsg').textContent=''; $('rmsg').textContent='';
+}
+
+function showRead(){
+  const p=person(), rec=p.record;
+  const line=(label,val)=>val?'<div class="readrow"><span>'+label+'</span><b>'+esc(val)+'</b></div>':'';
+  const addr=[rec.address1,rec.address2,rec.town,rec.county,rec.postcode,rec.country].filter(Boolean).join(', ');
+  $('readView').innerHTML =
+    line('Name',(rec.first_name+' '+rec.last_name).trim())+
+    line('Date of birth',rec.dob?new Date(rec.dob).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}):'')+
+    line('Mobile',rec.mobile)+
+    line('Email',rec.email)+
+    line('Address',addr)+
+    line('Newsletter',rec.newsletter_optin?'Yes please':'No thanks')+
+    (rec.membership_type==='Exile'?line('Share transport with nearby exiles',rec.exile_transport_share||'No'):'');
+  $('readView').style.display='block';
+  $('editView').style.display='none';
+  $('confirmBtns').style.display='flex';
+  $('detailsIntro').textContent='Please check these are right. It takes a moment and it means we can always reach you.';
+}
+
+function showEdit(){
+  $('readView').style.display='none';
+  $('editView').style.display='block';
+  $('confirmBtns').style.display='none';
+  $('detailsIntro').textContent='Change whatever needs changing, then save.';
+  $('f_first').focus();
+}
+
+async function confirmDetails(){
+  await saveDetails(true);
 }
 
 function formValues(){
@@ -381,9 +425,11 @@ function formValues(){
     record_id:person().record.id};
 }
 
-async function saveDetails(){
+async function saveDetails(justConfirming){
   const d=await (await fetch(EP+'/member/update',{method:'POST',headers:H(),body:JSON.stringify(formValues())})).json();
-  $('dmsg').innerHTML=d.ok?'<span style="color:var(--green)">Saved \u2014 thank you.</span>':'<span style="color:var(--red)">'+esc(d.error||'Could not save')+'</span>';
+  $('dmsg').innerHTML=d.ok
+    ? '<span style="color:var(--green)">'+(justConfirming?'Thank you \u2014 we\u2019ve noted your details are correct.':'Saved \u2014 thank you.')+'</span>'
+    : '<span style="color:var(--red)">'+esc(d.error||'Could not save')+'</span>';
   if(d.ok){const r=await fetch(EP+'/member/me',{headers:H()});data=await r.json();render();}
 }
 
