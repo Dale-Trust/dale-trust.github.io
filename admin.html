@@ -29,7 +29,8 @@
   .tile:hover{border-left-color:var(--bright);box-shadow:0 8px 20px rgba(4,30,66,.08)}
   .tile b{font-family:'Oswald';text-transform:uppercase;color:var(--ink);display:block;font-size:15px;margin-bottom:4px}
   .tile small{font-size:12.5px}
-  table{width:100%;border-collapse:collapse;font-size:13px}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+  th{white-space:nowrap;cursor:help}
   th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
   th{font-size:11px;text-transform:uppercase;color:#7A8AA5}
   td input[type=checkbox]{width:auto}
@@ -45,7 +46,6 @@
   <div class="who" id="who"></div>
 </div>
 <div class="wrap">
-
 <div id="login" class="card">
   <h2 style="border:0;padding:0;font-size:18px">Sign in</h2>
   <p style="font-size:13.5px;margin-top:6px">Enter your officer email — we'll send you a one-tap sign-in link. No password to remember, ever.</p>
@@ -53,10 +53,8 @@
   <button onclick="requestLink()">Email me a sign-in link</button>
   <p class="msg" id="lmsg"></p>
 </div>
-
 <div id="app">
   <div class="tiles" id="tiles"></div>
-
   <div class="card" id="retentionCard" style="display:none">
     <h2>Data retention</h2>
     <p style="font-size:13px;margin-bottom:10px">Board policy: personal details from past seasons are removed once they're over 12 months old. The <b>membership numbers are kept forever</b> &mdash; only names, addresses, emails, phones and dates of birth are stripped, so year-on-year figures stay intact.</p>
@@ -64,11 +62,24 @@
     <button onclick="runRetention()" style="background:#C0392B">Remove personal data older than 12 months</button>
     <p class="msg" id="retMsg"></p>
   </div>
-
   <div class="card" id="officersCard">
     <h2>Officers &amp; access</h2>
     <p style="font-size:13px;margin-bottom:10px">Tick what each officer can reach. Changes apply the next time they load a tool.</p>
-    <table id="offTable"><thead><tr><th>Name</th><th>Email</th><th>Members</th><th>Posts</th><th>Board figures</th><th>Admin</th><th></th></tr></thead><tbody></tbody></table>
+    <div style="overflow-x:auto">
+    <table id="offTable"><thead><tr>
+      <th>Name</th>
+      <th title="Search, add and edit members">Members</th>
+      <th title="Bulk import from the spreadsheet">Import</th>
+      <th title="Find and edit existing articles">Articles</th>
+      <th title="Write posts — they queue for approval unless they can also publish">Write</th>
+      <th title="Approve and publish what others have written">Publish</th>
+      <th title="Email members and lapsed members">Send email</th>
+      <th title="Create surveys and votes">Surveys</th>
+      <th title="Set up coaches and take bookings">Coach</th>
+      <th title="See the membership figures">Figures</th>
+      <th title="Add and remove officers, change permissions">Admin</th>
+      <th></th></tr></thead><tbody></tbody></table></div>
+    <p style="font-size:12.5px;color:#7A8AA5;margin-top:8px">Hover any heading to see what it allows. <b>Write</b> without <b>Publish</b> means their work queues for someone else to check first.</p>
     <div class="addrow">
       <input id="nName" placeholder="Name">
       <input id="nEmail" placeholder="Email">
@@ -78,16 +89,13 @@
     <p class="msg" id="omsg"></p>
   </div>
 </div>
-
 </div>
 <script>
 const EP='https://join.daletrust.uk';
 const $=id=>document.getElementById(id);
 let session=null, me=null;
 try{session=localStorage.getItem('dt_session');}catch(e){}
-
 const HDRS=()=>({'Content-Type':'application/json', ...(session?{'Authorization':'Bearer '+session}:{})});
-
 async function requestLink(){
   const email=$('email').value.trim();
   if(!email)return;
@@ -98,7 +106,6 @@ async function requestLink(){
   await fetch(EP+'/auth/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   $('lmsg').innerHTML='<span style="color:var(--green);font-weight:600">Check your email</span> — if that address belongs to a Trust officer, a sign-in link is on its way. It expires in 15 minutes.';
 }
-
 async function verifyFromHash(){
   const m=location.hash.match(/login=([a-f0-9]{64})/);
   if(!m)return false;
@@ -110,7 +117,6 @@ async function verifyFromHash(){
   try{localStorage.setItem('dt_session',session);}catch(e){}
   return true;
 }
-
 async function whoami(){
   if(!session)return false;
   const r=await fetch(EP+'/auth/me',{headers:HDRS()});
@@ -119,7 +125,6 @@ async function whoami(){
   if(!d.ok)return false;
   me=d.officer;return true;
 }
-
 function show(){
   $('login').style.display='none';$('app').style.display='block';
   $('who').innerHTML='<b>'+me.name+'</b>'+(me.role_title?' \u00B7 '+me.role_title:'')+'<br><a href="#" onclick="logout()">Sign out</a>';
@@ -128,19 +133,18 @@ function show(){
   if(me.can_members){
     tile('dashboard.html','Membership dashboard','Live register analysis \u2014 drop the sheet, press Connect');
     tile('register.html','Membership register','Look someone up, correct details, add a member by hand');
-    tile('import.html','Member import','Load spreadsheet tabs into the database');
   }
-  if(me.can_posts) tile('tools/compose.html','Post composer','Write once \u2014 publish or schedule in the Trust style');
-  if(me.can_posts) tile('posts.html','Manage articles','Find, edit, unpublish or archive anything on the site');
-  if(me.can_posts) tile('surveys.html','Surveys &amp; voting','Player of the Month, consultations and results');
-  if(me.can_posts) tile('tools/post-import.html','Import old posts','Republish the WordPress archive onto the new site');
+  if(me.can_import) tile('import.html','Member import','Load spreadsheet tabs into the database');
+  if(me.can_posts) tile('tools/compose.html','Post composer', me.can_publish ? 'Write, publish and email it out' : 'Write something — it goes for checking before it appears');
+  if(me.can_articles) tile('posts.html','Manage articles','Find, edit, approve or archive anything on the site');
+  if(me.can_surveys) tile('surveys.html','Surveys &amp; voting','Player of the Month, consultations and results');
+  if(me.can_articles) tile('tools/post-import.html','Import old posts','Republish the WordPress archive onto the new site');
   if(me.can_board) tile('board.html','Board figures','Membership at a glance \u2014 live, no personal data');
   tile('decisions.html','Decisions &amp; tasks','Everything raised about the website \u2014 answer your items here');
-  tile('coach.html','Coach travel','Set up coaches, take phone bookings, print the passenger list');
+  if(me.can_coach) tile('coach.html','Coach travel','Set up coaches, take phone bookings, print the passenger list');
   tile('tools/coach-poster.html','Coach poster maker','Matchday travel posters in four fields');
   if(me.is_admin){$('officersCard').style.display='block';loadOfficers();$('retentionCard').style.display='block';loadRetention();}
 }
-
 async function loadRetention(){
   try{
     const d=await (await fetch(EP+'/retention',{headers:HDRS()})).json();
@@ -165,22 +169,20 @@ async function loadOfficers(){
   const d=await r.json();
   if(!d.ok)return;
   const tb=document.querySelector('#offTable tbody');tb.innerHTML='';
+  const KEYS=['can_members','can_import','can_articles','can_posts','can_publish','can_send','can_surveys','can_coach','can_board','is_admin'];
   d.officers.filter(o=>o.active).forEach(o=>{
     tb.insertAdjacentHTML('beforeend',
     `<tr data-id="${o.id}">
-      <td><b>${o.name}</b>${o.role_title?'<br><span class="pill">'+o.role_title+'</span>':''}</td>
-      <td>${o.email}</td>
-      <td><input type="checkbox" ${o.can_members?'checked':''} data-k="can_members"></td>
-      <td><input type="checkbox" ${o.can_posts?'checked':''} data-k="can_posts"></td>
-      <td><input type="checkbox" ${o.can_board?'checked':''} data-k="can_board"></td>
-      <td><input type="checkbox" ${o.is_admin?'checked':''} data-k="is_admin"></td>
+      <td><b>${o.name}</b>${o.role_title?'<br><span class="pill">'+o.role_title+'</span>':''}<br><small style="color:#7A8AA5">${o.email}</small></td>
+      ${KEYS.map(k=>`<td style="text-align:center"><input type="checkbox" ${o[k]?'checked':''} data-k="${k}"></td>`).join('')}
       <td><button style="background:none;color:var(--red);padding:4px" onclick="removeOfficer(${o.id},'${o.name.replace(/'/g,"\\'")}')">remove</button></td>
     </tr>`);
   });
   tb.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.onchange=e=>{
     const tr=e.target.closest('tr');
-    const g=k=>tr.querySelector('[data-k='+k+']').checked;
-    saveOfficer(+tr.dataset.id,{is_admin:g('is_admin'),can_members:g('can_members'),can_posts:g('can_posts'),can_board:g('can_board')});
+    const flags={};
+    KEYS.forEach(k=>flags[k]=tr.querySelector('[data-k='+k+']').checked);
+    saveOfficer(+tr.dataset.id,flags);
   });
 }
 async function saveOfficer(id,flags){
@@ -191,10 +193,10 @@ async function saveOfficer(id,flags){
 async function addOfficer(){
   const name=$('nName').value.trim(),email=$('nEmail').value.trim(),title=$('nTitle').value.trim();
   if(!name||!email){alert('Name and email needed.');return;}
-  const r=await fetch(EP+'/auth/officers',{method:'POST',headers:HDRS(),body:JSON.stringify({name,email,role_title:title,can_board:true})});
+  const r=await fetch(EP+'/auth/officers',{method:'POST',headers:HDRS(),body:JSON.stringify({name,email,role_title:title,can_board:true,can_posts:false})});
   const d=await r.json();
   if(d.ok){$('nName').value='';$('nEmail').value='';$('nTitle').value='';loadOfficers();
-    $('omsg').innerHTML='<span style="color:var(--green)">Added \u2014 they can now sign in with their email (board figures by default; tick more as needed).</span>';}
+    $('omsg').innerHTML='<span style="color:var(--green)">Added. They can sign in with their email and will see the membership figures. Tick whatever else they need.</span>';}
   else $('omsg').innerHTML='<span style="color:var(--red)">'+(d.error||'Failed')+'</span>';
 }
 async function removeOfficer(id,name){
@@ -203,7 +205,6 @@ async function removeOfficer(id,name){
   loadOfficers();
 }
 function logout(){try{localStorage.removeItem('dt_session');}catch(e){}location.reload();}
-
 (async()=>{
   if(await verifyFromHash()){show();return;}
   if(await whoami()){show();return;}

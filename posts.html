@@ -44,6 +44,12 @@
 <div class="top"><h1>Manage articles</h1><small>Find, edit, unpublish or archive anything on the site</small></div>
 <div class="wrap">
 
+<div class="panel" id="queuePanel" style="display:none;border-left:5px solid var(--gold)">
+  <h2 style="border-left-color:var(--gold)">Waiting to be checked</h2>
+  <p style="font-size:13.5px;margin-bottom:10px">Written by someone else and not yet on the website.</p>
+  <div id="queueList"></div>
+</div>
+
 <div class="panel" id="browser">
   <div class="searchrow">
     <div><label>Search titles and text</label><input id="q" placeholder="e.g. Newport coach" onkeydown="if(event.key==='Enter')load(0)"></div>
@@ -101,6 +107,41 @@ let offset=0, limit=25, total=0, current=null;
 
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 const fmt=d=>d?new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—';
+
+let canApprove=false;
+
+async function loadQueue(){
+  try{
+    const d=await (await fetch(EP+'/posts/queue',{headers:H()})).json();
+    if(!d.ok||!d.waiting.length){$('queuePanel').style.display='none';return;}
+    canApprove=d.canApprove;
+    $('queueList').innerHTML=d.waiting.map(p=>
+      '<div style="border-bottom:1px solid var(--line);padding:12px 4px">'+
+      '<b style="color:var(--ink)">'+esc(p.title)+'</b>'+
+      '<small style="display:block;color:#7A8AA5;margin-top:2px">Written by '+esc(p.submitted_by||p.author)+
+      ' \u00b7 '+esc(p.category)+' \u00b7 '+fmt(p.updated_at)+'</small>'+
+      '<div style="background:var(--wash);padding:10px 12px;border-radius:8px;margin-top:8px;font-size:13.5px;max-height:150px;overflow:auto;white-space:pre-wrap">'+
+        esc(String(p.body).slice(0,700))+(String(p.body).length>700?'\u2026':'')+'</div>'+
+      (canApprove
+        ? '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">'+
+          '<button class="ok" onclick="approve('+p.id+',&quot;publish&quot;)">Approve and publish</button>'+
+          '<button class="ghost" onclick="edit('+p.id+')">Read and edit it first</button>'+
+          '<button class="ghost" style="color:var(--red)" onclick="approve('+p.id+',&quot;return&quot;)">Send back</button></div>'
+        : '<p style="font-size:13px;color:#7A8AA5;margin-top:8px">Waiting for someone who can publish.</p>')+
+      '</div>').join('');
+    $('queuePanel').style.display='block';
+  }catch(e){}
+}
+
+async function approve(id,action){
+  let note='';
+  if(action==='return'){
+    note=prompt('Send it back to the writer. Anything you want to tell them?')||'';
+  } else if(!confirm('Approve and publish this? It will appear on the website straight away.')) return;
+  const d=await (await fetch(EP+'/posts/approve',{method:'POST',headers:H(),body:JSON.stringify({id,action,note})})).json();
+  if(!d.ok){alert(d.error);return;}
+  loadQueue(); load(offset);
+}
 
 async function load(off){
   offset=Math.max(0,off||0);
@@ -162,6 +203,7 @@ async function archiveIt(){
   if(d.ok){$('eMsg').innerHTML='<span style="color:var(--green)">Archived.</span>';closeEditor();load(offset);}
 }
 
+loadQueue();
 load(0);
 </script>
 </body>
