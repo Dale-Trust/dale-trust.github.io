@@ -97,7 +97,7 @@ const slug=new URLSearchParams(location.search).get('p');
       document.title=p.title+' — Dale Supporters Trust';
       document.getElementById('heroTitle').textContent=p.category;
       document.getElementById('heroSub').textContent='Dale Trust news';
-      out.innerHTML='<article><h2>'+esc(p.title)+'</h2><p class="meta">By '+esc(p.author)+' \u00b7 '+fmt(p.publish_at)+'</p><div class="body">'+md(p.body)+'</div>'+
+      out.innerHTML='<article><h2>'+esc(p.title)+'</h2><p class="meta">By '+esc(p.author)+' \u00b7 '+fmt(p.publish_at)+'</p>'+(p.image?'<img src="'+p.image+'" alt="" style="width:100%;border-radius:12px;margin:0 0 18px;display:block">':'')+'<div class="body">'+md(p.body)+'</div>'+
         '<p style="margin-top:26px"><a href="news.html">&larr; All news &amp; newsletters</a></p></article>';
     } else {
       const {posts}=await (await fetch(EP+'/posts')).json();
