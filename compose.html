@@ -86,7 +86,9 @@
       </div>
     </div>
     <label>Header image <small style="text-transform:none">(optional)</small></label>
-    <input type="file" id="img" accept="image/*">
+    <input type="file" id="img" accept="image/*" onchange="uploadImage(this)">
+    <p class="hint" id="imgMsg" style="margin-top:6px">A picture at the top of the piece. It is added to your words automatically.</p>
+    <div id="imgPreview"></div>
     <label>Your words</label>
     <textarea id="body" lang="en-GB" spellcheck="true" placeholder="Just write. Blank line = new paragraph.
 # A line starting with # becomes a heading
@@ -121,6 +123,7 @@
   <div class="panel queue">
     <h2>The queue &mdash; published &amp; scheduled</h2>
     <div id="queue"><p class="hint">Nothing yet &mdash; your posts will appear here. Scheduled posts go live automatically at their time.</p></div>
+    <div id="after"></div>
   </div>
 
   <p class="note"><b>How this works:</b> posts save to the Trust's own database and appear on <b>daletrust.uk/news.html</b> immediately (or at their scheduled time). Emails are deliberately short and point readers to the website, so the full piece always lives at the Trust's own address.</p>
@@ -236,8 +239,8 @@ async function publish(){
     }
     const url='https://daletrust.uk/news.html?p='+d.slug;
     $('queue').innerHTML='<div class="qi"><span class="pill '+(mode==='later'?'sched':'live')+'">'+(mode==='later'?'Scheduled':'Live')+'</span>'+
-      '<div><b>'+$('title').value+'</b><small>'+$('cat').value+' \u00b7 <a href="'+url+'" target="_blank">view on the website</a></small></div></div>'+
-      '<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">'+
+      '<div><b>'+$('title').value+'</b><small>'+$('cat').value+' \u00b7 <a href="'+url+'" target="_blank">view on the website</a></small></div></div>';
+    $('after').innerHTML='<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">'+
       '<b style="font-family:Oswald;text-transform:uppercase">Email it out?</b>'+
       '<p class="hint" style="margin:4px 0 12px">Choose who should get it. The number updates as you narrow it down.</p>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
@@ -390,6 +393,42 @@ async function loadAudOptions(){
     if(prev)$('aud_season').value=prev;
     audCount();
   }catch(e){}
+}
+
+async function uploadImage(input){
+  const f=input.files && input.files[0];
+  if(!f) return;
+  const msg=$('imgMsg');
+  msg.textContent='Getting the picture ready\u2026';
+  try{
+    const dataUrl=await new Promise((res,rej)=>{
+      const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f);
+    });
+    // shrink it so it loads quickly on a phone
+    const img=await new Promise((res,rej)=>{
+      const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=dataUrl;
+    });
+    const max=1400;
+    const scale=Math.min(1, max/Math.max(img.width,img.height));
+    const c=document.createElement('canvas');
+    c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    const small=c.toDataURL('image/jpeg',0.82);
+    msg.textContent='Uploading\u2026';
+    const d=await (await fetch(CMS_ENDPOINT+'/image/upload',{method:'POST',headers:HDRS(),
+      body:JSON.stringify({data:small,filename:f.name})})).json();
+    if(!d.ok){msg.innerHTML='<span style="color:var(--red)">'+d.error+'</span>';return;}
+    // put it at the top of the words unless one is already there
+    const body=$('body');
+    if(!/^!\[/.test(body.value.trim())){
+      body.value='!['+($('title').value||'Dale Trust')+']('+d.url+')\n\n'+body.value;
+    } else {
+      body.value=body.value.replace(/^!\[[^\]]*\]\([^)]*\)/,'!['+($('title').value||'Dale Trust')+']('+d.url+')');
+    }
+    render(); runChecks();
+    msg.innerHTML='<span style="color:var(--green)">Picture added to the top of your piece.</span>';
+    $('imgPreview').innerHTML='<img src="'+d.url+'" style="max-width:180px;border-radius:8px;margin-top:8px">';
+  }catch(e){ msg.innerHTML='<span style="color:var(--red)">Could not use that picture.</span>'; }
 }
 
 async function mailshot(test){
