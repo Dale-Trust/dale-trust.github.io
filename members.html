@@ -54,6 +54,8 @@
   .readrow b{color:var(--ink);text-align:right;font-weight:600}
   .checked{background:#EAF7F0;border:1px solid #B7E0CB;border-left:5px solid var(--green);border-radius:10px;padding:14px 18px;font-size:14px;margin-bottom:16px}
   .hist{font-size:13.5px;color:#7A8AA5;margin-top:10px}
+  .bencat{font-family:'Oswald';text-transform:uppercase;font-size:14px;color:var(--royal);letter-spacing:.06em;margin:16px 0 6px}
+  .bencat:first-of-type{margin-top:6px}
   .bengrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
   @media(max-width:420px){.bengrid{grid-template-columns:1fr}}
   .ben{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
@@ -211,6 +213,7 @@
     <div class="panel" id="benefitsPanel">
       <h2 id="benTitle">Your membership gets you</h2>
       <p id="benIntro" style="font-size:14.5px;margin-bottom:12px">Just show your card.</p>
+      <p class="bencat">Food &amp; drink</p>
       <div class="bengrid">
         <div class="ben"><div class="pic" style="background-image:url('img/partners/cricket-club.jpg')"></div>
           <div class="txt"><b>Rochdale Cricket Club</b><span class="deal">15% off beer</span></div></div>
@@ -226,10 +229,15 @@
           <div class="txt"><b>Cemetery Hotel</b><span class="deal">10% off beer</span></div></div>
         <div class="ben"><div class="pic" style="background-image:url('img/partners/moorcock.webp')"></div>
           <div class="txt"><b>The Moorcock</b><span class="deal">2nd meal half price</span></div></div>
+      </div>
+      <p class="bencat">Services</p>
+      <div class="bengrid">
         <div class="ben"><div class="pic" style="background-image:url('img/partners/dale-motoring.jpg')"></div>
           <div class="txt"><b>Dale AFC School of Motoring</b><span class="deal">&pound;2 off lessons</span></div></div>
         <div class="ben"><div class="pic" style="background-image:url('img/partners/distinctive.png');background-size:contain;background-color:#fff"></div>
           <div class="txt"><b>Distinctive Holidays</b><span class="deal">Member discounts</span></div></div>
+        <div class="ben"><div class="pic" style="background:linear-gradient(130deg,#0E1F3D,#0057A7)"></div>
+          <div class="txt"><b>Culshaw Consulting</b><span class="deal">Member offer</span></div></div>
         <div class="ben"><div class="pic" style="background:linear-gradient(130deg,#0E1F3D,#0057A7)"></div>
           <div class="txt"><b>Bottomley&rsquo;s Print</b><span class="deal">Member offers</span></div></div>
       </div>
