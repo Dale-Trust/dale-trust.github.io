@@ -65,7 +65,7 @@
 </div>
 
 <div class="top">
-  <div><h1>Post Composer</h1><small>Write it once &mdash; the Trust look is applied for you</small></div>
+  <div><h1>Post Composer</h1><small>Write it once &mdash; the Trust look is applied for you</small><small style="display:block;color:#8FC1FF;font-size:11px;letter-spacing:.1em">COMPOSER v3 &middot; pictures enabled</small></div>
   <div class="who">Signed in as: <b id="whoami">Chris Culshaw</b></div>
 </div>
 
@@ -89,7 +89,10 @@
       </div>
     </div>
     <label>Header image <small style="text-transform:none">(optional)</small></label>
-    <input type="file" id="img" accept="image/*" onchange="uploadImage(this)">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <input type="file" id="img" accept="image/*" onchange="uploadImage(this)" style="flex:1;min-width:180px">
+      <button type="button" class="save" style="margin:0" onclick="uploadImage(document.getElementById('img'))">Add the picture</button>
+    </div>
     <p class="hint" id="imgMsg" style="margin-top:6px">A picture at the top of the piece. It is added to your words automatically.</p>
     <div id="imgPreview"></div>
     <label>Your words</label>
@@ -203,7 +206,8 @@ function render(){
   $('pvBody').innerHTML=html;
 }
 ['title','cat','author','body'].forEach(id=>$(id).addEventListener('input',()=>{render();runChecks();}));
-const imgEl=$('img'); if(imgEl && !imgEl.onchange) imgEl.onchange=()=>uploadImage(imgEl);
+const imgEl=$('img');
+if(imgEl){ imgEl.addEventListener('change',()=>uploadImage(imgEl)); }
 
 function runChecks(){
   const box=$('checks'); if(!box) return;
@@ -419,10 +423,13 @@ async function saveDraft(){
   }catch(e){alert('Could not reach the server.');}
 }
 
+let uploading=false;
 async function uploadImage(input){
-  const f=input.files && input.files[0];
-  if(!f) return;
-  const msg=$('imgMsg');
+  const msg=$('imgMsg') || document.createElement('p');
+  if(!input || !input.files || !input.files[0]){ msg.textContent='Choose a picture first.'; return; }
+  if(uploading) return;
+  uploading=true;
+  const f=input.files[0];
   msg.textContent='Getting the picture ready\u2026';
   try{
     const dataUrl=await new Promise((res,rej)=>{
@@ -457,7 +464,8 @@ async function uploadImage(input){
     render(); runChecks();
     msg.innerHTML='<span style="color:var(--green)">Picture added to the top of your piece.</span>';
     $('imgPreview').innerHTML='<img src="'+d.url+'" style="max-width:180px;border-radius:8px;margin-top:8px">';
-  }catch(e){ msg.innerHTML='<span style="color:var(--red)">Could not use that picture.</span>'; }
+  }catch(e){ msg.innerHTML='<span style="color:var(--red)">Could not use that picture \u2014 '+(e && e.message ? e.message : 'unknown problem')+'</span>'; }
+  finally{ uploading=false; }
 }
 
 async function mailshot(test){
