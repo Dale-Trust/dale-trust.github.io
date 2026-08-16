@@ -106,14 +106,21 @@
     <p class="hint">No formatting skills needed &mdash; the preview shows exactly how it publishes. Spelling is checked as you type (British English).</p>
     <div id="suggestBox" style="display:none;border:1px solid var(--line);border-left:4px solid var(--royal);border-radius:0 10px 10px 0;padding:14px 16px;margin-top:16px;background:#F7FAFF">
       <label style="margin:0"><input type="checkbox" id="wantEmail" onchange="toggleSuggest()" style="width:auto;margin-right:8px">Suggest this is emailed out too</label>
-      <p class="hint" style="margin-top:4px">Choose who you think should get it. Whoever approves your piece can send it in one go, or change your suggestion.</p>
-      <div id="suggestFields" style="display:none;margin-top:10px">
+      <p class="hint" style="margin-top:4px">Choose who you think should get it. Whoever approves your piece can send it as it stands, or change your suggestion.</p>
+      <div id="suggestFields" style="display:none;margin-top:12px">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div><label>Who</label><select id="sug_who" onchange="sugChanged()">
             <option value="current">Current members</option>
             <option value="lapsed">Lapsed members</option></select></div>
-          <div><label>Membership type</label>
-            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px" id="sugTypes"></div></div>
+          <div><label>Newsletter</label><select id="sug_news" onchange="sugCount()">
+            <option value="in">Opted in only</option>
+            <option value="">Everyone with an email</option></select></div>
+        </div>
+        <label>Membership type</label>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:2px">
+          <label style="font-size:14px;text-transform:none;letter-spacing:0;font-weight:500;margin:0"><input type="checkbox" class="sugType" value="Adult" checked onchange="sugCount()" style="width:auto;margin-right:6px">Adult</label>
+          <label style="font-size:14px;text-transform:none;letter-spacing:0;font-weight:500;margin:0"><input type="checkbox" class="sugType" value="Exile" checked onchange="sugCount()" style="width:auto;margin-right:6px">Exile</label>
+          <label style="font-size:14px;text-transform:none;letter-spacing:0;font-weight:500;margin:0"><input type="checkbox" class="sugType" value="Junior" checked onchange="sugCount()" style="width:auto;margin-right:6px">Junior</label>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
           <div><label>Where</label><select id="sug_place" onchange="sugChanged()">
@@ -121,8 +128,16 @@
             <option value="county">A county</option><option value="country">A country</option></select></div>
           <div id="sugPlaceWrap" style="display:none"><label>Which</label><select id="sug_which" onchange="sugCount()"></select></div>
         </div>
-        <input type="hidden" id="sug_season"><input type="hidden" id="sug_age" value=""><input type="hidden" id="sug_news" value="in">
-        <div id="sugCount" style="background:#fff;border:1px solid var(--line);padding:10px 12px;margin-top:10px;border-radius:8px;font-size:14px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+          <div><label>Age</label><select id="sug_age" onchange="sugCount()">
+            <option value="">Any age</option><option value="u16">Under 16</option><option value="16-39">16 to 39</option>
+            <option value="40-59">40 to 59</option><option value="60plus">60 or over</option>
+            <option value="unknown">No date of birth recorded</option></select></div>
+          <div><label>Gender</label><select id="sug_gender" onchange="sugCount()">
+            <option value="">Everyone</option><option value="f">Women and girls</option>
+            <option value="m">Men and boys</option><option value="unknown">Not recorded</option></select></div>
+        </div>
+        <div id="sugCount" style="background:#fff;border:1px solid var(--line);padding:11px 13px;margin-top:12px;border-radius:8px;font-size:14px"></div>
       </div>
     </div>
 
@@ -488,7 +503,10 @@ function toggleSuggest(){
 
 function sugFilters(){
   const who=$('sug_who').value, place=$('sug_place').value;
-  const f={who, newsletter:'in', age:'', place,
+  const f={who, place,
+    newsletter:$('sug_news').value,
+    age:$('sug_age').value,
+    gender:$('sug_gender').value,
     types:[...document.querySelectorAll('.sugType:checked')].map(x=>x.value)};
   if(who==='lapsed') f.season='2025/26';
   if(place==='county') f.county=$('sug_which').value;
@@ -498,6 +516,7 @@ function sugFilters(){
 
 async function sugChanged(){
   const place=$('sug_place').value;
+  if((place==='county'||place==='country') && !audOptions){ await loadAudOptions(); }
   if((place==='county'||place==='country')&&audOptions){
     const list=place==='county'?audOptions.counties:audOptions.countries;
     $('sug_which').innerHTML=list.map(x=>'<option>'+x.replace(/</g,'&lt;')+'</option>').join('');
