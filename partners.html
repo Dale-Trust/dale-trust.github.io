@@ -49,7 +49,11 @@
   .cat h3{font-size:20px;border-left:5px solid var(--gold);padding-left:12px;margin-bottom:3px;text-transform:uppercase;font-family:'Oswald'}
   .cat p{font-size:14px;color:#7A8AA5;padding-left:17px;margin:0}
   .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;margin-top:8px}
-  .p{border:1px solid var(--line);border-top:5px solid var(--gold);padding:18px 20px;background:#fff}
+  .p{border:1px solid var(--line);border-top:5px solid var(--gold);background:#fff;overflow:hidden;padding:0}
+  .p > *:not(.phead){margin-left:20px;margin-right:20px}
+  .p > h3{margin-top:16px}
+  .p > *:last-child{margin-bottom:18px}
+  .phead{height:120px;background-position:center;background-repeat:no-repeat;border-bottom:1px solid var(--line)}
   .p h3{font-size:18px;text-transform:none;font-family:'Oswald';letter-spacing:.01em}
   .p .addr{font-size:12.5px;color:#7A8AA5;margin:2px 0 10px}
   .p p{font-size:14.5px;margin-bottom:10px}
@@ -105,84 +109,13 @@
 <section style="background:var(--wash);border-top:1px solid var(--line);border-bottom:1px solid var(--line)"><div class="wrap">
   <h2 style="font-size:26px;margin-bottom:6px">The partners</h2>
   <p style="margin-bottom:22px">Eleven local businesses, all offering something to Trust members. Just show your membership card.</p>
-  <div class="cat"><h3>Food &amp; drink</h3><p>Match days, and every other day</p></div>
-  <div class="cards">
-
-    <div class="p" id="rochdale-cricket-club">
-      <h3>Rochdale Cricket Club</h3>
-      <p class="addr">Bridgefold Road, Rochdale OL11 5BX</p>
-      <p>A club with a rich history going back over 200 years and an integral part of local sport. Less than a ten-minute walk from the Crown Oil Arena, with free parking.</p>
-      <span class="deal">15% off beer on match days</span>
-    </div>
-
-    <div class="p" id="twisted-mule">
-      <h3>Twisted Mule Brewery &amp; Taphouse</h3>
-      <p class="addr">Spotland Bridge Mill, Mellor Street, Rochdale OL11 5BU</p>
-      <p>Industrial heritage meets modern craft beer, all brewed in house, in a beautifully restored cotton mill &mdash; stripped-back brick and cast-iron columns. Proudly inclusive and buzzing on match days.</p>
-      <span class="deal">15% off beer</span>
-      <p style="margin-top:10px;font-size:13.5px">Look out for monthly promotion evenings on Wednesdays and Thursdays.</p>
-    </div>
-
-    <div class="p" id="cap-and-whippet">
-      <h3>Cap &amp; Whippet</h3>
-      <p class="addr">796A Edenfield Road, Rochdale OL12 7RB</p>
-      <p>A micropub opened in 2022, sister to the Hop and Vine next door. Four hand pumps serving Twisted Mule beers from a temperature-controlled cellar, plus keg beers from home and abroad.</p>
-      <span class="deal">15% off beer</span>
-    </div>
-
-    <div class="p" id="moody-blue">
-      <h3>Moody Blue</h3>
-      <p class="addr">1 Drake Street, Rochdale OL16 1RE</p>
-      <p>In the heart of town, steps from the bus routes and Metrolink. Real ales, cosy corners, HD sports screens and dog-friendly areas &mdash; a regular meeting point for Dale fans on match days.</p>
-      <span class="deal">10% off beer</span>
-    </div>
-
-    <div class="p" id="mill-about">
-      <h3>Mill About</h3>
-      <p class="addr">Spotland Bridge Mill, Mellor Street, Rochdale OL11 5BU</p>
-      <p>A coffee shop and bar serving breakfasts, lunches, beers, wines and spirits, with free parking and within walking distance of the ground. Hosted by Alison, an enthusiastic Dale fan.</p>
-      <span class="deal">10% off food &amp; drink</span>
-    </div>
-
-    <div class="p" id="cemetery-hotel">
-      <h3>Cemetery Hotel</h3>
-      <p class="addr">470 Bury Road, Rochdale OL11 5EU</p>
-      <p>A traditional boozer with an inviting bar and three rooms off it &mdash; the setting for many a late night celebrating Dale's successes. A brisk walk down Sandy Lane from the ground, with rotating cask ales and non-alcoholic options.</p>
-      <span class="deal">10% off all beer</span>
-    </div>
-
-    <div class="p" id="the-moorcock">
-      <h3>The Moorcock</h3>
-      <p class="addr">Halifax Road, Littleborough OL15 0LD</p>
-      <p>A traditional country inn with comfortable accommodation, real ales, an extensive restaurant menu and daily specials, prepared with fresh produce wherever possible.</p>
-      <span class="deal">Buy one meal, get the second half price</span>
-      <p style="margin-top:10px;font-size:13.5px">All day Monday to Thursday, and 12&ndash;5pm Friday and Saturday (lowest-priced meal is the half-price one).</p>
-    </div>
-
-  </div>
-
   <div class="cat"><h3>Services</h3><p>Businesses offering something to Trust members</p></div>
   <div class="cards">
 
-    <div class="p" id="dale-afc-school-of-motoring">
-      <h3>Dale AFC School of Motoring</h3>
-      <p class="addr">Martin Culshaw &middot; 07899 824098</p>
-      <p>An approved driving instructor covering Rochdale and the surrounding area, getting learners through their UK driving test.</p>
-      <span class="deal">&pound;2 off driving lessons</span>
-      <p style="margin-top:10px;font-size:13.5px">Learners need a valid provisional licence and must be at least 17.</p>
-    </div>
-
-    <div class="p" id="distinctive-holidays">
-      <h3>Distinctive Holidays</h3>
-      <p class="addr">Andy Sharples &middot; 01706 437010</p>
-      <p>A Littleborough-based travel agent and cruise specialist &mdash; P&amp;O, Celebrity, Royal Caribbean, MSC, Marella and more, plus Jet2 and TUI packages, city breaks, safaris and tailor-made trips.</p>
-      <span class="deal">Discounts negotiated direct</span>
-    </div>
-
     <div class="p" id="culshaw-consulting">
+      <div class="phead" style="background-image:url('img/partners/Culshaw%20Consulting%20Logo.png');background-size:contain;background-color:#fff"></div>
       <h3>Culshaw Consulting</h3>
       <p class="addr">Chris Culshaw &middot; chris@culshaw.consulting</p>
-      <img src="img/partners/Culshaw Consulting Logo.png" alt="Culshaw Consulting" style="max-width:150px;height:auto;display:block;margin:6px 0 12px" onerror="this.style.display='none'">
       <p><strong>Technology support for Dale members</strong> &mdash; free and discounted services, whether you're a sole trader or an established business.</p>
 
       <details class="more" id="culshawMore">
@@ -206,11 +139,94 @@
       <p style="margin-top:8px;font-size:14px"><a href="mailto:chris@culshaw.consulting?subject=Dale%20Trust%20member%20enquiry">chris@culshaw.consulting</a> &mdash; mention you're a Trust member.</p>
     </div>
 
-    <div class="p" id="bottomleys-print">
+
+
+    <div class="p" id="dale-afc-school-of-motoring">
+      <div class="phead" style="background-image:url('img/partners/dale-motoring.jpg');background-size:cover"></div>
+      <h3>Dale AFC School of Motoring</h3>
+      <p class="addr">Martin Culshaw &middot; 07899 824098</p>
+      <p>An approved driving instructor covering Rochdale and the surrounding area, getting learners through their UK driving test.</p>
+      <span class="deal">&pound;2 off driving lessons</span>
+      <p style="margin-top:10px;font-size:13.5px">Learners need a valid provisional licence and must be at least 17.</p>
+    </div>
+
+    <div class="p" id="distinctive-holidays">
+      <div class="phead" style="background-image:url('img/partners/distinctive.png');background-size:contain;background-color:#fff"></div>
+      <h3>Distinctive Holidays</h3>
+      <p class="addr">Andy Sharples &middot; 01706 437010</p>
+      <p>A Littleborough-based travel agent and cruise specialist &mdash; P&amp;O, Celebrity, Royal Caribbean, MSC, Marella and more, plus Jet2 and TUI packages, city breaks, safaris and tailor-made trips.</p>
+      <span class="deal">Discounts negotiated direct</span>
+    </div>
+
+        <div class="p" id="bottomleys-print">
+      <div class="phead" style="background:linear-gradient(130deg,var(--navy),var(--royal))"></div>
       <h3>Bottomley's Print Services</h3>
       <p class="addr">Unit 3, Spen Business Park, Rochdale OL12 6AS</p>
       <p>Print services supporting the Trust and its members.</p>
       <span class="deal">Contact for member offers</span>
+    </div>
+
+  </div>
+
+  <div class="cat"><h3>Food &amp; drink</h3><p>Match days, and every other day</p></div>
+  <div class="cards">
+
+    <div class="p" id="rochdale-cricket-club">
+      <div class="phead" style="background-image:url('img/partners/cricket-club.jpg');background-size:cover"></div>
+      <h3>Rochdale Cricket Club</h3>
+      <p class="addr">Bridgefold Road, Rochdale OL11 5BX</p>
+      <p>A club with a rich history going back over 200 years and an integral part of local sport. Less than a ten-minute walk from the Crown Oil Arena, with free parking.</p>
+      <span class="deal">15% off beer on match days</span>
+    </div>
+
+    <div class="p" id="twisted-mule">
+      <div class="phead" style="background-image:url('img/partners/mule.jpg');background-size:cover"></div>
+      <h3>Twisted Mule Brewery &amp; Taphouse</h3>
+      <p class="addr">Spotland Bridge Mill, Mellor Street, Rochdale OL11 5BU</p>
+      <p>Industrial heritage meets modern craft beer, all brewed in house, in a beautifully restored cotton mill &mdash; stripped-back brick and cast-iron columns. Proudly inclusive and buzzing on match days.</p>
+      <span class="deal">15% off beer</span>
+      <p style="margin-top:10px;font-size:13.5px">Look out for monthly promotion evenings on Wednesdays and Thursdays.</p>
+    </div>
+
+    <div class="p" id="cap-and-whippet">
+      <div class="phead" style="background-image:url('img/partners/cap.jpg');background-size:cover"></div>
+      <h3>Cap &amp; Whippet</h3>
+      <p class="addr">796A Edenfield Road, Rochdale OL12 7RB</p>
+      <p>A micropub opened in 2022, sister to the Hop and Vine next door. Four hand pumps serving Twisted Mule beers from a temperature-controlled cellar, plus keg beers from home and abroad.</p>
+      <span class="deal">15% off beer</span>
+    </div>
+
+    <div class="p" id="moody-blue">
+      <div class="phead" style="background-image:url('img/partners/moody.jpg');background-size:cover"></div>
+      <h3>Moody Blue</h3>
+      <p class="addr">1 Drake Street, Rochdale OL16 1RE</p>
+      <p>In the heart of town, steps from the bus routes and Metrolink. Real ales, cosy corners, HD sports screens and dog-friendly areas &mdash; a regular meeting point for Dale fans on match days.</p>
+      <span class="deal">10% off beer</span>
+    </div>
+
+    <div class="p" id="mill-about">
+      <div class="phead" style="background-image:url('img/partners/mill.jpg');background-size:cover"></div>
+      <h3>Mill About</h3>
+      <p class="addr">Spotland Bridge Mill, Mellor Street, Rochdale OL11 5BU</p>
+      <p>A coffee shop and bar serving breakfasts, lunches, beers, wines and spirits, with free parking and within walking distance of the ground. Hosted by Alison, an enthusiastic Dale fan.</p>
+      <span class="deal">10% off food &amp; drink</span>
+    </div>
+
+    <div class="p" id="cemetery-hotel">
+      <div class="phead" style="background-image:url('img/partners/cemetery.jpg');background-size:cover"></div>
+      <h3>Cemetery Hotel</h3>
+      <p class="addr">470 Bury Road, Rochdale OL11 5EU</p>
+      <p>A traditional boozer with an inviting bar and three rooms off it &mdash; the setting for many a late night celebrating Dale's successes. A brisk walk down Sandy Lane from the ground, with rotating cask ales and non-alcoholic options.</p>
+      <span class="deal">10% off all beer</span>
+    </div>
+
+    <div class="p" id="the-moorcock">
+      <div class="phead" style="background-image:url('img/partners/moorcock.webp');background-size:cover"></div>
+      <h3>The Moorcock</h3>
+      <p class="addr">Halifax Road, Littleborough OL15 0LD</p>
+      <p>A traditional country inn with comfortable accommodation, real ales, an extensive restaurant menu and daily specials, prepared with fresh produce wherever possible.</p>
+      <span class="deal">Buy one meal, get the second half price</span>
+      <p style="margin-top:10px;font-size:13.5px">All day Monday to Thursday, and 12&ndash;5pm Friday and Saturday (lowest-priced meal is the half-price one).</p>
     </div>
 
   </div>
