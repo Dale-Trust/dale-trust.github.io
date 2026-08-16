@@ -88,6 +88,7 @@
       <th title="Write posts — they queue for approval unless they can also publish">Write</th>
       <th title="Approve and publish what others have written">Publish</th>
       <th title="Email members and lapsed members">Send email</th>
+      <th title="See the ready-written Facebook, X, Instagram and LinkedIn posts">Social</th>
       <th title="Create surveys and votes">Surveys</th>
       <th title="Set up coaches and take bookings">Coach</th>
       <th title="See the membership figures">Figures</th>
@@ -231,7 +232,7 @@ async function loadOfficers(){
   const d=await r.json();
   if(!d.ok)return;
   const tb=document.querySelector('#offTable tbody');tb.innerHTML='';
-  const KEYS=['can_members','can_import','can_articles','can_posts','can_publish','can_send','can_surveys','can_coach','can_board','is_admin'];
+  const KEYS=['can_members','can_import','can_articles','can_posts','can_publish','can_send','can_social','can_surveys','can_coach','can_board','is_admin'];
   d.officers.filter(o=>o.active).forEach(o=>{
     tb.insertAdjacentHTML('beforeend',
     `<tr data-id="${o.id}">

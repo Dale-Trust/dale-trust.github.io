@@ -276,7 +276,8 @@ async function publish(){
       '<p class="hint" style="margin-top:8px">Emails are short and link back to the website \u2014 the full piece always lives on daletrust.uk.</p>'+
       '<p id="mailmsg" style="margin-top:8px;font-weight:600"></p></div>'+
       '<div id="sharePanel" style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px"></div>';
-    buildShare(url);
+    if(!window._perm || window._perm.can_social !== false) buildShare(url);
+    else $('sharePanel').innerHTML='<p class="hint">Sharing on Facebook, X and Instagram is handled by the Media Officer.</p>';
     loadAudOptions();
   }catch(e){alert('Could not reach the server.');}
 }
