@@ -62,6 +62,14 @@
   footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:20px}
   .p:target{border-color:var(--royal);border-top-color:var(--royal);box-shadow:0 0 0 3px rgba(0,87,167,.15)}
   .p{scroll-margin-top:24px}
+  .more{margin:12px 0 4px;border-top:1px solid var(--line);padding-top:10px}
+  .more summary{cursor:pointer;font:600 14px 'Montserrat';color:var(--royal);list-style:none;padding:6px 0;display:flex;align-items:center;gap:8px}
+  .more summary::-webkit-details-marker{display:none}
+  .more summary::after{content:"\25BE";font-size:12px;transition:transform .15s}
+  .more[open] summary::after{transform:rotate(180deg)}
+  .more summary:hover{text-decoration:underline}
+  .more-body{padding-top:4px}
+  .more-body p{font-size:14.5px}
 </style>
 </head>
 <body>
@@ -177,6 +185,9 @@
       <img src="img/partners/Culshaw Consulting Logo.png" alt="Culshaw Consulting" style="max-width:150px;height:auto;display:block;margin:6px 0 12px" onerror="this.style.display='none'">
       <p><strong>Technology support for Dale members</strong> &mdash; free and discounted services, whether you're a sole trader or an established business.</p>
 
+      <details class="more" id="culshawMore">
+        <summary>See the three offers</summary>
+        <div class="more-body">
       <p style="margin-top:12px"><strong>Digital Health Check &mdash; free to members</strong> (normally &pound;150)<br>
       A plain-English report on how your business looks online: whether your emails are reaching people or landing in spam, how fast your site loads on a phone, your Google listing and your domain security. One page, no jargon, no obligation, and a 20-minute call to talk it through.</p>
 
@@ -185,6 +196,9 @@
 
       <p><strong>Technology Review &mdash; free to members</strong> (normally &pound;750)<br>
       A half-day review of your systems, software spend, data and risks, with a written summary you can act on. For businesses with staff and a few systems that have grown organically. Usually saves more in wasted subscriptions than it costs.</p>
+
+              </div>
+      </details>
 
       <span class="deal">Free health check &middot; 30% off websites</span>
 
@@ -210,5 +224,12 @@
 </div></section>
 
 <footer>Dale Trust is the trading name of Rochdale Supporters Club Limited, a registered society (29690R). Partners of the Trust is coordinated by Keith Hicks.</footer>
+<script>
+// if someone has come straight to a partner, open its detail
+(function(){
+  var t=location.hash && document.querySelector(location.hash);
+  if(t){ var d=t.querySelector('details'); if(d) d.open=true; }
+})();
+</script>
 </body>
 </html>
