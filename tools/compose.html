@@ -109,20 +109,20 @@
       <p class="hint" style="margin-top:4px">Choose who you think should get it. Whoever approves your piece can send it in one go, or change your suggestion.</p>
       <div id="suggestFields" style="display:none;margin-top:10px">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div><label>Who</label><select id="aud_who" onchange="audChanged()">
+          <div><label>Who</label><select id="sug_who" onchange="sugChanged()">
             <option value="current">Current members</option>
             <option value="lapsed">Lapsed members</option></select></div>
           <div><label>Membership type</label>
-            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px" id="typeBoxes"></div></div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px" id="sugTypes"></div></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
-          <div><label>Where</label><select id="aud_place" onchange="audChanged()">
+          <div><label>Where</label><select id="sug_place" onchange="sugChanged()">
             <option value="">Anywhere</option><option value="uk">UK</option><option value="overseas">Overseas</option>
             <option value="county">A county</option><option value="country">A country</option></select></div>
-          <div id="placeWrap" style="display:none"><label>Which</label><select id="aud_which" onchange="audCount()"></select></div>
+          <div id="sugPlaceWrap" style="display:none"><label>Which</label><select id="sug_which" onchange="sugCount()"></select></div>
         </div>
-        <input type="hidden" id="aud_season"><input type="hidden" id="aud_age" value=""><input type="hidden" id="aud_news" value="in">
-        <div id="audCount" style="background:#fff;border:1px solid var(--line);padding:10px 12px;margin-top:10px;border-radius:8px;font-size:14px"></div>
+        <input type="hidden" id="sug_season"><input type="hidden" id="sug_age" value=""><input type="hidden" id="sug_news" value="in">
+        <div id="sugCount" style="background:#fff;border:1px solid var(--line);padding:10px 12px;margin-top:10px;border-radius:8px;font-size:14px"></div>
       </div>
     </div>
 
@@ -319,6 +319,15 @@ async function publish(){
         '<div><label>Newsletter</label><select id="aud_news" onchange="audCount()">'+
           '<option value="in">Opted in only</option><option value="">Everyone with an email</option></select></div>'+
       '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">'+
+        '<div><label>Gender</label><select id="aud_gender" onchange="audCount()">'+
+          '<option value="">Everyone</option><option value="f">Women and girls</option>'+
+          '<option value="m">Men and boys</option><option value="unknown">Not recorded</option></select></div>'+
+        '<div><label>Details</label><select id="aud_confirmed" onchange="audCount()">'+
+          '<option value="">Everyone</option>'+
+          '<option value="never">Have never confirmed their details</option>'+
+          '<option value="done">Have confirmed their details</option></select></div>'+
+      '</div>'+
       '<div id="audCount" style="background:var(--wash);border-left:4px solid var(--royal);padding:12px 14px;margin-top:14px;border-radius:0 8px 8px 0"></div>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'+
       '<button class="go" style="width:auto;background:#46536B" onclick="mailshot(true)">Send me a test</button>'+
@@ -398,6 +407,8 @@ function audFilters(){
   const who=$('aud_who').value;
   const place=$('aud_place').value;
   const f={who, newsletter:$('aud_news').value, age:$('aud_age').value, place,
+    gender: $('aud_gender') ? $('aud_gender').value : '',
+    confirmed: $('aud_confirmed') ? $('aud_confirmed').value : '',
     types:[...document.querySelectorAll('.audType:checked')].map(x=>x.value)};
   if(who==='lapsed'||who==='season') f.season=$('aud_season').value;
   if(place==='county') f.county=$('aud_which').value;
@@ -440,10 +451,14 @@ async function loadAudOptions(){
   try{
     audOptions=await (await fetch(CMS_ENDPOINT+'/audience/options',{headers:HDRS()})).json();
     if(!audOptions.ok)return;
-    $('aud_season').innerHTML=audOptions.seasons.map(s=>'<option>'+s+'</option>').join('');
-    const prev=audOptions.seasons.filter(s=>s!==audOptions.current)[0];
-    if(prev)$('aud_season').value=prev;
-    audCount();
+    const ss=$('aud_season');
+    if(ss){
+      ss.innerHTML=audOptions.seasons.map(s=>'<option>'+s+'</option>').join('');
+      const prev=audOptions.seasons.filter(s=>s!==audOptions.current)[0];
+      if(prev) ss.value=prev;
+    }
+    if($('sugCount')) sugCount();
+    if($('audCount')) audCount();
   }catch(e){}
 }
 
@@ -468,12 +483,47 @@ function startAnother(){
 function toggleSuggest(){
   const on=$('wantEmail').checked;
   $('suggestFields').style.display=on?'block':'none';
-  if(on) audCount();
+  if(on) sugCount();
+}
+
+function sugFilters(){
+  const who=$('sug_who').value, place=$('sug_place').value;
+  const f={who, newsletter:'in', age:'', place,
+    types:[...document.querySelectorAll('.sugType:checked')].map(x=>x.value)};
+  if(who==='lapsed') f.season='2025/26';
+  if(place==='county') f.county=$('sug_which').value;
+  if(place==='country') f.country=$('sug_which').value;
+  return f;
+}
+
+async function sugChanged(){
+  const place=$('sug_place').value;
+  if((place==='county'||place==='country')&&audOptions){
+    const list=place==='county'?audOptions.counties:audOptions.countries;
+    $('sug_which').innerHTML=list.map(x=>'<option>'+x.replace(/</g,'&lt;')+'</option>').join('');
+    $('sugPlaceWrap').style.display='block';
+  } else $('sugPlaceWrap').style.display='none';
+  sugCount();
+}
+
+let sugTimer=null;
+function sugCount(){
+  clearTimeout(sugTimer);
+  sugTimer=setTimeout(async()=>{
+    const box=$('sugCount'); if(!box) return;
+    box.textContent='Counting\u2026';
+    try{
+      const d=await (await fetch(CMS_ENDPOINT+'/audience/count',{method:'POST',headers:HDRS(),body:JSON.stringify(sugFilters())})).json();
+      box.innerHTML = d.ok
+        ? '<b>'+d.count+'</b> people would get it \u2014 <span style="color:#7A8AA5">'+d.description+'</span>'
+        : (d.error||'Could not count.');
+    }catch(e){ box.textContent='Could not count just now.'; }
+  },250);
 }
 
 function suggestion(){
   if(!$('wantEmail') || !$('wantEmail').checked) return null;
-  return { proposed_send:1, proposed_audience:audFilters() };
+  return { proposed_send:1, proposed_audience:sugFilters() };
 }
 
 async function saveDraft(){
