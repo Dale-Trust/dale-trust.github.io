@@ -383,7 +383,8 @@ async function loadLive(){
 
     // ---- build an Exiles sheet in the layout the analysis expects ----
     const ix={};head.forEach((c,i)=>{ix[String(c).toLowerCase().trim()]=i;});
-    const isEng=v=>{const t=(v||'').toLowerCase();return !t||t==='england'||t==='uk'||t==='united kingdom'||t==='gb'||t==='scotland'||t==='wales';};
+    // the Trust counts overseas as anywhere outside England
+    const isEng=v=>{const t=(v||'').toLowerCase().trim();return !t||t==='england';};
     const byCountry={}, byCounty={}, townsOf={}, summary={overseas:[],england:[],total:[]};
     order.forEach(s=>{
       let ov=0,en=0;

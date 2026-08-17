@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dale Trust — Membership at a Glance</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
+<script>window.addEventListener("error",function(e){if(e.target&&e.target.tagName==="SCRIPT"&&!window.Chart&&!window._chartFallback){window._chartFallback=1;var s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js";document.head.appendChild(s);}},true);</script>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--gold:#E8B84B;--green:#1E8E5A;--grey:#8C9299}
@@ -51,6 +52,12 @@ const ROYAL='#0057A7',NAVY='#0E1F3D',GOLD='#E8B84B',GREEN='#1E8E5A',GREY='#8C929
 const $=id=>document.getElementById(id);
 const say=(t,bad)=>{$('msg').innerHTML=t+(bad?'<br><br><a href="admin.html" style="color:#0057A7">Sign in again &rarr;</a>':'');};
 
+function whenCharts(cb, tries){
+  if (window.Chart) return cb();
+  if ((tries||0) > 60) { say('The charting library could not be loaded \u2014 please refresh the page.'); return; }
+  setTimeout(function(){ whenCharts(cb, (tries||0)+1); }, 100);
+}
+
 (async function(){
   let session=null;
   try{session=localStorage.getItem('dt_session');}catch(e){}
@@ -65,6 +72,7 @@ const say=(t,bad)=>{$('msg').innerHTML=t+(bad?'<br><br><a href="admin.html" styl
   }catch(e){ say('Could not reach the server: '+e.message); return; }
 
   try{
+    await new Promise(res => whenCharts(res));
     const pick=(arr,key)=>Object.fromEntries((arr||[]).map(x=>[String(x[key!==undefined?key:'k']),x.n]));
     const t=pick(d.byType), nvr=pick(d.newVsRenewal), news=pick(d.newsletter);
     const total=(+t.Adult||0)+(+t.Exile||0)+(+t.Junior||0);

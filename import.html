@@ -183,6 +183,13 @@ function load(f){
   if (isCSV) r.readAsText(f); else r.readAsArrayBuffer(f);
 }
 
+const COUNTRIES=['WALES','SCOTLAND','NORTHERN IRELAND','IRELAND','REPUBLIC OF IRELAND','ISLE OF MAN',
+ 'USA','U.S.A.','UNITED STATES','CANADA','AUSTRALIA','NEW ZEALAND','NORWAY','SWEDEN','DENMARK','FINLAND',
+ 'MALTA','SPAIN','PORTUGAL','FRANCE','GERMANY','NETHERLANDS','BELGIUM','ITALY','SWITZERLAND','AUSTRIA',
+ 'BULGARIA','CZECH REPUBLIC','POLAND','GREECE','CYPRUS','TURKEY','THAILAND','KUWAIT','UNITED ARAB EMIRATES',
+ 'UAE','QATAR','SAUDI ARABIA','SOUTH AFRICA','TANZANIA','KENYA','INDIA','CHINA','JAPAN','SINGAPORE',
+ 'HONG KONG','BRAZIL','ARGENTINA','MEXICO','GIBRALTAR','JERSEY','GUERNSEY'];
+
 function useSheet(name){
   const grid = XLSX.utils.sheet_to_json(workbook.Sheets[name], {header:1, blankrows:false, raw:false, defval:''});
   if (!grid.length) { $('loaded').innerHTML = '<span class="bad">That tab looks empty.</span>'; return; }
@@ -252,7 +259,8 @@ function transform(r,m){
     gender:g('gender')||null,
     dob:normDate(g('dob')), email:g('email'), mobile:g('mobile'), home_tel:g('home_tel'),
     address1:g('address1'), address2:g('address2'), town:g('town'),
-    county:g('county'), postcode:g('postcode'), country:g('country'),
+    county:g('county'), postcode:g('postcode'),
+    country: g('country') || (COUNTRIES.includes(g('county').toUpperCase().trim()) ? g('county').trim() : ''),
     exile_transport_share: ex? (ex.startsWith('y')?'Yes':'No') : null,
     date_joined:normDate(g('date_joined')),
     annual_fee:g('annual_fee').replace(/[\u00A3,]/g,'')||null,
