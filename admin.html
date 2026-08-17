@@ -155,6 +155,7 @@ function show(){
   if(me.can_articles) tile('posts.html','Manage articles','Find, edit, approve or archive anything on the site');
   if(me.can_articles) checkQueue();
   if(me.can_surveys) tile('surveys.html','Surveys &amp; voting','Player of the Month, consultations and results');
+  if(me.can_social||me.can_articles) tile('graphics.html','Graphics maker','Trust-branded images for Facebook, Instagram and X');
   if(me.can_articles) tile('tools/post-import.html','Import old posts','Republish the WordPress archive onto the new site');
   if(me.can_board) tile('board.html','Board figures','Membership at a glance \u2014 live, no personal data');
   tile('decisions.html','Decisions &amp; tasks','Everything raised about the website \u2014 answer your items here');

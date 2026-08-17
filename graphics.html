@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graphics maker | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:21px}.top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:1100px;margin:0 auto;padding:18px}
+  .cols{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+  @media(max-width:860px){.cols{grid-template-columns:1fr}}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{font-size:15px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:12px 0 4px}
+  input,select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
+  textarea{min-height:64px;resize:vertical}
+  button{background:var(--royal);color:#fff;border:0;border-radius:9px;padding:12px 20px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+  button.green{background:var(--green);width:100%;padding:15px}
+  button.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line)}
+  .picks{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pick{border:1.5px solid var(--line);border-radius:9px;padding:11px 12px;cursor:pointer;background:#fff;text-align:left;font:600 13px 'Montserrat';color:var(--body)}
+  .pick.on{border-color:var(--royal);background:#E8F1FC;color:var(--royal)}
+  .sizes{display:flex;gap:8px;flex-wrap:wrap}
+  .size{border:1.5px solid var(--line);border-radius:100px;padding:7px 14px;cursor:pointer;background:#fff;font:600 12.5px 'Montserrat';color:var(--body)}
+  .size.on{border-color:var(--royal);background:var(--royal);color:#fff}
+  .stage{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;text-align:center;position:sticky;top:18px}
+  canvas{max-width:100%;height:auto;border-radius:8px;box-shadow:0 10px 30px rgba(4,30,66,.16)}
+  .hint{font-size:12.5px;color:#7A8AA5;margin-top:6px}
+  .drop{border:2px dashed var(--line);border-radius:9px;padding:14px;text-align:center;font-size:13px;cursor:pointer;color:#7A8AA5}
+  .drop:hover{border-color:var(--royal);color:var(--royal)}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>Graphics maker</h1><small>Trust-branded images for Facebook, Instagram and X &mdash; fill in the boxes and download</small></div>
+<div class="wrap">
+<div class="cols">
+
+  <div>
+    <div class="panel">
+      <h2>What are you making?</h2>
+      <div class="picks" id="picks"></div>
+    </div>
+
+    <div class="panel">
+      <h2>The words</h2>
+      <div id="fields"></div>
+
+      <label>Background photograph (optional)</label>
+      <div class="drop" id="drop" onclick="document.getElementById('photo').click()">Drop a photo here, or click to choose</div>
+      <input type="file" id="photo" accept="image/*" style="display:none">
+      <div id="photoRow" style="display:none;margin-top:8px">
+        <button class="ghost" style="padding:6px 12px;font-size:11.5px" onclick="clearPhoto()">Remove photo</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Where is it going?</h2>
+      <div class="sizes" id="sizes"></div>
+      <p class="hint" id="sizeHint"></p>
+    </div>
+  </div>
+
+  <div class="stage">
+    <canvas id="c" width="1080" height="1080"></canvas>
+    <p class="hint" id="dims"></p>
+    <div style="margin-top:12px"><button class="green" onclick="download()">Download the image</button></div>
+    <p class="hint">Saves as a PNG. Post it straight to Facebook, Instagram or X.</p>
+  </div>
+
+</div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+
+const NAVY='#0E1F3D', ROYAL='#0057A7', GOLD='#E8B84B', WHITE='#ffffff', PALE='#C7D6EC';
+
+const SIZES=[
+  {id:'square', w:1080, h:1080, label:'Square', note:'Facebook and Instagram posts'},
+  {id:'wide',   w:1200, h:675,  label:'Landscape', note:'X, and Facebook link posts'},
+  {id:'story',  w:1080, h:1920, label:'Story', note:'Instagram and Facebook stories'}
+];
+
+const TEMPLATES={
+  potm:{name:'Player of the Month', fields:[
+    {id:'eyebrow', label:'Top line', value:'Player of the Month'},
+    {id:'name', label:'Player', value:''},
+    {id:'sub', label:'Month', value:'August 2026'},
+    {id:'foot', label:'Bottom line', value:'Voted for by Dale supporters'}]},
+  result:{name:'Match result', fields:[
+    {id:'eyebrow', label:'Competition', value:'Sky Bet League Two'},
+    {id:'name', label:'Score line', value:'Rochdale 2-1 Crawley'},
+    {id:'sub', label:'Where and when', value:'Crown Oil Arena \u00b7 Saturday'},
+    {id:'foot', label:'Bottom line', value:'Up the Dale'}]},
+  fixture:{name:'Next fixture', fields:[
+    {id:'eyebrow', label:'Top line', value:'Next up'},
+    {id:'name', label:'Opponent', value:'Crawley Town (H)'},
+    {id:'sub', label:'When', value:'Saturday 22 August \u00b7 3pm'},
+    {id:'foot', label:'Bottom line', value:'Crown Oil Arena'}]},
+  join:{name:'Join the Trust', fields:[
+    {id:'eyebrow', label:'Top line', value:'Join the Dale Trust'},
+    {id:'name', label:'Headline', value:'\u00a37.50 a season'},
+    {id:'sub', label:'Supporting line', value:'Juniors free \u00b7 Two minutes to join'},
+    {id:'foot', label:'Bottom line', value:'daletrust.uk'}]},
+  coach:{name:'Coach travel', fields:[
+    {id:'eyebrow', label:'Top line', value:'Coach travel'},
+    {id:'name', label:'Where to', value:'Colchester United'},
+    {id:'sub', label:'Details', value:'\u00a335 \u00b7 departs 7.45am'},
+    {id:'foot', label:'Bottom line', value:'Book at daletrust.uk'}]},
+  event:{name:'Event or meeting', fields:[
+    {id:'eyebrow', label:'Top line', value:'Dale Trust'},
+    {id:'name', label:'What', value:'Fans Forum'},
+    {id:'sub', label:'When and where', value:'Thursday 7pm \u00b7 Dale Bar'},
+    {id:'foot', label:'Bottom line', value:'All supporters welcome'}]},
+  quote:{name:'Quote or headline', fields:[
+    {id:'eyebrow', label:'Top line', value:'Dale Trust'},
+    {id:'name', label:'The words', value:'Your club. Your trust. Your say.'},
+    {id:'sub', label:'Who said it (optional)', value:''},
+    {id:'foot', label:'Bottom line', value:'daletrust.uk'}]}
+};
+
+let tpl='potm', size='square', photo=null, badge=null;
+const vals={};
+
+// load the Trust badge
+const badgeImg=new Image();
+badgeImg.crossOrigin='anonymous';
+badgeImg.onload=()=>{badge=badgeImg;draw();};
+badgeImg.onerror=()=>{badge=null;draw();};
+badgeImg.src='img/brand/dale-logo.png';
+
+function init(){
+  $('picks').innerHTML=Object.entries(TEMPLATES).map(([k,t])=>
+    '<button class="pick'+(k===tpl?' on':'')+'" data-t="'+k+'" onclick="pickTpl(\''+k+'\')">'+t.name+'</button>').join('');
+  $('sizes').innerHTML=SIZES.map(s=>
+    '<button class="size'+(s.id===size?' on':'')+'" onclick="pickSize(\''+s.id+'\')">'+s.label+'</button>').join('');
+  buildFields();
+  updateHint();
+}
+
+function pickTpl(k){
+  tpl=k;
+  document.querySelectorAll('.pick').forEach(b=>b.classList.toggle('on',b.dataset.t===k));
+  buildFields(); draw();
+}
+function pickSize(id){
+  size=id;
+  document.querySelectorAll('.size').forEach((b,i)=>b.classList.toggle('on',SIZES[i].id===id));
+  updateHint(); draw();
+}
+function updateHint(){
+  const s=SIZES.find(x=>x.id===size);
+  $('sizeHint').textContent=s.note+' \u2014 '+s.w+' by '+s.h;
+  $('dims').textContent=s.w+' \u00d7 '+s.h;
+}
+
+function buildFields(){
+  const t=TEMPLATES[tpl];
+  $('fields').innerHTML=t.fields.map(f=>{
+    if(vals[tpl]===undefined) vals[tpl]={};
+    if(vals[tpl][f.id]===undefined) vals[tpl][f.id]=f.value;
+    const big=f.id==='name';
+    return '<label>'+f.label+'</label>'+
+      (big?'<textarea id="f_'+f.id+'" oninput="setVal(\''+f.id+'\',this.value)">'+vals[tpl][f.id]+'</textarea>'
+          :'<input id="f_'+f.id+'" value="'+String(vals[tpl][f.id]).replace(/"/g,'&quot;')+'" oninput="setVal(\''+f.id+'\',this.value)">');
+  }).join('');
+}
+function setVal(id,v){vals[tpl][id]=v;draw();}
+
+// photo handling
+$('photo').onchange=e=>{const f=e.target.files[0];if(f)loadPhoto(f);};
+const drop=$('drop');
+drop.ondragover=e=>{e.preventDefault();drop.style.borderColor=ROYAL;};
+drop.ondragleave=()=>{drop.style.borderColor='';};
+drop.ondrop=e=>{e.preventDefault();drop.style.borderColor='';const f=e.dataTransfer.files[0];if(f)loadPhoto(f);};
+function loadPhoto(file){
+  const r=new FileReader();
+  r.onload=()=>{const im=new Image();im.onload=()=>{photo=im;$('photoRow').style.display='block';$('drop').textContent=file.name;draw();};im.src=r.result;};
+  r.readAsDataURL(file);
+}
+function clearPhoto(){photo=null;$('photoRow').style.display='none';$('drop').textContent='Drop a photo here, or click to choose';draw();}
+
+// ---- drawing ----
+function fitText(ctx,text,maxW,startPx,font,minPx){
+  let px=startPx;
+  while(px>minPx){
+    ctx.font=font.replace('{px}',px);
+    if(ctx.measureText(text).width<=maxW) break;
+    px-=4;
+  }
+  return px;
+}
+function wrap(ctx,text,maxW){
+  const words=String(text).split(/\s+/); const lines=[]; let line='';
+  words.forEach(w=>{
+    const t=line?line+' '+w:w;
+    if(ctx.measureText(t).width>maxW && line){lines.push(line);line=w;} else line=t;
+  });
+  if(line)lines.push(line);
+  return lines;
+}
+
+function draw(){
+  const s=SIZES.find(x=>x.id===size);
+  const c=$('c'); c.width=s.w; c.height=s.h;
+  const ctx=c.getContext('2d');
+  const W=s.w, H=s.h, unit=Math.min(W,H)/1080;
+  const v=vals[tpl]||{};
+  const pad=Math.round(78*unit);
+
+  // background
+  const g=ctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,NAVY); g.addColorStop(.58,'#16305C'); g.addColorStop(1,'#00417E');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  if(photo){
+    const r=Math.max(W/photo.width,H/photo.height);
+    const pw=photo.width*r, ph=photo.height*r;
+    ctx.globalAlpha=.55;
+    ctx.drawImage(photo,(W-pw)/2,(H-ph)/2,pw,ph);
+    ctx.globalAlpha=1;
+    const sh=ctx.createLinearGradient(0,0,0,H);
+    sh.addColorStop(0,'rgba(14,31,61,0.55)');
+    sh.addColorStop(0.35,'rgba(14,31,61,0.35)');
+    sh.addColorStop(1,'rgba(14,31,61,0.96)');
+    ctx.fillStyle=sh; ctx.fillRect(0,0,W,H);
+  }
+
+  // diagonal royal slash, as on the website
+  ctx.save();
+  ctx.globalAlpha=photo?.16:.30;
+  ctx.fillStyle=ROYAL;
+  ctx.beginPath();
+  ctx.moveTo(W*0.68,-10); ctx.lineTo(W+10,-10); ctx.lineTo(W+10,H+10); ctx.lineTo(W*0.52,H+10);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+
+  // ---- badge, top left ----
+  let topY=pad;
+  if(badge){
+    const bw=Math.round((size==='wide'?120:140)*unit);
+    const bh=bw*(badge.height/badge.width);
+    ctx.drawImage(badge,pad,topY,bw,bh);
+  } else {
+    ctx.fillStyle=PALE;
+    ctx.font='700 '+Math.round(25*unit)+'px Montserrat, sans-serif';
+    ctx.letterSpacing=Math.round(3*unit)+'px';
+    ctx.fillText('DALE SUPPORTERS TRUST',pad,topY+Math.round(25*unit));
+    ctx.letterSpacing='0px';
+  }
+
+  // ---- measure the text block so it can sit on the bottom ----
+  const maxW=W-pad*2-(size==='wide'?W*0.14:W*0.06);
+  const ebPx=Math.round((size==='wide'?27:31)*unit);
+  const subPx=Math.round((size==='wide'?34:42)*unit);
+  let px=Math.round((size==='story'?135:size==='wide'?92:126)*unit);
+  ctx.font='700 '+px+'px Oswald, sans-serif';
+  let lines=wrap(ctx,String(v.name||'').toUpperCase(),maxW);
+  while(lines.length>4 && px>36){
+    px-=6; ctx.font='700 '+px+'px Oswald, sans-serif';
+    lines=wrap(ctx,String(v.name||'').toUpperCase(),maxW);
+  }
+  ctx.font='500 '+subPx+'px Montserrat, sans-serif';
+  const subLines = v.sub ? wrap(ctx,v.sub,maxW) : [];
+
+  const lineGap=Math.round(px*0.10);
+  let blockH = 0;
+  if(v.eyebrow) blockH += ebPx + Math.round(30*unit);
+  blockH += lines.length*(px+lineGap);
+  if(subLines.length) blockH += Math.round(20*unit) + subLines.length*Math.round(subPx*1.32);
+
+  const footTop = H - pad - Math.round(52*unit);
+  let y = footTop - Math.round(46*unit) - blockH;
+  const minY = topY + Math.round(190*unit);
+  if(y < minY) y = minY;
+
+  // ---- eyebrow ----
+  if(v.eyebrow){
+    ctx.fillStyle=GOLD;
+    ctx.font='700 '+ebPx+'px Montserrat, sans-serif';
+    ctx.letterSpacing=Math.round(4.5*unit)+'px';
+    y += ebPx;
+    ctx.fillText(String(v.eyebrow).toUpperCase(),pad,y);
+    ctx.letterSpacing='0px';
+    y += Math.round(30*unit);
+  }
+
+  // ---- headline ----
+  ctx.fillStyle=WHITE;
+  ctx.font='700 '+px+'px Oswald, sans-serif';
+  lines.forEach(l=>{ y+=px; ctx.fillText(l,pad,y); y+=lineGap; });
+
+  // ---- supporting line ----
+  if(subLines.length){
+    y+=Math.round(20*unit);
+    ctx.fillStyle=PALE;
+    ctx.font='500 '+subPx+'px Montserrat, sans-serif';
+    subLines.forEach(l=>{ y+=Math.round(subPx*1.32); ctx.fillText(l,pad,y); });
+  }
+
+  // ---- footer ----
+  const fy=H-pad;
+  ctx.strokeStyle='rgba(255,255,255,.24)';
+  ctx.lineWidth=Math.max(1,Math.round(2*unit));
+  ctx.beginPath(); ctx.moveTo(pad,fy-Math.round(48*unit)); ctx.lineTo(W-pad,fy-Math.round(48*unit)); ctx.stroke();
+  if(v.foot){
+    ctx.fillStyle=WHITE;
+    ctx.font='600 '+Math.round(29*unit)+'px Montserrat, sans-serif';
+    ctx.fillText(v.foot,pad,fy);
+  }
+  ctx.fillStyle=PALE;
+  ctx.font='500 '+Math.round(26*unit)+'px Montserrat, sans-serif';
+  const url='daletrust.uk';
+  ctx.fillText(url,W-pad-ctx.measureText(url).width,fy);
+}
+
+function download(){
+  const s=SIZES.find(x=>x.id===size);
+  const name=(TEMPLATES[tpl].name+'-'+(vals[tpl]&&vals[tpl].name||'').slice(0,30))
+    .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'dale-trust';
+  const a=document.createElement('a');
+  a.download=name+'-'+s.id+'.png';
+  a.href=$('c').toDataURL('image/png');
+  a.click();
+}
+
+init(); draw();
+</script>
+</body>
+</html>
