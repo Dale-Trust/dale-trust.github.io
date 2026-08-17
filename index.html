@@ -392,6 +392,15 @@
     .foot-grid > *:first-child{grid-column:1 / -1}
   }
 
+    /* headings that fit a phone screen */
+    h1,h2,h3{overflow-wrap:break-word;hyphens:none}
+    h2{font-size:26px;line-height:1.12}
+    .member h2{font-size:26px}
+    .hero h2{font-size:28px}
+    .sec-head h2{font-size:25px}
+    .kicker{font-size:11px;letter-spacing:.14em}
+    .member p.intro{font-size:15px}
+
     /* four pillars swipe rather than stacking */
     .pillars{
       display:grid;grid-auto-flow:column;grid-auto-columns:62%;grid-template-columns:none;
@@ -405,8 +414,10 @@
     /* competitions: only the top two of last season's table on a phone */
     .comp-title img{height:26px}
     .comp-title span{font-size:19px}
-    .podium .prow:nth-child(4){display:none}
-    .ph h4{font-size:14px}
+    .ph h4{font-size:13.5px}
+    .prow{padding:9px 12px}
+    .prow .mgr{font-size:11.5px}
+    .prow .pts{font-size:15px}
     .ff-entry small{font-size:11.5px;line-height:1.45}
     .comp-div{margin:26px 0}
 
