@@ -29,6 +29,10 @@
   .trip{border:1px solid var(--line);border-left:5px solid var(--royal);border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;background:#fff}
   .trip.on{border-left-color:var(--green);background:#F7FCF9}
   .trip.draft{border-left-color:#C3CCD8;background:#FBFCFE}
+  .tripwrap{margin-bottom:10px}
+  .tripedit{display:none;background:#fff;border:1px solid var(--line);border-left:5px solid var(--gold);border-top:0;border-radius:0 0 10px 10px;padding:16px 18px;margin-top:-10px}
+  .tripedit label{margin-top:8px}
+  .newtrip{display:none;background:#fff;border:1px solid var(--line);border-left:5px solid var(--green);border-radius:0 10px 10px 0;padding:16px 18px;margin-top:12px}
   .liveswitch{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--body);cursor:pointer;background:#fff;border:1.5px solid var(--line);border-radius:100px;padding:5px 13px 5px 8px;margin-top:6px}
   .liveswitch input{width:auto;margin:0;transform:scale(1.15)}
   .liveswitch.on{border-color:var(--green);color:#14653F;background:#EAF7F0}
@@ -57,33 +61,6 @@
     <p style="font-size:13.5px;margin-bottom:12px">Every away game is already set up with a suggested departure time and price. Check the details, then tick <b>On the website</b> when you are ready for people to book.</p>
     <div id="trips">Loading…</div>
     <div style="margin-top:14px"><button class="ghost" onclick="newTrip()">+ Set up a new coach</button></div>
-  </div>
-
-  <div class="panel noprint" id="tripForm" style="display:none">
-    <h2 id="tfTitle">New coach</h2>
-    <div class="grid2">
-      <div><label>Opponent</label><input id="t_opp" placeholder="e.g. Colchester United"></div>
-      <div><label>Ground</label><input id="t_venue" placeholder="e.g. JobServe Community Stadium"></div>
-    </div>
-    <div class="grid3">
-      <div><label>Match date</label><input id="t_date" type="date"></div>
-      <div><label>Kick-off</label><input id="t_ko" placeholder="15:00"></div>
-      <div><label>Coach departs</label><input id="t_dep" placeholder="07:45"></div>
-    </div>
-    <div class="grid3">
-      <div><label>Departs from</label><input id="t_from" value="Crown Oil Arena"></div>
-      <div><label>Price per seat (£)</label><input id="t_price" value="35"></div>
-      <div><label>Seats on the coach</label><input id="t_seats" value="49"></div>
-    </div>
-    <div class="grid2">
-      <div><label>Status</label><select id="t_status"><option value="draft">Not shown yet</option><option value="open">On the website</option><option value="closed">Closed</option><option value="cancelled">Cancelled</option></select></div>
-      <div><label>Notes (shown to passengers)</label><input id="t_notes" placeholder="Stop en route each way"></div>
-    </div>
-    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-      <button class="green" onclick="saveTrip()">Save coach</button>
-      <button class="ghost" onclick="document.getElementById('tripForm').style.display='none'">Cancel</button>
-    </div>
-    <p class="msg" id="tmsg"></p>
   </div>
 
   <div id="detail" style="display:none">
@@ -136,28 +113,90 @@ async function load(tripId){
   if(tripId) drawBookings();
 }
 
+function tripFields(p, t){
+  const v = f => (t && t[f]!==null && t[f]!==undefined) ? String(t[f]).replace(/"/g,'&quot;') : '';
+  const sel = (id, opts, cur) => '<select id="'+p+'_'+id+'">'+opts.map(o=>{
+    const [val,lab]=o.split('|');
+    return '<option value="'+val+'"'+(cur===val?' selected':'')+'>'+lab+'</option>';
+  }).join('')+'</select>';
+  return '<div class="grid2">'+
+    '<div><label>Opponent</label><input id="'+p+'_opp" value="'+v('opponent')+'"></div>'+
+    '<div><label>Ground</label><input id="'+p+'_venue" value="'+v('venue')+'"></div></div>'+
+    '<div class="grid3">'+
+    '<div><label>Match date</label><input id="'+p+'_date" type="date" value="'+v('match_date')+'"></div>'+
+    '<div><label>Kick-off</label><input id="'+p+'_ko" value="'+v('kickoff')+'" placeholder="15:00"></div>'+
+    '<div><label>Coach departs</label><input id="'+p+'_dep" value="'+v('depart_time')+'" placeholder="07:45"></div></div>'+
+    '<div class="grid3">'+
+    '<div><label>Departs from</label><input id="'+p+'_from" value="'+(t?v('depart_from'):'Crown Oil Arena')+'"></div>'+
+    '<div><label>Price per seat (\u00a3)</label><input id="'+p+'_price" value="'+(t?v('price'):'35')+'"></div>'+
+    '<div><label>Seats on the coach</label><input id="'+p+'_seats" value="'+(t?v('seats'):'49')+'"></div></div>'+
+    '<div class="grid2">'+
+    '<div><label>Status</label>'+sel('status',['draft|Not shown yet','open|On the website','closed|Closed','cancelled|Cancelled'], t?t.status:'draft')+'</div>'+
+    '<div><label>Notes (shown to passengers)</label><input id="'+p+'_notes" value="'+v('notes')+'"></div></div>'+
+    '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">'+
+    '<button class="green sm" onclick="saveTrip(\''+p+'\','+(t?t.id:'null')+')">Save</button>'+
+    '<button class="ghost sm" onclick="closeTrip(\''+p+'\')">Cancel</button></div>'+
+    '<p class="msg" id="'+p+'_msg"></p>';
+}
+
 function drawTrips(){
   if(!trips.length){$('trips').innerHTML='<p style="color:#7A8AA5">No coaches set up yet.</p>';return;}
   $('trips').innerHTML=trips.map(t=>{
     const live = t.status==='open';
-    return '<div class="trip'+(current&&current.id===t.id?' on':'')+(t.status==='draft'?' draft':'')+'" onclick="openTrip('+t.id+')">'+
-    '<div class="seats"><b>'+t.remaining+'</b><span>seats left</span></div>'+
-    '<b>'+esc(t.opponent)+'</b>'+
-    '<small>'+dfmt(t.match_date)+' · departs '+esc(t.depart_time)+' from '+esc(t.depart_from)+' · '+money(t.price)+' a seat</small>'+
-    '<small>'+t.taken+' of '+t.seats+' seats taken'+
-    (t.status==='closed'||t.status==='cancelled'?' · <b style="color:#C0392B">'+t.status+'</b>':'')+'</small>'+
-    '<label class="liveswitch'+(live?' on':'')+'" onclick="event.stopPropagation()">'+
-      '<input type="checkbox"'+(live?' checked':'')+' onchange="setLive('+t.id+',this.checked)">'+
-      (live?'On the website':'Not shown yet')+'</label>'+
-    '<button class="ghost sm noprint" style="margin-left:8px" onclick="event.stopPropagation();editTrip('+t.id+')">Edit</button>'+
-    '</div>';
-  }).join('');
+    return '<div class="tripwrap">'+
+      '<div class="trip'+(current&&current.id===t.id?' on':'')+(t.status==='draft'?' draft':'')+'" onclick="openTrip('+t.id+')">'+
+      '<div class="seats"><b>'+t.remaining+'</b><span>seats left</span></div>'+
+      '<b>'+esc(t.opponent)+'</b>'+
+      '<small>'+dfmt(t.match_date)+' \u00b7 departs '+esc(t.depart_time)+' from '+esc(t.depart_from)+' \u00b7 '+money(t.price)+' a seat</small>'+
+      '<small>'+t.taken+' of '+t.seats+' seats taken'+
+      (t.status==='closed'||t.status==='cancelled'?' \u00b7 <b style="color:#C0392B">'+t.status+'</b>':'')+'</small>'+
+      '<label class="liveswitch'+(live?' on':'')+'" onclick="event.stopPropagation()">'+
+        '<input type="checkbox"'+(live?' checked':'')+' onchange="setLive('+t.id+',this.checked)">'+
+        (live?'On the website':'Not shown yet')+'</label>'+
+      '<button class="ghost sm noprint" style="margin-left:8px" id="eb'+t.id+'" onclick="event.stopPropagation();toggleTrip('+t.id+')">Edit</button>'+
+      '</div>'+
+      '<div class="tripedit" id="te'+t.id+'">'+tripFields('t'+t.id, t)+'</div>'+
+      '</div>';
+  }).join('')+'<div class="newtrip" id="newTripBox">'+tripFields('tnew', null)+'</div>';
 }
 
-async function setLive(id, live){
-  const d=await (await fetch(EP+'/coach/live',{method:'POST',headers:H(),body:JSON.stringify({id,live})})).json();
-  if(!d.ok){alert(d.error||'Could not change that.');}
-  load(current?current.id:null);
+function toggleTrip(id){
+  const box=$('te'+id), btn=$('eb'+id);
+  document.querySelectorAll('.tripedit').forEach(b=>{ if(b!==box) b.style.display='none'; });
+  document.querySelectorAll('[id^=eb]').forEach(b=>{ if(b!==btn) b.textContent='Edit'; });
+  $('newTripBox').style.display='none';
+  const open = box.style.display!=='block';
+  box.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? 'Close' : 'Edit';
+}
+
+function closeTrip(p){
+  if(p==='tnew'){ $('newTripBox').style.display='none'; return; }
+  const id=p.slice(1);
+  $('te'+id).style.display='none';
+  const b=$('eb'+id); if(b) b.textContent='Edit';
+}
+
+function newTrip(){
+  document.querySelectorAll('.tripedit').forEach(b=>b.style.display='none');
+  document.querySelectorAll('[id^=eb]').forEach(b=>b.textContent='Edit');
+  const box=$('newTripBox');
+  box.style.display='block';
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+  $('tnew_opp').focus();
+}
+
+async function saveTrip(p, id){
+  const g=f=>{const el=$(p+'_'+f);return el?el.value.trim():'';};
+  const body={id:id, opponent:g('opp'), venue:g('venue'), match_date:g('date'),
+    kickoff:g('ko'), depart_time:g('dep'), depart_from:g('from'),
+    price:g('price'), seats:g('seats'), status:g('status'), notes:g('notes')};
+  const msg=$(p+'_msg');
+  if(!body.opponent||!body.match_date||!body.depart_time){
+    msg.innerHTML='<span style="color:var(--red)">Opponent, date and departure time are needed.</span>';return;
+  }
+  const d=await (await fetch(EP+'/coach/trip',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+  if(d.ok){ load(current?current.id:null); } else msg.innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';
 }
 
 function openTrip(id){
@@ -192,31 +231,6 @@ async function mark(id,status){
   if(status==='cancelled'&&!confirm('Cancel this booking?'))return;
   await fetch(EP+'/coach/booking',{method:'POST',headers:H(),body:JSON.stringify({id,payment_status:status})});
   load(current.id);
-}
-
-function newTrip(){
-  editing=null; $('tfTitle').textContent='New coach';
-  ['t_opp','t_venue','t_date','t_ko','t_dep','t_notes'].forEach(i=>$(i).value='');
-  $('t_from').value='Crown Oil Arena'; $('t_price').value='35'; $('t_seats').value='49'; $('t_status').value='open';
-  $('tripForm').style.display='block'; $('tripForm').scrollIntoView({behavior:'smooth'});
-}
-function editTrip(id){
-  const t=trips.find(x=>x.id===id); editing=id;
-  $('tfTitle').textContent='Edit — '+t.opponent;
-  $('t_opp').value=t.opponent; $('t_venue').value=t.venue||''; $('t_date').value=t.match_date;
-  $('t_ko').value=t.kickoff||''; $('t_dep').value=t.depart_time; $('t_from').value=t.depart_from;
-  $('t_price').value=t.price; $('t_seats').value=t.seats; $('t_status').value=t.status; $('t_notes').value=t.notes||'';
-  $('tripForm').style.display='block'; $('tripForm').scrollIntoView({behavior:'smooth'});
-}
-async function saveTrip(){
-  const body={id:editing,opponent:$('t_opp').value.trim(),venue:$('t_venue').value.trim(),
-    match_date:$('t_date').value,kickoff:$('t_ko').value.trim(),depart_time:$('t_dep').value.trim(),
-    depart_from:$('t_from').value.trim(),price:$('t_price').value,seats:$('t_seats').value,
-    status:$('t_status').value,notes:$('t_notes').value.trim()};
-  if(!body.opponent||!body.match_date||!body.depart_time){$('tmsg').innerHTML='<span style="color:var(--red)">Opponent, date and departure time are needed.</span>';return;}
-  const d=await (await fetch(EP+'/coach/trip',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
-  if(d.ok){$('tripForm').style.display='none';$('tmsg').textContent='';load(current?current.id:null);}
-  else $('tmsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';
 }
 
 async function addManual(){
