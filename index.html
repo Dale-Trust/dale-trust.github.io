@@ -163,7 +163,7 @@
   .sec-head .more:hover{color:var(--royal-bright);border-bottom-color:var(--royal-bright)}
 
   /* Pillars */
-  .pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:18px}
   .pillar{position:relative;background:#fff;border:1px solid var(--line);border-top:4px solid var(--royal);padding:28px 24px 26px;text-decoration:none;color:var(--body);transition:all .18s ease}
   .pillar:hover{transform:translateY(-5px);box-shadow:0 18px 40px rgba(4,30,66,.12);border-top-color:var(--royal-bright)}
   .pillar .num{font-family:'Oswald';font-weight:600;font-size:12px;letter-spacing:.22em;color:var(--royal)}
@@ -309,16 +309,11 @@
   @media (max-width:980px){
     nav.links{display:none}
     .hero-inner,.member-grid,.ex-grid{grid-template-columns:1fr;gap:44px}
-    .pillars{grid-template-columns:repeat(4,1fr);gap:14px}
     .news-grid{grid-template-columns:1fr}
     .story,.story.small{min-height:280px}
     .foot-grid{grid-template-columns:1fr 1fr}
   }
-  @media (max-width:860px){
-    .pillars{grid-template-columns:repeat(2,1fr)}
-  }
   @media (max-width:560px){
-    .pillars{grid-template-columns:1fr}
     .foot-grid{grid-template-columns:1fr}
     .countdown{gap:8px}.cd{width:62px}
     .topbar .right{display:none}
@@ -423,7 +418,10 @@
     .hero h2{font-size:28px}
     .sec-head h2{font-size:25px}
     .kicker{font-size:11px;letter-spacing:.14em}
-    .member p.intro{font-size:15px}
+    .member p.intro{font-size:15px;max-width:none}
+    /* grid columns will not shrink below their content unless told to */
+    .member-grid > *,.ex-grid > *,.hero-inner > *,.news-grid > *,.foot-grid > *{min-width:0}
+    .member,.member-card,.member p,.member h2,.perk span{min-width:0;overflow-wrap:anywhere}
 
     /* four pillars swipe rather than stacking */
     .pillars{
