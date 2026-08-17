@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Renewals | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:21px}.top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:900px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:10px 0 4px}
+  input,select{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media(max-width:640px){.g2,.g3{grid-template-columns:1fr}}
+  button{background:var(--royal);color:#fff;border:0;border-radius:9px;padding:12px 20px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+  button.green{background:var(--green)}button.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line)}
+  button.warn{background:var(--red)}
+  button:disabled{background:#9FB4CC;cursor:not-allowed}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:6px}
+  .kpi{background:var(--wash);border-radius:10px;padding:14px 16px}
+  .kpi b{font-family:'Oswald';font-size:30px;color:var(--ink);display:block;line-height:1}
+  .kpi span{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:#7A8AA5}
+  .bar{background:var(--wash);border-radius:8px;height:30px;overflow:hidden;margin-top:12px;position:relative}
+  .bar i{display:block;height:100%;background:var(--green)}
+  .bar span{position:absolute;left:12px;top:5px;font-size:14px;font-weight:700;color:var(--ink)}
+  .stage{border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:0 10px 10px 0;padding:14px 16px;margin-bottom:10px}
+  .stage b{font-family:'Oswald';text-transform:uppercase;font-size:15px;color:var(--ink);display:block}
+  .stage p{font-size:13.5px;margin:3px 0 10px}
+  .stage .done{font-size:13px;color:var(--green);font-weight:600}
+  .warnbox{background:#FFF9E8;border:1px solid #EAD198;border-left:5px solid var(--gold);padding:14px 16px;border-radius:0 10px 10px 0;font-size:14px;margin-top:10px}
+  .msg{font-size:13.5px;font-weight:600;margin-top:10px}
+  .off{background:#F7FAFF;border:1px dashed var(--line);border-radius:10px;padding:16px;text-align:center;color:#7A8AA5;font-size:14px}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>Renewals</h1><small>Where the season stands, and the reminders that bring members back</small></div>
+<div class="wrap">
+
+<div class="panel">
+  <h2>Where we are</h2>
+  <div id="stats">Loading&hellip;</div>
+</div>
+
+<div class="panel" id="noticesPanel">
+  <h2>Renewal notices</h2>
+  <div id="notices"></div>
+  <p class="msg" id="nmsg"></p>
+</div>
+
+<div class="panel">
+  <h2>Settings</h2>
+  <div class="g2">
+    <div><label>This season</label><input id="s_current"></div>
+    <div><label>Next season</label><input id="s_next"></div>
+  </div>
+  <label>Renewals for next season</label>
+  <select id="s_open"><option value="0">Not open yet</option><option value="1">Open — members can renew</option></select>
+  <p style="font-size:12.5px;color:#7A8AA5;margin-top:4px">When this is open, members signing in see a renew button for next season, and the reminder emails can go out.</p>
+  <div style="margin-top:14px"><button class="green" onclick="saveSettings()">Save</button></div>
+  <p class="msg" id="smsg"></p>
+</div>
+
+<div class="panel">
+  <h2>Rolling the season over</h2>
+  <p style="font-size:14px">Once the new season has started and renewals are largely done, roll it over. Next season becomes this season, the membership figures for the season just gone are recorded permanently, and renewals close.</p>
+  <div class="warnbox">Do this <b>once a year</b>, after the season has changed. Nothing is deleted &mdash; every member record stays exactly where it is.</div>
+  <div style="margin-top:14px"><button class="warn" onclick="rollover()">Roll the season over</button></div>
+  <p class="msg" id="rmsg"></p>
+</div>
+
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
+let data=null;
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+const STAGES=[
+  {id:'first', name:'First notice', text:'Goes to everyone who has not yet renewed. Friendly, straightforward: your membership is due, here is the button.'},
+  {id:'reminder', name:'Reminder', text:'Two weeks later, to whoever still has not renewed.'},
+  {id:'last', name:'Last call', text:'The final one. Says plainly that it is the last reminder.'}
+];
+
+async function load(){
+  try{
+    const r=await fetch(EP+'/renewal/status',{headers:H()});
+    if(r.status===401||r.status===403){location.href='admin.html';return;}
+    data=await r.json();
+    if(!data.ok){$('stats').textContent=data.error;return;}
+    draw();
+  }catch(e){$('stats').textContent='Could not reach the server.';}
+}
+
+function draw(){
+  const pct = data.due ? Math.round(data.renewed/data.due*100) : 0;
+  $('stats').innerHTML=
+    '<div class="kpis">'+
+    '<div class="kpi"><b>'+data.due+'</b><span>Members in '+esc(data.current)+'</span></div>'+
+    '<div class="kpi"><b>'+data.renewed+'</b><span>Renewed for '+esc(data.next)+'</span></div>'+
+    '<div class="kpi"><b>'+data.still_to_renew+'</b><span>Still to renew</span></div>'+
+    '<div class="kpi"><b>'+data.no_email+'</b><span>No email address</span></div>'+
+    '</div>'+
+    '<div class="bar"><i style="width:'+pct+'%"></i><span>'+pct+'% renewed for '+esc(data.next)+'</span></div>'+
+    (data.no_email? '<p style="font-size:13px;color:#7A8AA5;margin-top:10px">'+data.no_email+
+      ' members have no email address, so they cannot be sent a renewal notice. They will need reaching another way.</p>':'');
+
+  $('s_current').value=data.current; $('s_next').value=data.next;
+  $('s_open').value=data.renewals_open?'1':'0';
+
+  if(!data.renewals_open){
+    $('notices').innerHTML='<div class="off">Renewals are not open yet. Turn them on in the settings below, and the reminders can then go out.</div>';
+    return;
+  }
+  const sentMap={};
+  (data.notices||[]).forEach(n=>sentMap[n.stage]=n);
+  $('notices').innerHTML=STAGES.map(s=>{
+    const done=sentMap[s.id];
+    return '<div class="stage"><b>'+s.name+'</b><p>'+s.text+'</p>'+
+      (done? '<p class="done">Sent to '+done.n+' people on '+new Date(done.last.replace(" ","T")+"Z").toLocaleDateString('en-GB',{day:'numeric',month:'long'})+'</p>':'')+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button class="ghost" onclick="send(&quot;'+s.id+'&quot;,true)">Send me a test</button>'+
+      '<button onclick="send(&quot;'+s.id+'&quot;,false)"'+(data.still_to_renew?'':' disabled')+'>'+
+        (data.still_to_renew? 'Send to '+data.still_to_renew+' people':'Nobody to send to')+'</button>'+
+      '</div></div>';
+  }).join('');
+}
+
+async function send(stage,test){
+  const body={stage};
+  if(test){
+    const to=prompt('Send a test to which email?'); if(!to)return; body.test_to=to;
+  } else {
+    if(!confirm('Send the '+stage+' notice to '+data.still_to_renew+' people?\\n\\nAnyone already sent this particular notice is skipped automatically. This cannot be unsent.'))return;
+  }
+  $('nmsg').textContent='Sending…';
+  const d=await (await fetch(EP+'/renewal/send',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+  $('nmsg').innerHTML=d.ok
+    ? '<span style="color:var(--green)">'+(d.test?'Test sent.':'Sent to '+d.sent+' people.')+'</span>'
+    : '<span style="color:var(--red)">'+esc(d.error)+'</span>';
+  if(d.ok && !d.test) load();
+}
+
+async function saveSettings(){
+  const s={current_season:$('s_current').value.trim(), next_season:$('s_next').value.trim(), renewals_open:$('s_open').value};
+  const d=await (await fetch(EP+'/settings',{method:'POST',headers:H(),body:JSON.stringify({settings:s})})).json();
+  $('smsg').innerHTML=d.ok?'<span style="color:var(--green)">Saved.</span>':'<span style="color:var(--red)">'+esc(d.error)+'</span>';
+  if(d.ok) load();
+}
+
+async function rollover(){
+  if(!confirm('Roll the season over?\\n\\n'+data.next+' becomes the current season, this season\\u2019s figures are recorded permanently, and renewals close.\\n\\nDo this once a year.'))return;
+  const phrase=prompt('Type ROLL OVER to confirm:');
+  if(phrase!=='ROLL OVER'){$('rmsg').textContent='Cancelled.';return;}
+  const d=await (await fetch(EP+'/renewal/rollover',{method:'POST',headers:H(),body:JSON.stringify({confirm:'ROLL OVER'})})).json();
+  $('rmsg').innerHTML=d.ok
+    ? '<span style="color:var(--green)">Done — '+esc(d.now)+' is now the current season.</span>'
+    : '<span style="color:var(--red)">'+esc(d.error)+'</span>';
+  if(d.ok) load();
+}
+
+load();
+</script>
+</body>
+</html>

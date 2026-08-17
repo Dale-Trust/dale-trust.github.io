@@ -360,7 +360,24 @@ function render(){
     ? 'Member since '+p.since+' \u00b7 '+p.seasons.length+' seasons on record'
     : 'Member for '+p.seasons[0];
 
-  if(cur){
+  if(cur && data.renewals_open && !p.renewed){
+    $('statusBanner').innerHTML='<div class="banner"><b>Renewals for '+esc(data.next)+' are open.</b> '+
+      esc(p.name.split(' ')[0])+' is a member for '+esc(data.season)+' \u2014 check the details below and renew in a minute.</div>';
+    $('renewPanel').style.display='block';
+    $('renewTitle').textContent='Renew for '+data.next;
+    $('renewIntro').textContent='Your details are already filled in above \u2014 check them, then choose your membership.';
+    $('r_type').value=rec.membership_type;
+    $('renewBtn').textContent='Renew for '+data.next;
+    $('benTitle').textContent='Your membership gets you';
+    $('benIntro').textContent='Just show your card.';
+    $('benefitsPanel').classList.remove('lapsedben');
+  } else if(cur && data.renewals_open && p.renewed){
+    $('statusBanner').innerHTML='<div class="checked"><b>Renewed for '+esc(data.next)+'.</b> Thank you \u2014 that is you sorted for next season.</div>';
+    $('renewPanel').style.display='none';
+    $('benTitle').textContent='Your membership gets you';
+    $('benIntro').textContent='Just show your card.';
+    $('benefitsPanel').classList.remove('lapsedben');
+  } else if(cur){
     $('statusBanner').innerHTML='<div class="checked"><b>'+esc(p.name.split(' ')[0])+' is a member for '+esc(data.season)+'.</b> Thanks for backing the Trust.</div>';
     $('renewPanel').style.display='none';
     $('benTitle').textContent='Your membership gets you';
