@@ -392,6 +392,24 @@
     .foot-grid > *:first-child{grid-column:1 / -1}
   }
 
+    /* four pillars swipe rather than stacking */
+    .pillars{
+      display:grid;grid-auto-flow:column;grid-auto-columns:62%;grid-template-columns:none;
+      overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+      gap:12px;padding-bottom:10px;margin-right:-20px;padding-right:20px;scrollbar-width:none;
+    }
+    .pillars::-webkit-scrollbar{display:none}
+    .pillars > *{scroll-snap-align:start}
+    .pillar{padding:16px 14px}
+
+    /* competitions: only the top two of last season's table on a phone */
+    .comp-title img{height:26px}
+    .comp-title span{font-size:19px}
+    .podium .prow:nth-child(4){display:none}
+    .ph h4{font-size:14px}
+    .ff-entry small{font-size:11.5px;line-height:1.45}
+    .comp-div{margin:26px 0}
+
   @media (max-width:420px){
     .tb-txt span{display:none}
     .tb-col{align-items:center;text-align:center}
@@ -593,15 +611,14 @@
     <h3 class="disp comp-title s6-title"><img src="img/comps/fpl.svg" alt="Fantasy Premier League" style="height:34px"> <span>Dale Trust FF Premiership</span></h3>
     <div class="ff-grid">
       <div class="ff-copy">
-        <p>Fantasy Football is back! After the success of our very own Dale Trust FF Premiership, we're inviting all Trust members to join the league for the forthcoming season.</p>
-        <p>Congratulations to last season's champion &mdash; Exile member <strong>Roger Winterbottom</strong>, whose Locomotiv Moocow topped the table with 2,354 points.</p>
+        <p>Our own Fantasy Football league is back, free to every Trust member. Last season's winner was Exile member <strong>Roger Winterbottom</strong> with 2,354 points.</p>
         <div class="ff-entry">
           <b>How to enter</b>
           Register your team at <a href="https://fantasy.premierleague.com" target="_blank" rel="noopener">fantasy.premierleague.com</a>, then join our league with the code:
           <span class="code">htejf9</span>
           <small>Deadline: Friday 21st August, 6:30pm &middot; FREE to all current 26/27 Trust members &middot; Prize for the winner (TBC)</small>
         </div>
-        <p>Good luck &amp; enjoy the game!</p>
+        
       </div>
       <div class="podium">
         <div class="ph"><h4 class="disp">Final table 2025/26 &mdash; top three</h4></div>
@@ -628,15 +645,14 @@
     <h3 class="disp comp-title s6-title"><img src="img/comps/super6.png" alt="Sky Sports Super 6"> <span>Dale Trust Prediction League</span></h3>
     <div class="ff-grid">
       <div class="ff-copy">
-        <p>Super 6 is back after the success of our very own Dale Trust prediction comp &mdash; 76 entrants last season! Predict the scores in six selected Saturday Premier League games each week.</p>
-        <p>Congratulations to last season's champion &mdash; Adult member <strong>Michael Manning</strong>, who topped the table with 450 points.</p>
+        <p>Predict six Premier League scores each Saturday. 76 of us played last season &mdash; won by Adult member <strong>Michael Manning</strong> on 450 points.</p>
         <div class="ff-entry">
           <b>How to enter</b>
           Register at <a href="https://super6.skysports.com/" target="_blank" rel="noopener">super6.skysports.com</a>, then join our league with the code:
           <span class="code">HHJFGY</span>
           <small>Deadline: Saturday 22nd August, 3:00pm &middot; FREE to all current 26/27 Trust members &middot; Prize for the winner (TBC)</small>
         </div>
-        <p>Good luck &amp; enjoy the game!</p>
+        
       </div>
       <div class="podium">
         <div class="ph"><h4 class="disp">Final table 2025/26 &mdash; top three</h4></div>
@@ -664,7 +680,7 @@
   <div class="wrap member-grid">
     <div class="member">
       <p class="kicker">Membership 2026/27</p>
-      <h2>Own a piece of the journey back</h2>
+      <h2>Own a piece of the club</h2>
       <p class="intro">From Wembley to the EFL — this club runs on its supporters. Trust membership funds the coaches, the charity work and the fan voice at the Crown Oil Arena.</p>
       <div class="perks">
         <div class="perk"><span class="tick">✓</span><span>Discounts with Partners of the Trust — pubs, local businesses and matchday offers</span></div>
