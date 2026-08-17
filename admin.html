@@ -162,6 +162,7 @@ function show(){
   tile('decisions.html','Decisions &amp; tasks','Everything raised about the website \u2014 answer your items here');
   if(me.can_coach) tile('coach.html','Coach travel','Set up coaches, take phone bookings, print the passenger list');
   tile('tools/coach-poster.html','Coach poster maker','Matchday travel posters in four fields');
+  tile('awayteams.html','Visiting trusts','The note we send before an away following visits, and who to send it to');
   if(me.is_admin){$('officersCard').style.display='block';loadOfficers();$('backupCard').style.display='block';loadBackupCounts();$('retentionCard').style.display='block';loadRetention();}
 }
 async function checkQueue(){

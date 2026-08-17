@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visiting supporters' trusts | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:21px}.top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:950px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:10px 0 4px}
+  input,select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
+  textarea{min-height:280px;line-height:1.6;font-size:14px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:640px){.g2{grid-template-columns:1fr}}
+  button{background:var(--royal);color:#fff;border:0;border-radius:9px;padding:11px 20px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+  button.green{background:var(--green)}button.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line)}
+  button.sm{padding:6px 12px;font-size:11.5px}
+  .row{display:flex;gap:12px;align-items:center;padding:11px 6px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .row:hover{background:#F7FAFF}
+  .row b{color:var(--ink)}.row small{color:#7A8AA5;display:block;font-size:12.5px}
+  .grow{flex:1;min-width:180px}
+  .tag{font-size:11px;padding:3px 10px;border-radius:100px;background:var(--wash);color:#7A8AA5;flex:none}
+  .tag.done{background:#EAF7F0;color:#14653F;font-weight:700}
+  .msg{font-size:13.5px;font-weight:600;margin-top:10px}
+  .note{background:var(--wash);border-left:4px solid var(--gold);padding:12px 14px;border-radius:0 8px 8px 0;font-size:13.5px;margin-bottom:12px}
+  #editor{display:none}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>Visiting supporters&rsquo; trusts</h1><small>The note we send before an away following visits Rochdale &mdash; and who to send it to</small></div>
+<div class="wrap">
+
+<div class="panel">
+  <h2>Write the note</h2>
+  <div class="note">Pick who is visiting, check the details, then copy it. The wording is shared &mdash; if you improve it, everyone gets the better version.</div>
+  <div class="g2">
+    <div><label>Who is visiting?</label><select id="club" onchange="fill()"></select></div>
+    <div><label>Match date</label><input id="matchdate" placeholder="e.g. Saturday 22 August" oninput="fill()"></div>
+  </div>
+  <label>The note</label>
+  <textarea id="out"></textarea>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+    <button onclick="copyOut()">Copy the note</button>
+    <button class="ghost" onclick="markSent()">Mark as sent</button>
+    <button class="ghost" onclick="openTemplate()">Edit the wording for everyone</button>
+  </div>
+  <p class="msg" id="cmsg"></p>
+</div>
+
+<div class="panel" id="templatePanel" style="display:none">
+  <h2>The shared wording</h2>
+  <p style="font-size:13.5px;margin-bottom:8px">Use <b>{CLUB}</b>, <b>{TRUST}</b> and <b>{DATE}</b> and they will be filled in each time.</p>
+  <textarea id="tpl"></textarea>
+  <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="green" onclick="saveTemplate()">Save for everyone</button>
+    <button class="ghost" onclick="document.getElementById('templatePanel').style.display='none'">Close</button>
+  </div>
+  <p class="msg" id="tmsg"></p>
+</div>
+
+<div class="panel">
+  <h2>Who to send it to</h2>
+  <div id="list">Loading&hellip;</div>
+  <div style="margin-top:14px"><button class="ghost" onclick="openEditor()">+ Add or update a club</button></div>
+</div>
+
+<div class="panel" id="editor">
+  <h2 id="eTitle">Club details</h2>
+  <div class="g2">
+    <div><label>Club</label><input id="e_club"></div>
+    <div><label>Their trust or supporters&rsquo; club</label><input id="e_trust"></div>
+  </div>
+  <div class="g2">
+    <div><label>Contact name</label><input id="e_contact"></div>
+    <div><label>Email</label><input id="e_email"></div>
+  </div>
+  <label>Website or Facebook page</label><input id="e_web">
+  <label>Notes</label><input id="e_notes" placeholder="Anything worth remembering for next time">
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="green" onclick="saveClub()">Save</button>
+    <button class="ghost" onclick="document.getElementById('editor').style.display='none'">Cancel</button>
+  </div>
+  <p class="msg" id="emsg"></p>
+</div>
+
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
+let clubs=[], template='';
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+const DEFAULT_TEMPLATE = `Hello,
+
+I'm writing from the Dale Trust, the independent supporters' trust of Rochdale AFC, ahead of your visit to us on {DATE}.
+
+We wanted to pass on a few things that might make the trip easier for your supporters.
+
+FREE PARKING
+Two of our partner venues are offering free parking to visiting supporters, both within walking distance of the ground:
+
+- Rochdale Cricket Club, Bridgefold Road, OL11 5BX — under ten minutes' walk
+- Spotland Bridge Mill, Mellor Street, OL11 5BU — home to both the Twisted Mule brewery and taphouse and the Mill About coffee shop and bar, so food, drink and parking in one place
+
+BEFORE THE GAME
+Both venues above welcome away supporters. In the town centre, The Baum on Toad Lane is a former CAMRA national pub of the year, and the Regal Moon is the Wetherspoons if you're arriving by train.
+
+GETTING HERE AND THE GROUND ITSELF
+We've put together a guide for visiting supporters covering the away end, directions from the M62, parking, trains and trams, and where to eat and drink:
+
+https://daletrust.uk/visiting.html
+
+If anything on it is out of date or unclear, please tell us and we'll fix it.
+
+FROM ONE TRUST TO ANOTHER
+If there's anything we can help with — or anything you'd like us to pass on to Rochdale AFC before you travel — do get in touch. And if {TRUST} ever wants to compare notes on anything, we'd be glad to.
+
+Safe travels, and enjoy your day.
+
+Keith Hicks
+Partners of the Trust
+Dale Supporters Trust
+daletrust.uk`;
+
+async function load(){
+  try{
+    const d=await (await fetch(EP+'/awaytrusts',{headers:H()})).json();
+    if(!d.ok){$('list').textContent=d.error;return;}
+    clubs=d.clubs; template=d.template||DEFAULT_TEMPLATE;
+    $('club').innerHTML=clubs.map(c=>'<option value="'+c.id+'">'+esc(c.club)+'</option>').join('');
+    $('tpl').value=template;
+    drawList(); fill();
+  }catch(e){$('list').textContent='Could not reach the server.';}
+}
+
+function drawList(){
+  $('list').innerHTML=clubs.map(c=>
+    '<div class="row"><div class="grow"><b>'+esc(c.club)+'</b>'+
+    '<small>'+(c.trust_name?esc(c.trust_name):'<span style="color:#C0392B">no trust recorded</span>')+
+    (c.contact_name?' &middot; '+esc(c.contact_name):'')+
+    (c.email?' &middot; '+esc(c.email):'')+'</small>'+
+    (c.notes?'<small>'+esc(c.notes)+'</small>':'')+'</div>'+
+    (c.last_contacted?'<span class="tag done">Contacted '+new Date(c.last_contacted).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</span>':'<span class="tag">not yet contacted</span>')+
+    '<button class="sm ghost" onclick="editClub('+c.id+')">Edit</button></div>').join('');
+}
+
+function fill(){
+  const c=clubs.find(x=>String(x.id)===$('club').value);
+  if(!c)return;
+  $('out').value=template
+    .split('{CLUB}').join(c.club)
+    .split('{TRUST}').join(c.trust_name||(c.club+' supporters'))
+    .split('{DATE}').join($('matchdate').value.trim()||'[match date]');
+}
+
+function copyOut(){
+  const t=$('out');
+  t.select(); t.setSelectionRange(0,99999);
+  navigator.clipboard.writeText(t.value).then(()=>{
+    $('cmsg').innerHTML='<span style="color:var(--green)">Copied \\u2014 paste it into an email.</span>';
+  }).catch(()=>document.execCommand('copy'));
+}
+
+async function markSent(){
+  const c=clubs.find(x=>String(x.id)===$('club').value);
+  if(!c)return;
+  const d=await (await fetch(EP+'/awaytrusts/sent',{method:'POST',headers:H(),body:JSON.stringify({id:c.id})})).json();
+  if(d.ok){$('cmsg').innerHTML='<span style="color:var(--green)">Noted \\u2014 '+esc(c.club)+' marked as contacted today.</span>';load();}
+}
+
+function openTemplate(){$('templatePanel').style.display='block';$('tpl').value=template;$('templatePanel').scrollIntoView({behavior:'smooth'});}
+async function saveTemplate(){
+  const d=await (await fetch(EP+'/awaytrusts/template',{method:'POST',headers:H(),body:JSON.stringify({template:$('tpl').value})})).json();
+  if(d.ok){template=$('tpl').value;fill();$('tmsg').innerHTML='<span style="color:var(--green)">Saved \\u2014 everyone gets this version now.</span>';}
+  else $('tmsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';
+}
+
+function openEditor(club){
+  ['e_club','e_trust','e_contact','e_email','e_web','e_notes'].forEach(i=>$(i).value='');
+  $('eTitle').textContent='Add a club';
+  $('emsg').textContent='';
+  $('editor').style.display='block';
+  $('editor').scrollIntoView({behavior:'smooth'});
+}
+function editClub(id){
+  const c=clubs.find(x=>x.id===id); if(!c)return;
+  $('eTitle').textContent=c.club;
+  $('e_club').value=c.club; $('e_trust').value=c.trust_name||'';
+  $('e_contact').value=c.contact_name||''; $('e_email').value=c.email||'';
+  $('e_web').value=c.website||''; $('e_notes').value=c.notes||'';
+  $('emsg').textContent='';
+  $('editor').style.display='block';
+  $('editor').scrollIntoView({behavior:'smooth'});
+}
+async function saveClub(){
+  const body={club:$('e_club').value.trim(),trust_name:$('e_trust').value.trim(),
+    contact_name:$('e_contact').value.trim(),email:$('e_email').value.trim(),
+    website:$('e_web').value.trim(),notes:$('e_notes').value.trim()};
+  if(!body.club){$('emsg').innerHTML='<span style="color:var(--red)">A club is needed.</span>';return;}
+  const d=await (await fetch(EP+'/awaytrusts/save',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+  if(d.ok){$('editor').style.display='none';load();}
+  else $('emsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';
+}
+
+load();
+</script>
+</body>
+</html>
