@@ -309,10 +309,13 @@
   @media (max-width:980px){
     nav.links{display:none}
     .hero-inner,.member-grid,.ex-grid{grid-template-columns:1fr;gap:44px}
-    .pillars{grid-template-columns:repeat(2,1fr)}
+    .pillars{grid-template-columns:repeat(4,1fr);gap:14px}
     .news-grid{grid-template-columns:1fr}
     .story,.story.small{min-height:280px}
     .foot-grid{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:860px){
+    .pillars{grid-template-columns:repeat(2,1fr)}
   }
   @media (max-width:560px){
     .pillars{grid-template-columns:1fr}
@@ -323,6 +326,18 @@
   @media (prefers-reduced-motion:reduce){
     *{transition:none!important;animation:none!important;scroll-behavior:auto}
   }
+  .whoswho{grid-column:1 / -1;border-top:1px solid rgba(255,255,255,.14);padding-top:26px;margin-top:6px}
+  .who-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 28px;margin-top:14px}
+  .wp{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .wp .role{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#7E93B4;line-height:1.3}
+  .wp .nm,.wp a{font-size:14.5px;color:#E4ECF6;font-weight:600;text-decoration:none;line-height:1.35}
+  .wp a{color:#8FC1FF}
+  .wp a:hover{color:#fff}
+  @media (max-width:980px){.who-grid{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:700px){.who-grid{grid-template-columns:repeat(2,1fr);gap:14px 18px}
+    .whoswho{padding-top:20px}}
+  @media (max-width:400px){.who-grid{grid-template-columns:1fr}}
+
   /* ---------- phones: keep it short ---------- */
   @media (max-width:700px){
 
@@ -395,7 +410,16 @@
     /* headings that fit a phone screen */
     h1,h2,h3{overflow-wrap:break-word;hyphens:none}
     h2{font-size:26px;line-height:1.12}
-    .member h2{font-size:26px}
+    .member h2{font-size:23px;letter-spacing:0}
+    .member .kicker{font-size:10.5px}
+    .member-card h3{font-size:24px}
+    .member-card{padding:22px 20px}
+    .member-card img.logo{width:64px;height:64px;margin-bottom:14px}
+    .member-card .season{letter-spacing:.16em;font-size:12px}
+    .member-card .sub{font-size:14px;max-width:none}
+    .member-card .row{gap:12px}
+    .member-card .row .btn{width:100%;text-align:center}
+    .perk{font-size:14.5px;gap:10px}
     .hero h2{font-size:28px}
     .sec-head h2{font-size:25px}
     .kicker{font-size:11px;letter-spacing:.14em}
@@ -801,22 +825,22 @@
         <img src="img/brand/dale-logo.png" alt="Dale Supporters Trust" style="height:84px;width:auto;margin-bottom:14px;">
         <p>The independent supporters' trust of Rochdale AFC. Member of the Football Supporters' Association.</p>
       </div>
-      <div>
+      <div class="whoswho">
         <h4>Who's who</h4>
-        <ul>
-          <li><b>Chair / Travel Coordinator</b> &mdash; Emma Loynd</li>
-          <li><b>Membership Officer</b> &mdash; Scott Goulding</li>
-          <li><b>Secretary</b> &mdash; Murray Knight</li>
-          <li><b>Club Trust Board Director</b> &mdash; Vince Ashall</li>
-          <li><b>Treasurer</b> &mdash; Michael Shepherd</li>
-          <li><b>Digital</b> &mdash; Chris Culshaw</li>
-          <li><b>Exiles</b> &mdash; Ian Goodwin</li>
-          <li><b>Partners of the Trust</b> &mdash; <a href="partners.html" style="color:#8FC1FF">Keith Hicks</a></li>
-          <li><b>Former Players Association</b> &mdash; <a href="fpa.html" style="color:#8FC1FF">Keith Hicks / Siobhan McElhinney</a></li>
-          <li><b>Youth Inclusion / Media Officer</b> &mdash; Ruby Loynd</li>
-          <li><b>Fan Liaison</b> &mdash; Matt Cullen</li>
-          <li><b>Rochdale AFC Ladies</b> &mdash; Kirsty Fernehough</li>
-        </ul>
+        <div class="who-grid">
+        <div class="wp"><span class="role">Chair / Travel Coordinator</span><span class="nm">Emma Loynd</span></div>
+        <div class="wp"><span class="role">Membership Officer</span><span class="nm">Scott Goulding</span></div>
+        <div class="wp"><span class="role">Secretary</span><span class="nm">Murray Knight</span></div>
+        <div class="wp"><span class="role">Club Trust Board Director</span><span class="nm">Vince Ashall</span></div>
+        <div class="wp"><span class="role">Treasurer</span><span class="nm">Michael Shepherd</span></div>
+        <div class="wp"><span class="role">Digital Officer</span><span class="nm">Chris Culshaw</span></div>
+        <div class="wp"><span class="role">Exiles</span><span class="nm">Ian Goodwin</span></div>
+        <div class="wp"><span class="role">Partners of the Trust</span><a href="partners.html">Keith Hicks</a></div>
+        <div class="wp"><span class="role">Former Players Association</span><a href="fpa.html">Keith Hicks &amp; Siobhan McElhinney</a></div>
+        <div class="wp"><span class="role">Youth Inclusion / Media</span><span class="nm">Ruby Loynd</span></div>
+        <div class="wp"><span class="role">Fan Liaison</span><span class="nm">Matt Cullen</span></div>
+        <div class="wp"><span class="role">Rochdale AFC Ladies</span><span class="nm">Kirsty Fernehough</span></div>
+        </div>
       </div>
       <div>
         <h4>Get in touch</h4>
