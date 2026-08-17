@@ -28,6 +28,10 @@
   button.sm{padding:5px 11px;font-size:11.5px}
   .trip{border:1px solid var(--line);border-left:5px solid var(--royal);border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;background:#fff}
   .trip.on{border-left-color:var(--green);background:#F7FCF9}
+  .trip.draft{border-left-color:#C3CCD8;background:#FBFCFE}
+  .liveswitch{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--body);cursor:pointer;background:#fff;border:1.5px solid var(--line);border-radius:100px;padding:5px 13px 5px 8px;margin-top:6px}
+  .liveswitch input{width:auto;margin:0;transform:scale(1.15)}
+  .liveswitch.on{border-color:var(--green);color:#14653F;background:#EAF7F0}
   .trip b{font-family:'Oswald';font-size:17px;text-transform:uppercase;color:var(--ink);display:block}
   .trip small{color:#7A8AA5;display:block;margin-top:2px}
   .seats{float:right;text-align:right}
@@ -50,6 +54,7 @@
 
   <div class="panel noprint">
     <h2>Coaches</h2>
+    <p style="font-size:13.5px;margin-bottom:12px">Every away game is already set up with a suggested departure time and price. Check the details, then tick <b>On the website</b> when you are ready for people to book.</p>
     <div id="trips">Loading…</div>
     <div style="margin-top:14px"><button class="ghost" onclick="newTrip()">+ Set up a new coach</button></div>
   </div>
@@ -71,7 +76,7 @@
       <div><label>Seats on the coach</label><input id="t_seats" value="49"></div>
     </div>
     <div class="grid2">
-      <div><label>Status</label><select id="t_status"><option value="open">Open for booking</option><option value="closed">Closed</option><option value="cancelled">Cancelled</option></select></div>
+      <div><label>Status</label><select id="t_status"><option value="draft">Not shown yet</option><option value="open">On the website</option><option value="closed">Closed</option><option value="cancelled">Cancelled</option></select></div>
       <div><label>Notes (shown to passengers)</label><input id="t_notes" placeholder="Stop en route each way"></div>
     </div>
     <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
@@ -133,15 +138,26 @@ async function load(tripId){
 
 function drawTrips(){
   if(!trips.length){$('trips').innerHTML='<p style="color:#7A8AA5">No coaches set up yet.</p>';return;}
-  $('trips').innerHTML=trips.map(t=>
-    '<div class="trip'+(current&&current.id===t.id?' on':'')+'" onclick="openTrip('+t.id+')">'+
+  $('trips').innerHTML=trips.map(t=>{
+    const live = t.status==='open';
+    return '<div class="trip'+(current&&current.id===t.id?' on':'')+(t.status==='draft'?' draft':'')+'" onclick="openTrip('+t.id+')">'+
     '<div class="seats"><b>'+t.remaining+'</b><span>seats left</span></div>'+
     '<b>'+esc(t.opponent)+'</b>'+
-    '<small>'+dfmt(t.match_date)+' · departs '+esc(t.depart_time)+' from '+esc(t.depart_from)+' · '+money(t.price)+' a seat'+
-    (t.status!=='open'?' · <b style="color:#C0392B">'+t.status+'</b>':'')+'</small>'+
-    '<small>'+t.taken+' of '+t.seats+' seats taken '+
-    '<button class="ghost sm noprint" style="margin-left:8px" onclick="event.stopPropagation();editTrip('+t.id+')">Edit</button></small>'+
-    '</div>').join('');
+    '<small>'+dfmt(t.match_date)+' · departs '+esc(t.depart_time)+' from '+esc(t.depart_from)+' · '+money(t.price)+' a seat</small>'+
+    '<small>'+t.taken+' of '+t.seats+' seats taken'+
+    (t.status==='closed'||t.status==='cancelled'?' · <b style="color:#C0392B">'+t.status+'</b>':'')+'</small>'+
+    '<label class="liveswitch'+(live?' on':'')+'" onclick="event.stopPropagation()">'+
+      '<input type="checkbox"'+(live?' checked':'')+' onchange="setLive('+t.id+',this.checked)">'+
+      (live?'On the website':'Not shown yet')+'</label>'+
+    '<button class="ghost sm noprint" style="margin-left:8px" onclick="event.stopPropagation();editTrip('+t.id+')">Edit</button>'+
+    '</div>';
+  }).join('');
+}
+
+async function setLive(id, live){
+  const d=await (await fetch(EP+'/coach/live',{method:'POST',headers:H(),body:JSON.stringify({id,live})})).json();
+  if(!d.ok){alert(d.error||'Could not change that.');}
+  load(current?current.id:null);
 }
 
 function openTrip(id){
