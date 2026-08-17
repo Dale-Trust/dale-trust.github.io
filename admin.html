@@ -43,6 +43,16 @@
   @media(max-width:700px){.addrow{grid-template-columns:1fr}}
   .pill{font-size:11px;font-weight:700;padding:2px 10px;border-radius:100px;background:#E8F1FC;color:var(--royal)}
   #app,#officersCard{display:none}
+  .guide-banner{display:flex;align-items:center;gap:16px;background:linear-gradient(120deg,#0E1F3D,#16305C 60%,#00417E);color:#fff;border-radius:14px;padding:18px 22px;margin-bottom:18px;text-decoration:none;border:0;position:relative;overflow:hidden;transition:transform .12s}
+  .guide-banner::before{content:"";position:absolute;top:0;bottom:0;right:-14%;width:44%;background:#0057A7;transform:skewX(-14deg);opacity:.35}
+  .guide-banner:hover{transform:translateY(-1px)}
+  .guide-banner .gb-ico{position:relative;flex:none;width:44px;height:44px;border-radius:50%;background:#E8B84B;color:#3a2c00;font-family:'Oswald',sans-serif;font-size:26px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .guide-banner .gb-txt{position:relative;flex:1;min-width:180px}
+  .guide-banner .gb-txt b{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:17px;display:block;letter-spacing:.02em;color:#fff}
+  .guide-banner .gb-txt span{font-size:14px;color:#C7D6EC;display:block;margin-top:2px}
+  .guide-banner .gb-go{position:relative;flex:none;background:#fff;color:#0E1F3D;font-family:'Oswald',sans-serif;font-size:13.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:11px 20px;border-radius:9px}
+  @media(max-width:620px){.guide-banner{flex-wrap:wrap}.guide-banner .gb-go{width:100%;text-align:center}}
+
 </style>
 </head>
 <body>
@@ -60,6 +70,7 @@
   <p class="msg" id="lmsg"></p>
 </div>
 <div id="app">
+  <div id="guideBanner"></div>
   <div class="tiles" id="tiles"></div>
   <div class="card" id="backupCard" style="display:none">
     <h2>Download everything</h2>
@@ -144,6 +155,12 @@ function show(){
   $('login').style.display='none';$('app').style.display='block';
   $('who').innerHTML='<b>'+me.name+'</b>'+(me.role_title?' \u00B7 '+me.role_title:'')+'<br><a href="#" onclick="logout()">Sign out</a>';
   const t=$('tiles');t.innerHTML='';
+  const gd=$('guideBanner');
+  if(gd) gd.innerHTML='<a class="guide-banner" href="guide.html">'+
+    '<span class="gb-ico">?</span>'+
+    '<span class="gb-txt"><b>New here, or not sure what something does?</b>'+
+    '<span>How to use it &mdash; every screen explained, step by step. Start here.</span></span>'+
+    '<span class="gb-go">Open the guide &rarr;</span></a>';
   const tile=(href,title,desc)=>t.insertAdjacentHTML('beforeend','<a class="tile" href="'+href+'"><b>'+title+'</b><small>'+desc+'</small></a>');
   if(me.can_members){
     tile('dashboard.html','Membership dashboard','Live register analysis \u2014 drop the sheet, press Connect');
@@ -160,7 +177,6 @@ function show(){
   if(me.can_articles) tile('tools/post-import.html','Import old posts','Republish the WordPress archive onto the new site');
   if(me.can_board) tile('board.html','Board figures','Membership at a glance \u2014 live, no personal data');
   tile('decisions.html','Decisions &amp; tasks','Everything raised about the website \u2014 answer your items here');
-  tile('guide.html','How to use it','Every screen explained — how to do the job it was built for');
   if(me.can_coach) tile('coach.html','Coach travel','Set up coaches, take phone bookings, print the passenger list');
   tile('tools/coach-poster.html','Coach poster maker','Matchday travel posters in four fields');
   tile('awayteams.html','Visiting trusts','The note we send before an away following visits, and who to send it to');
