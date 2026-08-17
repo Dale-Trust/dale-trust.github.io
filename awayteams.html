@@ -34,7 +34,11 @@
   .tag.done{background:#EAF7F0;color:#14653F;font-weight:700}
   .msg{font-size:13.5px;font-weight:600;margin-top:10px}
   .note{background:var(--wash);border-left:4px solid var(--gold);padding:12px 14px;border-radius:0 8px 8px 0;font-size:13.5px;margin-bottom:12px}
-  #editor{display:none}
+  .clubrow{border-bottom:1px solid var(--line)}
+  .clubrow:last-child{border-bottom:0}
+  .inline{display:none;background:var(--wash);border-left:4px solid var(--royal);border-radius:0 9px 9px 0;padding:16px 18px;margin:0 0 12px}
+  .inline label{margin-top:8px}
+  .adder{display:none;background:var(--wash);border-left:4px solid var(--green);border-radius:0 9px 9px 0;padding:16px 18px;margin-top:12px}
 </style>
 </head>
 <body>
@@ -76,23 +80,6 @@
   <div style="margin-top:14px"><button class="ghost" onclick="openEditor()">+ Add or update a club</button></div>
 </div>
 
-<div class="panel" id="editor">
-  <h2 id="eTitle">Club details</h2>
-  <div class="g2">
-    <div><label>Club</label><input id="e_club"></div>
-    <div><label>Their trust or supporters&rsquo; club</label><input id="e_trust"></div>
-  </div>
-  <div class="g2">
-    <div><label>Contact name</label><input id="e_contact"></div>
-    <div><label>Email</label><input id="e_email"></div>
-  </div>
-  <label>Website or Facebook page</label><input id="e_web">
-  <label>Notes</label><input id="e_notes" placeholder="Anything worth remembering for next time">
-  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-    <button class="green" onclick="saveClub()">Save</button>
-    <button class="ghost" onclick="document.getElementById('editor').style.display='none'">Cancel</button>
-  </div>
-  <p class="msg" id="emsg"></p>
 </div>
 
 </div>
@@ -148,15 +135,67 @@ async function load(){
   }catch(e){$('list').textContent='Could not reach the server.';}
 }
 
+function clubForm(prefix, c){
+  const v = f => (c && c[f]) ? String(c[f]).replace(/"/g,'&quot;') : '';
+  return '<div class="g2">'+
+    '<div><label>Club</label><input id="'+prefix+'_club" value="'+(c?v('club'):'')+'"'+(c?' readonly style="background:#F7FAFF"':'')+'></div>'+
+    '<div><label>Their trust or supporters&rsquo; club</label><input id="'+prefix+'_trust" value="'+v('trust_name')+'"></div>'+
+    '</div>'+
+    '<div class="g2">'+
+    '<div><label>Contact name</label><input id="'+prefix+'_contact" value="'+v('contact_name')+'"></div>'+
+    '<div><label>Email</label><input id="'+prefix+'_email" value="'+v('email')+'"></div>'+
+    '</div>'+
+    '<label>Website or Facebook page</label><input id="'+prefix+'_web" value="'+v('website')+'">'+
+    '<label>Notes</label><input id="'+prefix+'_notes" value="'+v('notes')+'" placeholder="Anything worth remembering for next time">'+
+    '<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">'+
+    '<button class="green sm" onclick="saveClub(\''+prefix+'\')">Save</button>'+
+    '<button class="ghost sm" onclick="closeForm(\''+prefix+'\')">Cancel</button>'+
+    '</div><p class="msg" id="'+prefix+'_msg"></p>';
+}
+
 function drawList(){
   $('list').innerHTML=clubs.map(c=>
-    '<div class="row"><div class="grow"><b>'+esc(c.club)+'</b>'+
-    '<small>'+(c.trust_name?esc(c.trust_name):'<span style="color:#C0392B">no trust recorded</span>')+
-    (c.contact_name?' &middot; '+esc(c.contact_name):'')+
-    (c.email?' &middot; '+esc(c.email):'')+'</small>'+
-    (c.notes?'<small>'+esc(c.notes)+'</small>':'')+'</div>'+
-    (c.last_contacted?'<span class="tag done">Contacted '+new Date(c.last_contacted).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</span>':'<span class="tag">not yet contacted</span>')+
-    '<button class="sm ghost" onclick="editClub('+c.id+')">Edit</button></div>').join('');
+    '<div class="clubrow">'+
+      '<div class="row"><div class="grow"><b>'+esc(c.club)+'</b>'+
+      '<small>'+(c.trust_name?esc(c.trust_name):'<span style="color:#C0392B">no trust recorded</span>')+
+      (c.contact_name?' &middot; '+esc(c.contact_name):'')+
+      (c.email?' &middot; '+esc(c.email):'')+'</small>'+
+      (c.notes?'<small>'+esc(c.notes)+'</small>':'')+'</div>'+
+      (c.last_contacted?'<span class="tag done">Contacted '+new Date(c.last_contacted).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</span>':'<span class="tag">not yet contacted</span>')+
+      '<button class="sm ghost" onclick="toggleEdit('+c.id+')" id="btn'+c.id+'">Edit</button></div>'+
+      '<div class="inline" id="ed'+c.id+'">'+clubForm('c'+c.id, c)+'</div>'+
+    '</div>').join('')+
+    '<div class="adder" id="addBox">'+clubForm('newc', null)+'</div>';
+}
+
+function toggleEdit(id){
+  const box=$('ed'+id), btn=$('btn'+id);
+  document.querySelectorAll('.inline').forEach(b=>{ if(b!==box) b.style.display='none'; });
+  document.querySelectorAll('[id^=btn]').forEach(b=>{ if(b!==btn) b.textContent='Edit'; });
+  $('addBox').style.display='none';
+  const open = box.style.display!=='block';
+  box.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? 'Close' : 'Edit';
+  if(open) $('c'+id+'_trust').focus();
+}
+
+function closeForm(prefix){
+  if(prefix==='newc'){ $('addBox').style.display='none'; return; }
+  const id=prefix.slice(1);
+  $('ed'+id).style.display='none';
+  $('btn'+id).textContent='Edit';
+}
+
+function openEditor(){
+  document.querySelectorAll('.inline').forEach(b=>b.style.display='none');
+  document.querySelectorAll('[id^=btn]').forEach(b=>b.textContent='Edit');
+  const box=$('addBox');
+  box.style.display='block';
+  ['club','trust','contact','email','web','notes'].forEach(f=>{ const el=$('newc_'+f); if(el) el.value=''; });
+  $('newc_club').removeAttribute('readonly');
+  $('newc_club').style.background='#fff';
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+  $('newc_club').focus();
 }
 
 function fill(){
@@ -197,24 +236,14 @@ function openEditor(club){
   $('editor').style.display='block';
   $('editor').scrollIntoView({behavior:'smooth'});
 }
-function editClub(id){
-  const c=clubs.find(x=>x.id===id); if(!c)return;
-  $('eTitle').textContent=c.club;
-  $('e_club').value=c.club; $('e_trust').value=c.trust_name||'';
-  $('e_contact').value=c.contact_name||''; $('e_email').value=c.email||'';
-  $('e_web').value=c.website||''; $('e_notes').value=c.notes||'';
-  $('emsg').textContent='';
-  $('editor').style.display='block';
-  $('editor').scrollIntoView({behavior:'smooth'});
-}
-async function saveClub(){
-  const body={club:$('e_club').value.trim(),trust_name:$('e_trust').value.trim(),
-    contact_name:$('e_contact').value.trim(),email:$('e_email').value.trim(),
-    website:$('e_web').value.trim(),notes:$('e_notes').value.trim()};
-  if(!body.club){$('emsg').innerHTML='<span style="color:var(--red)">A club is needed.</span>';return;}
+async function saveClub(prefix){
+  const g=f=>{const el=$(prefix+'_'+f);return el?el.value.trim():'';};
+  const body={club:g('club'),trust_name:g('trust'),contact_name:g('contact'),
+    email:g('email'),website:g('web'),notes:g('notes')};
+  const msg=$(prefix+'_msg');
+  if(!body.club){msg.innerHTML='<span style="color:var(--red)">A club is needed.</span>';return;}
   const d=await (await fetch(EP+'/awaytrusts/save',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
-  if(d.ok){$('editor').style.display='none';load();}
-  else $('emsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';
+  if(d.ok){ load(); } else msg.innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';
 }
 
 load();
