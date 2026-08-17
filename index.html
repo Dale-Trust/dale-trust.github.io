@@ -323,6 +323,82 @@
   @media (prefers-reduced-motion:reduce){
     *{transition:none!important;animation:none!important;scroll-behavior:auto}
   }
+  /* ---------- phones: keep it short ---------- */
+  @media (max-width:700px){
+
+    /* less air between everything */
+    section{padding:44px 0}
+    .sec-head{margin-bottom:22px;gap:10px}
+    .wrap{padding-left:20px;padding-right:20px}
+
+    /* top band: three across in one compact row rather than three stacked blocks */
+    .tb-grid{grid-template-columns:repeat(3,1fr);padding:0 12px;gap:0}
+    .tb-col{flex-direction:column;align-items:flex-start;gap:4px;padding:12px 8px;text-align:left}
+    .tb-col + .tb-col{border-left:1px solid rgba(255,255,255,.16);border-top:0;padding-left:12px}
+    .tb-ico{font-size:19px}
+    .tb-txt b{font-size:12.5px;line-height:1.2}
+    .tb-txt span{font-size:11px;line-height:1.35;white-space:normal;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .tb-flag{display:none}
+
+    /* hero: shorter, and the stats sit in one row */
+    .hero h1{font-size:38px}
+    .hero .lede{font-size:15.5px}
+    .hero-inner{gap:26px}
+    .stats{margin-top:26px;display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+    .stats .stat{padding:14px 8px 0}
+    .stats .stat b{font-size:22px}
+    .stats .stat span{font-size:10.5px;line-height:1.3}
+    .hero-ctas{gap:10px}
+    .hero-ctas .btn{flex:1;text-align:center}
+
+    /* card rows become a swipe instead of a tall stack */
+    .news-grid,
+    .ptn-grid{
+      display:grid;
+      grid-auto-flow:column;
+      grid-auto-columns:78%;
+      grid-template-columns:none;
+      overflow-x:auto;
+      scroll-snap-type:x mandatory;
+      -webkit-overflow-scrolling:touch;
+      gap:12px;
+      padding-bottom:10px;
+      margin-right:-20px;
+      padding-right:20px;
+      scrollbar-width:none;
+    }
+    .news-grid::-webkit-scrollbar,
+    .ptn-grid::-webkit-scrollbar{display:none}
+    .news-grid > *,
+    .ptn-grid > *{scroll-snap-align:start}
+    .story{min-height:230px}
+    .ptn{padding:14px}
+    .ptn-cat{margin-top:22px}
+    .ptn-cat::after{content:" \2014 swipe";font-weight:400;opacity:.55;font-size:11.5px;letter-spacing:0}
+
+    /* fixtures strip: swipe as well */
+    .fx-rows{grid-auto-flow:column;grid-auto-columns:70%;grid-template-columns:none;
+      overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;scrollbar-width:none}
+    .fx-rows::-webkit-scrollbar{display:none}
+    .fx-rows > *{scroll-snap-align:start}
+
+    /* exiles and membership panels */
+    .ex-grid,.member-grid{gap:22px}
+    .member-card{padding:22px}
+
+    /* footer: two columns rather than four stacked */
+    .foot-grid{grid-template-columns:1fr 1fr;gap:22px}
+    .foot-grid > *:first-child{grid-column:1 / -1}
+  }
+
+  @media (max-width:420px){
+    .tb-txt span{display:none}
+    .tb-col{align-items:center;text-align:center}
+    .news-grid,.ptn-grid{grid-auto-columns:86%}
+    .hero h1{font-size:32px}
+  }
+
 </style>
 </head>
 <body>
