@@ -407,20 +407,21 @@ async function loadLive(){
       });
       summary.overseas.push(ov);summary.england.push(en);summary.total.push(ov+en);
     });
+    // the spreadsheet lists the newest season first, so match that
+    const cols=[...order].reverse();
+    const idxOf={}; order.forEach((s,i)=>idxOf[s]=i);
     const ex=[];
-    ex.push(['Country'].concat(order));
-    Object.keys(byCountry).sort((a,b)=>{
-      const last=order[order.length-1];
-      return (byCountry[b][last]||0)-(byCountry[a][last]||0);
-    }).forEach(c=>ex.push([c].concat(order.map(s=>byCountry[c][s]||0))));
+    ex.push(['Country'].concat(cols));
+    Object.keys(byCountry).sort((a,b)=>(byCountry[b][cols[0]]||0)-(byCountry[a][cols[0]]||0))
+      .forEach(c=>ex.push([c].concat(cols.map(s=>byCountry[c][s]||0))));
     ex.push([]);
     ex.push(['Counties','Members','Towns']);
     Object.entries(byCounty).sort((a,b)=>b[1]-a[1]).forEach(([c,n])=>
       ex.push([c,n,[...(townsOf[c]||[])].slice(0,6).join(', ')]));
     ex.push([]);
-    ex.push(['Overseas'].concat(summary.overseas));
-    ex.push(['England'].concat(summary.england));
-    ex.push(['Total'].concat(summary.total));
+    ex.push(['Overseas'].concat(cols.map(s=>summary.overseas[idxOf[s]]||0)));
+    ex.push(['England'].concat(cols.map(s=>summary.england[idxOf[s]]||0)));
+    ex.push(['Total'].concat(cols.map(s=>summary.total[idxOf[s]]||0)));
     wb.SheetNames.push('Exiles');
     wb.Sheets['Exiles']=XLSX.utils.aoa_to_sheet(ex);
     // official season history (2012/13 onwards) from the database
