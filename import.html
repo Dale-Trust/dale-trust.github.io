@@ -285,10 +285,16 @@ function preview(){
 async function runImport(){
   const ep=$('endpoint').value.trim().replace(/\/$/,'');
   const m=mapping();
-  const all=rows.map(r=>transform(r,m)).filter(r=>r.first_name&&r.last_name&&r.membership_type);
+  // a name or an email is enough — anyone with an email can complete their own details later
+  const mapped=rows.map(r=>transform(r,m));
+  const all=mapped.filter(r=>(r.first_name&&r.last_name)||r.email);
   const dropped=rows.length-all.length;
-  if(!all.length){alert('No importable rows — check the column matching (name and type are required).');return;}
-  if(!confirm('Import '+all.length+' rows as '+document.getElementById('seasonSel').selectedOptions[0].text+' into the live database'+(dropped?' ('+dropped+' rows lack name/type and will be skipped)':'')+'?'))return;
+  const noName=all.filter(r=>!(r.first_name&&r.last_name)).length;
+  if(!all.length){alert('No importable rows — check the column matching. A row needs either a name or an email address.');return;}
+  let ask='Import '+all.length+' rows as '+document.getElementById('seasonSel').selectedOptions[0].text+' into the live database?';
+  if(noName) ask+='\n\n'+noName+' of them have an email but no name. They will go in marked "details needed" so they can fill the rest in when they sign in.';
+  if(dropped) ask+='\n\n'+dropped+' rows have neither a name nor an email and will be skipped — usually blank lines or totals.';
+  if(!confirm(ask))return;
   $('run').disabled=true;$('bar').style.display='block';
   let imported=0,skipped=0,errs=[];
   const CHUNK=40;
@@ -302,7 +308,8 @@ async function runImport(){
     }catch(e){errs.push(e.message);break;}
     $('fill').style.width=Math.round(100*Math.min(i+CHUNK,all.length)/all.length)+'%';
   }
-  $('report').innerHTML='<span class="ok">Imported: '+imported+'</span> &middot; Skipped (already present or incomplete): '+(skipped+dropped)+
+  $('report').innerHTML='<span class="ok">Imported: '+imported+'</span> &middot; Skipped (already on the register, or no name and no email): '+(skipped+dropped)+
+    (noName?' &middot; <span style="color:#8A4B00">'+noName+' need their details filling in</span>':'')+
     (errs.length?'<br><span class="bad">Issues:</span> '+errs.slice(0,8).join('; '):'');
   $('run').disabled=false;
 }
