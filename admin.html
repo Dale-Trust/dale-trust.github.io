@@ -192,6 +192,7 @@ function show(){
   if(me.can_articles) tile('tools/post-import.html','Import old posts','Republish the WordPress archive onto the new site');
   if(me.can_board) tile('board.html','Board figures','Membership at a glance \u2014 live, no personal data');
   tile('decisions.html','Decisions &amp; tasks','Everything raised about the website \u2014 answer your items here');
+  if(me.is_admin) tile('policy-admin.html','Policies','The Trust’s policies, with a version and a date on each');
   if(me.is_admin) tile('activity.html','Activity','Everything officers have done, newest first');
   if(me.can_coach) tile('coach.html','Coach travel','Set up coaches, take phone bookings, print the passenger list');
   tile('tools/coach-poster.html','Coach poster maker','Matchday travel posters in four fields');

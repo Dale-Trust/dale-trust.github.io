@@ -47,6 +47,9 @@
   article h2{font-size:clamp(24px,4vw,34px);text-transform:none;margin-bottom:6px}
   article .body{margin-top:22px}
   article .body p{margin:0 0 14px}
+  .policybox{background:var(--wash);border-left:4px solid var(--royal);border-radius:0 10px 10px 0;padding:14px 18px;margin:26px 0 0}
+  .policybox b{display:block;font-family:'Oswald';text-transform:uppercase;font-size:14px;color:var(--ink);letter-spacing:.02em}
+  .policybox a{display:inline-block;margin-top:6px;font-weight:600}
   article .body img{max-width:100%;height:auto;border-radius:10px;margin:8px 0 18px;display:block}
   article .body a{text-decoration:underline;text-underline-offset:2px}
   article .body h3{font-size:20px;text-transform:none;margin:22px 0 8px}
@@ -98,6 +101,8 @@ const slug=new URLSearchParams(location.search).get('p');
       document.getElementById('heroTitle').textContent=p.category;
       document.getElementById('heroSub').textContent='Dale Trust news';
       out.innerHTML='<article><h2>'+esc(p.title)+'</h2><p class="meta">By '+esc(p.author)+' \u00b7 '+fmt(p.publish_at)+'</p>'+(p.image?'<img src="'+p.image+'" alt="" style="width:100%;border-radius:12px;margin:0 0 18px;display:block">':'')+'<div class="body">'+md(p.body)+'</div>'+
+        (p.policy_slug ? '<div class="policybox"><b>Worth reading alongside this</b>'+
+          '<a href="policies.html?p='+encodeURIComponent(p.policy_slug)+'">Read the policy &rarr;</a></div>' : '')+
         '<p style="margin-top:26px"><a href="news.html">&larr; All news &amp; newsletters</a></p></article>';
     } else {
       const {posts}=await (await fetch(EP+'/posts')).json();
