@@ -75,12 +75,13 @@
     <h3>Before you book</h3>
     <ul>
       <li>Your coach seat <strong>does not include a match ticket</strong> &mdash; buy that from the club</li>
-      <li>Please arrive <strong>ten minutes before departure</strong>. The coach leaves on time</li>
+      <li>Please arrive <strong>ten minutes before departure</strong></li>
+      <li>All passengers aged <strong>15 or under MUST travel with a responsible adult aged 18 or over</strong></li>
+      <li><strong>No Alcohol / Vaping</strong></li>
       <li>If the coach is cancelled or the match is postponed, <strong>everyone gets a full refund</strong></li>
-      <li><strong>No refund for no-shows.</strong> The coach is paid for whether you're on it or not, so please let us know as early as you can if you can't travel</li>
-      <li>Alcohol is not permitted on the coach &mdash; it's the law on vehicles travelling to a football match</li>
       <li>Any questions: <a href="mailto:travel@daletrust.co.uk">travel@daletrust.co.uk</a></li>
     </ul>
+    <p style="margin-top:14px;font-size:14px"><a href="code-of-conduct.html">Read the coach travel code of conduct &rarr;</a></p>
   </div>
 </div></section>
 
@@ -130,8 +131,9 @@ async function load(){
           '<div class="row2"><div><label>Your name</label><input id="n'+t.id+'" value="'+esc(member?member.name:'')+'"></div>'+
           '<div><label>Mobile number</label><input id="p'+t.id+'" value="'+esc(member&&member.record?member.record.mobile||'':'')+'"></div></div>'+
           '<div class="row2"><div><label>Email</label><input id="e'+t.id+'" type="email" value="'+esc(member&&member.record?member.record.email||'':'')+'"></div>'+
-          '<div><label>How many seats?</label><select id="s'+t.id+'">'+
+          '<div><label>How many seats?</label><select id="s'+t.id+'" onchange="paxFields('+t.id+')">'+
             [1,2,3,4,5,6].filter(n=>n<=t.remaining).map(n=>'<option>'+n+'</option>').join('')+'</select></div></div>'+
+          '<div id="pax'+t.id+'"></div>'+
           '<div style="margin-top:14px"><button class="green" onclick="book('+t.id+')">Book and pay &rarr;</button></div>'+
           '<p class="msg" id="m'+t.id+'"></p>'+
         '</div></div>';
@@ -139,17 +141,42 @@ async function load(){
   }catch(e){$('list').textContent='Could not reach the server — please try again.';}
 }
 
-function openForm(id){const f=$('f'+id);f.style.display=f.style.display==='block'?'none':'block';if(f.style.display==='block')$('n'+id).focus();}
+function paxFields(id){
+  const n=parseInt(document.getElementById('s'+id).value,10)||1;
+  const box=document.getElementById('pax'+id);
+  let html='<p style="font-size:13.5px;color:#7A8AA5;margin:14px 0 4px">'+
+    'We need a name and date of birth for everyone travelling \u2014 it is how the driver knows who is on board, '+
+    'and how we make sure anyone 15 or under is with an adult.</p>';
+  for(let i=0;i<n;i++){
+    html+='<div class="row2" style="margin-top:8px">'+
+      '<div><label>Passenger '+(i+1)+(i===0?' (you)':'')+'</label><input id="pn'+id+'_'+i+'" placeholder="Full name"'+
+        (i===0&&member?' value="'+esc(member.name)+'"':'')+'></div>'+
+      '<div><label>Date of birth</label><input id="pd'+id+'_'+i+'" type="date"></div></div>';
+  }
+  box.innerHTML=html;
+}
+
+function openForm(id){
+  const f=$('f'+id);
+  f.style.display=f.style.display==='block'?'none':'block';
+  if(f.style.display==='block'){ paxFields(id); $('n'+id).focus(); }
+}
 
 async function book(id){
   const name=$('n'+id).value.trim(), mobile=$('p'+id).value.trim(), email=$('e'+id).value.trim();
   const seats=parseInt($('s'+id).value,10)||1;
   const msg=$('m'+id);
   if(!name||!mobile){msg.innerHTML='<span style="color:var(--red)">We need your name and a mobile number.</span>';return;}
+  const passengers=[];
+  for(let i=0;i<seats;i++){
+    const pn=($('pn'+id+'_'+i)||{}).value||'', pd=($('pd'+id+'_'+i)||{}).value||'';
+    if(!pn.trim()||!pd){msg.innerHTML='<span style="color:var(--red)">Please give a name and date of birth for everyone travelling.</span>';return;}
+    passengers.push({name:pn.trim(),dob:pd});
+  }
   msg.textContent='One moment…';
   try{
     const d=await (await fetch(EP+'/coach/book',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({trip_id:id,name,mobile,email,seats,member_no:member&&member.record?member.record.member_no:null})})).json();
+      body:JSON.stringify({trip_id:id,name,mobile,email,seats,passengers,member_no:member&&member.record?member.record.member_no:null})})).json();
     if(!d.ok){msg.innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return;}
     if(d.pay_url){
       msg.innerHTML='<span style="color:var(--green)">Almost there</span> — one step left. Taking you to payment…';

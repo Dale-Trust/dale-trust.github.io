@@ -219,7 +219,18 @@ function drawBookings(){
   if(!bookings.length){$('bookings').innerHTML='<p style="color:#7A8AA5;margin-top:10px">Nobody booked yet.</p>';return;}
   $('bookings').innerHTML='<table><tr><th>Name</th><th>Mobile</th><th>Seats</th><th>Paid</th><th class="noprint">Ref</th><th class="noprint"></th></tr>'+
     bookings.map(b=>'<tr'+(b.payment_status==='cancelled'?' style="opacity:.45"':'')+'>'+
-      '<td><b>'+esc(b.name)+'</b>'+(b.notes?'<br><small style="color:#7A8AA5">'+esc(b.notes)+'</small>':'')+'</td>'+
+      '<td><b>'+esc(b.name)+'</b>'+
+        (function(){
+          if(!b.passengers) return '';
+          try{
+            const p=JSON.parse(b.passengers);
+            if(!p.length) return '';
+            return '<br><small style="color:#46536B">'+p.map(x=>
+              esc(x.name)+(x.age!==undefined&&x.age<=15?' <b style="color:#C0392B">('+x.age+')</b>':'')
+            ).join(', ')+'</small>';
+          }catch(e){ return ''; }
+        })()+
+        (b.notes?'<br><small style="color:#7A8AA5">'+esc(b.notes)+'</small>':'')+'</td>'+
       '<td>'+esc(b.mobile||'—')+'</td><td>'+b.seats+'</td>'+
       '<td><span class="pill '+b.payment_status+'">'+b.payment_status+'</span></td>'+
       '<td class="noprint"><small>'+esc(b.booking_ref)+'</small></td>'+
