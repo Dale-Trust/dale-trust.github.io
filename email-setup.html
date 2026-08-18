@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Trust email address | Dale Supporters Trust</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;color:var(--body);font-size:15.5px;line-height:1.65;background:var(--wash)}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink);line-height:1.15}
+  a{color:var(--royal)}
+  .hero{background:linear-gradient(120deg,var(--navy),#16305C 58%,#00417E);color:#fff;padding:38px 24px;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:0;bottom:0;right:-12%;width:42%;background:var(--royal);transform:skewX(-14deg);opacity:.35}
+  .wrap{max-width:660px;margin:0 auto;padding:0 24px}
+  .hero .wrap{position:relative}
+  .kicker{font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#8FC1FF;margin-bottom:8px}
+  .hero h1{color:#fff;font-size:clamp(26px,5vw,38px)}
+  .hero p{color:#C7D6EC;margin-top:8px}
+  section{padding:28px 0 60px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:14px 0 5px}
+  input,select,textarea{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font:inherit;color:var(--ink);background:#fff}
+  textarea{min-height:70px}
+  .tick{display:flex;gap:12px;align-items:flex-start;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer}
+  .tick:hover{border-color:var(--bright);background:#F7FAFF}
+  .tick.on{border-color:var(--royal);background:#E8F1FC}
+  .tick input{width:auto;margin-top:3px;flex:none;transform:scale(1.2)}
+  .tick b{display:block;color:var(--ink);font-size:15px}
+  .tick span{font-size:13.5px;color:#7A8AA5}
+  button{background:var(--royal);color:#fff;border:0;border-radius:10px;padding:15px 28px;font:600 15px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer;width:100%;margin-top:20px}
+  button:hover{background:var(--bright)}
+  .note{background:var(--wash);border-left:4px solid var(--royal);border-radius:0 10px 10px 0;padding:14px 16px;font-size:14.5px;margin:16px 0}
+  .deadline{background:#FFF9E8;border:1px solid #EAD198;border-left:5px solid var(--gold);border-radius:0 10px 10px 0;padding:14px 16px;font-size:14.5px;margin-top:14px}
+  .msg{font-size:15px;font-weight:600;margin-top:12px}
+  .done{text-align:center;padding:36px 22px}
+  .done b{font-family:'Oswald';font-size:26px;text-transform:uppercase;color:var(--ink);display:block;margin-bottom:8px}
+  #form{display:none}
+  footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:20px}
+</style>
+</head>
+<body>
+<div class="hero"><div class="wrap">
+  <p class="kicker">Two minutes, please</p>
+  <h1>Your Trust email address</h1>
+  <p>We're moving the Trust onto its own email addresses. Pick your name, check what we've got, and tick which shared inboxes you want to see.</p>
+</div></div>
+
+<section><div class="wrap">
+  <div class="card" id="progress" style="display:none"></div>
+
+  <div class="card">
+    <label>Who are you?</label>
+    <select id="who" onchange="pick()"><option value="">Choose your name&hellip;</option></select>
+    <div class="deadline" id="deadline"></div>
+  </div>
+
+  <div id="form">
+    <div class="card">
+      <h2 style="font-size:17px;margin-bottom:4px">Your own address</h2>
+      <p style="font-size:14px">This is yours, and it stays with you.</p>
+      <label>Your personal address</label>
+      <input id="personal">
+      <p style="font-size:13px;color:#7A8AA5;margin-top:4px">Change it if you'd rather have something else &mdash; first name is usual.</p>
+
+      <label>Your role address</label>
+      <input id="alias">
+      <p style="font-size:13px;color:#7A8AA5;margin-top:4px">This belongs to the job rather than to you, so it carries on working when someone else takes over. It arrives in the same inbox. Separate several with commas.</p>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size:17px;margin-bottom:4px">Shared inboxes</h2>
+      <p style="font-size:14px;margin-bottom:14px">Tick any you should see. More than one person can be on each, and everyone can see what's been answered.</p>
+      <div id="groups"></div>
+    </div>
+
+    <div class="card">
+      <div class="note"><b>This is not another app to check.</b> It goes into the Mail app on your phone, or Gmail, or Outlook &mdash; alongside your normal email. Replies go out from your Trust address.</div>
+      <label>Anything else? (optional)</label>
+      <textarea id="notes" placeholder="e.g. I'd rather not have a mailbox, or my role name is wrong"></textarea>
+      <button onclick="save()">That's right &mdash; confirm</button>
+      <p class="msg" id="msg"></p>
+    </div>
+  </div>
+</div></section>
+
+<footer>Dale Trust is the trading name of Rochdale Supporters Club Limited, a registered society (29690R).</footer>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+let people=[], current=null;
+
+const GROUPS=[
+  ['info','info@ · help@ · support@','General enquiries from members and the public. The main address on the website.'],
+  ['matchday','matchday@','Ticketing, stewarding, kiosks and anything about a matchday.'],
+  ['board','board@','Anything addressed to the board as a whole.'],
+  ['hergametoo','hergametoo@','Her Game Too.'],
+  ['partners','partners@','Local businesses offering member discounts.'],
+  ['travel','travel@','Coach travel enquiries and bookings.']
+];
+
+(async()=>{
+  try{
+    const d=await (await fetch(EP+'/emailsetup')).json();
+    if(!d.ok)return;
+    people=d.people;
+    $('who').innerHTML='<option value="">Choose your name…</option>'+
+      people.map(p=>'<option value="'+esc(p.person)+'">'+esc(p.person)+(p.confirmed_at?' ✓':'')+'</option>').join('');
+    // if you are signed in as an officer, show who is still to reply
+    let sess=null; try{sess=localStorage.getItem('dt_session');}catch(e){}
+    if(sess){
+      const done=people.filter(p=>p.confirmed_at), left=people.filter(p=>!p.confirmed_at);
+      $('progress').style.display='block';
+      $('progress').innerHTML='<b style="font-family:Oswald;text-transform:uppercase;font-size:17px;color:var(--ink)">'+
+        done.length+' of '+people.length+' have confirmed</b>'+
+        (left.length?'<p style="font-size:14px;margin-top:6px">Still to reply: '+left.map(p=>esc(p.person)).join(', ')+'</p>'
+                    :'<p style="font-size:14px;margin-top:6px;color:var(--green)">Everyone has replied.</p>');
+    }
+    if(d.deadline){
+      const dl=new Date(d.deadline+'T23:59:59');
+      const days=Math.ceil((dl-new Date())/86400000);
+      $('deadline').innerHTML='<b>Please confirm by '+dl.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})+'</b>'+
+        (days>0?' — that\'s '+days+' day'+(days===1?'':'s')+' away.':' — that date has passed, but please still fill it in.')+
+        '<br>After that I\'ll set them all up, so anyone who hasn\'t replied gets what\'s suggested here.';
+    }
+  }catch(e){}
+})();
+
+function pick(){
+  const p=people.find(x=>x.person===$('who').value);
+  if(!p){$('form').style.display='none';return;}
+  current=p;
+  $('personal').value=p.personal_address||'';
+  $('alias').value=p.role_alias||'';
+  let chosen=[]; try{chosen=JSON.parse(p.groups||'[]');}catch(e){}
+  $('groups').innerHTML=GROUPS.map(([k,name,desc])=>
+    '<label class="tick'+(chosen.includes(k)?' on':'')+'" id="t_'+k+'">'+
+    '<input type="checkbox" value="'+k+'"'+(chosen.includes(k)?' checked':'')+' onchange="this.closest(\'.tick\').classList.toggle(\'on\',this.checked)">'+
+    '<span><b>'+name+'</b><span>'+desc+'</span></span></label>').join('');
+  $('notes').value=p.notes||'';
+  $('msg').textContent='';
+  $('form').style.display='block';
+  $('form').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function save(){
+  const groups=[...document.querySelectorAll('#groups input:checked')].map(x=>x.value);
+  const body={person:current.person, personal_address:$('personal').value.trim(),
+    role_alias:$('alias').value.trim(), groups, notes:$('notes').value.trim()};
+  if(!body.personal_address){$('msg').innerHTML='<span style="color:var(--red)">Please give a personal address.</span>';return;}
+  $('msg').textContent='Saving…';
+  try{
+    const d=await (await fetch(EP+'/emailsetup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+    if(!d.ok){$('msg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return;}
+    document.querySelector('section .wrap').innerHTML=
+      '<div class="card done"><b>Thank you</b>'+
+      '<p>That\'s you sorted. You\'ll get your details and a short note on adding it to your phone once they\'re all set up.</p>'+
+      '<p style="margin-top:14px;font-size:14px"><a href="email-setup.html">Someone else needs to fill it in</a></p></div>';
+  }catch(e){$('msg').innerHTML='<span style="color:var(--red)">Could not save just now — please try again.</span>';}
+}
+</script>
+</body>
+</html>
