@@ -42,6 +42,8 @@
       <div class="card"><h2>New vs renewing</h2><canvas id="cNvr"></canvas></div>
       <div class="card"><h2>Members by season on record</h2><canvas id="cSeason"></canvas></div>
       <div class="card"><h2>Newsletter consent</h2><canvas id="cNews"></canvas></div>
+      <div class="card" style="grid-column:1 / -1"><h2>Membership since 2003, against average home attendance</h2><canvas id="cHistory" height="120"></canvas>
+        <p style="font-size:13px;color:#7A8AA5;margin-top:10px">The line is membership as a share of the average home crowd &mdash; the fairest measure, because it allows for how the club is doing.</p></div>
     </div>
     <p class="stamp" id="stamp"></p>
   </div>
@@ -93,6 +95,32 @@ function whenCharts(cb, tries){
     new Chart($('cSeason'),{type:'bar',data:{labels:seasons,
       datasets:[{data:counts,backgroundColor:seasons.map(s=>s==='2026/27'?ROYAL:GREY)}]},
       options:{plugins:{legend:{display:false}}}});
+    // twenty-four seasons of official figures
+    try{
+      const oh = await (await fetch(EP+'/official',{headers:{'Authorization':'Bearer '+session}})).json();
+      if(oh.ok && oh.history && oh.history.length){
+        const rows = oh.history.slice().sort((a,b)=>a.season.localeCompare(b.season));
+        new Chart($('cHistory'),{
+          data:{labels:rows.map(r=>r.season),
+            datasets:[
+              {type:'bar',label:'Members',data:rows.map(r=>r.total),
+               backgroundColor:'#0057A7',borderRadius:3,order:2,yAxisID:'y'},
+              {type:'line',label:'Share of home crowd (%)',data:rows.map(r=>r.pct?Math.round(r.pct*10)/10:null),
+               borderColor:'#E8B84B',backgroundColor:'#E8B84B',borderWidth:3,tension:.3,
+               pointRadius:3,order:1,yAxisID:'y1'}
+            ]},
+          options:{responsive:true,maintainAspectRatio:false,
+            plugins:{legend:{position:'bottom'}},
+            scales:{
+              y:{beginAtZero:true,title:{display:true,text:'Members'}},
+              y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},
+                  title:{display:true,text:'% of home crowd'},ticks:{callback:v=>v+'%'}},
+              x:{ticks:{maxRotation:60,minRotation:60,font:{size:10}}}
+            }}
+        });
+      }
+    }catch(e){}
+
     new Chart($('cNews'),{type:'doughnut',data:{labels:['Opted in','Declined'],
       datasets:[{data:[news['1']||0,news['0']||0],backgroundColor:[GREEN,GREY]}]},
       options:{plugins:{legend:{position:'bottom'}}}});
