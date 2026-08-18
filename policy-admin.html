@@ -69,18 +69,20 @@ function form(p, prefix){
     '<div><label>Version</label><input id="'+prefix+'_version" value="'+v('version')+'" placeholder="e.g. 1.0"></div>'+
     '<div><label>Agreed on</label><input id="'+prefix+'_approved_at" type="date" value="'+(p&&p.approved_at?String(p.approved_at).slice(0,10):'')+'"></div>'+
     '<div><label>Agreed by</label><input id="'+prefix+'_approved_by" value="'+v('approved_by')+'" placeholder="e.g. the board, 14 August"></div></div>'+
-    '<div class="g2">'+
-    '<div><label>Status</label><select id="'+prefix+'_status">'+
+    '<label>Status</label><select id="'+prefix+'_status">'+
       ['draft|Draft — not on the site','published|On the site','archived|Archived']
       .map(o=>{const[val,lab]=o.split('|');return '<option value="'+val+'"'+((p&&p.status===val)?' selected':'')+'>'+lab+'</option>';}).join('')+
-    '</select></div>'+
-    '<div><label>Link to the signed document (optional)</label><input id="'+prefix+'_doc_url" value="'+v('doc_url')+'" placeholder="e.g. docs/code-of-conduct.pdf"></div></div>'+
-    '<p class="hint">Put the document in the website folder and give the path here, or leave it blank &mdash; most people will just read the wording.</p>'+
+    '</select>'+
+    '<p class="hint">What is written here is the policy. There is no separate document &mdash; this is the version of record, and every change is kept.</p>'+
+    (p?'<label>What has changed? (optional)</label><input id="'+prefix+'_note" placeholder="e.g. added the no vaping line, agreed at the August board">'+
+       '<p class="hint">Saved against the version you are replacing, so it is clear later why it changed.</p>':'')+
     '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">'+
     '<button class="green sm" onclick="save(\''+prefix+'\','+(p?'\''+p.slug+'\'':'null')+')">Save</button>'+
     '<button class="ghost sm" onclick="closeBox(\''+prefix+'\')">Cancel</button>'+
     (p&&p.status==='published'?'<a href="policies.html?p='+encodeURIComponent(p.slug)+'" target="_blank"><button class="ghost sm" type="button">See it on the site &rarr;</button></a>':'')+
-    '</div><p class="msg" id="'+prefix+'_msg"></p>';
+    (p?'<button class="ghost sm" onclick="history_(\''+p.slug+'\')">Earlier versions</button>':'')+
+    '</div><p class="msg" id="'+prefix+'_msg"></p>'+
+    (p?'<div id="hist_'+p.slug+'" style="margin-top:12px"></div>':'');
 }
 
 async function load(){
@@ -123,11 +125,49 @@ function closeBox(prefix){
   document.querySelectorAll('[id^=b_]').forEach(b=>b.textContent='Edit');
 }
 
+async function history_(slug){
+  const box=document.getElementById('hist_'+slug);
+  if(box.dataset.open==='1'){box.innerHTML='';box.dataset.open='0';return;}
+  const d=await (await fetch(EP+'/policies/history?slug='+encodeURIComponent(slug),{headers:H()})).json();
+  if(!d.ok){box.textContent=d.error;return;}
+  box.dataset.open='1';
+  if(!d.versions.length){
+    box.innerHTML='<p style="font-size:13.5px;color:#7A8AA5">No earlier versions — this is the first wording.</p>';return;
+  }
+  box.innerHTML='<p style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin-bottom:6px">Earlier versions</p>'+
+    d.versions.map(v=>
+      '<div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:6px;font-size:13.5px">'+
+      '<b>'+(v.version?esc(v.version):'no version number')+'</b> &middot; replaced '+
+      new Date(v.replaced_at.replace(" ","T")+"Z").toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+
+      (v.replaced_by?' by '+esc(v.replaced_by):'')+
+      (v.note?'<br><span style="color:#7A8AA5">'+esc(v.note)+'</span>':'')+
+      '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'+
+      '<button class="ghost sm" onclick="viewOld('+v.id+',\''+slug+'\')">Read it</button>'+
+      '<button class="ghost sm" onclick="restore('+v.id+')">Put this one back</button>'+
+      '</div></div>').join('');
+}
+
+async function viewOld(id, slug){
+  const d=await (await fetch(EP+'/policies/history?id='+id,{headers:H()})).json();
+  if(!d.ok){alert(d.error);return;}
+  const box=document.getElementById('hist_'+slug);
+  box.insertAdjacentHTML('beforeend',
+    '<div style="background:#fff;border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:0 8px 8px 0;padding:14px 16px;margin-top:8px">'+
+    '<b style="font-size:13px">What it said then</b>'+
+    '<pre style="white-space:pre-wrap;font:inherit;font-size:13.5px;margin-top:8px;color:#46536B">'+esc(d.version.body||'(nothing)')+'</pre></div>');
+}
+
+async function restore(id){
+  if(!confirm('Put this earlier version back as the current policy?\n\nWhat is there now will be kept in the history, so nothing is lost.'))return;
+  const d=await (await fetch(EP+'/policies/restore',{method:'POST',headers:H(),body:JSON.stringify({id})})).json();
+  if(d.ok) load(); else alert(d.error);
+}
+
 async function save(prefix, slug){
   const g=f=>{const el=$(prefix+'_'+f);return el?el.value.trim():'';};
   const body={slug, title:g('title'), summary:g('summary'), body:g('body'),
     version:g('version'), approved_at:g('approved_at')||null, approved_by:g('approved_by'),
-    status:g('status'), doc_url:g('doc_url')};
+    status:g('status'), change_note:g('note')};
   const msg=$(prefix+'_msg');
   if(!body.title){msg.innerHTML='<span style="color:var(--red)">A name is needed.</span>';return;}
   const d=await (await fetch(EP+'/policies/save',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();

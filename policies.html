@@ -34,7 +34,6 @@
   article .body h3{font-size:18px;margin:24px 0 8px;text-transform:none;font-family:'Oswald'}
   article .body ul{margin:0 0 14px 22px}
   article .body li{margin-bottom:6px}
-  .doc{background:var(--wash);border-left:4px solid var(--royal);border-radius:0 9px 9px 0;padding:14px 16px;margin:20px 0;font-size:14.5px}
   footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:22px}
 </style>
 </head>
@@ -83,7 +82,7 @@ function inline(s){
           (p.approved_by?' by '+esc(p.approved_by):'')+
         '</p>'+
         '<div class="body">'+render(p.body)+'</div>'+
-        (p.doc_url?'<div class="doc">The signed original is available as a document: <a href="'+esc(p.doc_url)+'">download it here</a>.</div>':'')+
+
         '<p style="margin-top:26px"><a href="policies.html">&larr; All policies</a></p></article>';
     } else {
       const d=await (await fetch(EP+'/policies')).json();
