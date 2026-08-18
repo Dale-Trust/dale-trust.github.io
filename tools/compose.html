@@ -82,6 +82,9 @@
           <option>Competitions</option><option>Community Work</option><option>Junior Dale</option>
           <option>Meetings with the Club</option><option>Friends of the Trust</option>
         </select>
+      <label>Include a policy?</label>
+      <select id="policyPick"><option value="">No</option></select>
+      <p class="hint">If this post is about something covered by a policy — coach travel, the code of conduct — pick it here and a link is added at the bottom.</p>
       </div>
       <div>
         <label>Your name</label>
@@ -462,6 +465,17 @@ function audCount(){
   },250);
 }
 
+async function loadPolicies(){
+  try{
+    const d=await (await fetch(CMS_ENDPOINT+'/policies/admin',{headers:HDRS()})).json();
+    if(!d.ok)return;
+    const sel=$('policyPick');
+    sel.innerHTML='<option value="">No</option>'+d.policies
+      .filter(p=>p.status==='published')
+      .map(p=>'<option value="'+p.slug+'">'+p.title+'</option>').join('');
+  }catch(e){}
+}
+
 async function loadAudOptions(){
   try{
     audOptions=await (await fetch(CMS_ENDPOINT+'/audience/options',{headers:HDRS()})).json();
@@ -677,6 +691,7 @@ function drawQueue(){
 function del(id){save(load().filter(p=>p.id!==id));drawQueue();}
 drawQueue(); render();
 setInterval(drawQueue, 30000); // scheduled items flip to Live automatically
+loadPolicies();
 </script>
 </body>
 </html>
