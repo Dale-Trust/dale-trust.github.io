@@ -17,13 +17,24 @@
   .top{background:var(--navy);color:#fff;padding:18px 22px}
   .top h1{font-size:20px}.top small{color:#8FC1FF;font-size:12px;display:block}
   .wrap{max-width:1050px;margin:0 auto;padding:18px}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
-  .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
-  .kpi span{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#7A8AA5;display:block}
-  .kpi b{font-family:'Oswald';font-size:30px;color:var(--ink)}
+  .hero{background:linear-gradient(120deg,var(--navy),#16305C 60%,#00417E);color:#fff;border-radius:14px;padding:22px 24px;margin-bottom:16px;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:0;bottom:0;right:-14%;width:44%;background:var(--royal);transform:skewX(-14deg);opacity:.35}
+  .hero .in{position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px}
+  .hero .big span{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#8FC1FF;display:block;margin-bottom:2px}
+  .hero .big b{font-family:'Oswald';font-size:44px;color:#fff;line-height:1;display:block}
+  .hero .big em{font-style:normal;font-size:13px;color:#C7D6EC;display:block;margin-top:3px}
+  .up{color:#6FD79B}.down{color:#FFB4A8}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;border-left:4px solid var(--royal)}
+  .kpi.warn{border-left-color:var(--gold)}.kpi.good{border-left-color:var(--green)}
+  .kpi span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#7A8AA5;display:block}
+  .kpi b{font-family:'Oswald';font-size:28px;color:var(--ink);line-height:1.1}
+  .kpi em{font-style:normal;font-size:12px;color:#7A8AA5;display:block;margin-top:2px}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media(max-width:760px){.grid{grid-template-columns:1fr}}
   .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+  .card canvas{max-height:230px}
+  .card[style*="1 / -1"] canvas{max-height:300px}
   .card h2{font-size:14px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:10px}
   .stamp{font-size:12.5px;color:#7A8AA5;margin:14px 2px}
   #msg{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;text-align:center;max-width:480px;margin:40px auto}
@@ -36,14 +47,20 @@
 <div class="wrap">
   <div id="msg">Loading the figures&hellip;</div>
   <div id="dash">
+    <div class="hero"><div class="in" id="hero"></div></div>
     <div class="kpis" id="kpis"></div>
     <div class="grid">
-      <div class="card"><h2>Membership by type</h2><canvas id="cType"></canvas></div>
-      <div class="card"><h2>New vs renewing</h2><canvas id="cNvr"></canvas></div>
-      <div class="card"><h2>Members by season on record</h2><canvas id="cSeason"></canvas></div>
-      <div class="card"><h2>Newsletter consent</h2><canvas id="cNews"></canvas></div>
-      <div class="card" style="grid-column:1 / -1"><h2>Membership since 2003, against average home attendance</h2><canvas id="cHistory" height="120"></canvas>
+      <div class="card" style="grid-column:1 / -1"><h2>Membership since 2003, against average home attendance</h2><canvas id="cHistory" height="118"></canvas>
         <p style="font-size:13px;color:#7A8AA5;margin-top:10px">The line is membership as a share of the average home crowd &mdash; the fairest measure, because it allows for how the club is doing.</p></div>
+      <div class="card"><h2>Membership by type</h2><canvas id="cType"></canvas></div>
+      <div class="card"><h2>Who they are</h2><canvas id="cGender"></canvas></div>
+      <div class="card"><h2>Age profile</h2><canvas id="cAge"></canvas></div>
+      <div class="card"><h2>New vs renewing</h2><canvas id="cNvr"></canvas></div>
+      <div class="card" style="grid-column:1 / -1"><h2>Lapsed by season &mdash; who we could win back</h2><canvas id="cLapsed" height="110"></canvas></div>
+      <div class="card"><h2>Where they live &mdash; top towns</h2><canvas id="cTowns"></canvas></div>
+      <div class="card"><h2>Overseas</h2><canvas id="cCountries"></canvas></div>
+      <div class="card"><h2>How they joined</h2><canvas id="cVia"></canvas></div>
+      <div class="card"><h2>Newsletter consent</h2><canvas id="cNews"></canvas></div>
     </div>
     <p class="stamp" id="stamp"></p>
   </div>
@@ -64,70 +81,99 @@ function whenCharts(cb, tries){
   let session=null;
   try{session=localStorage.getItem('dt_session');}catch(e){}
   if(!session){ say('Please sign in to view the figures.',true); return; }
-  let d;
-  try{
-    const r=await fetch(EP+'/stats',{headers:{'Authorization':'Bearer '+session}});
-    if(r.status===401||r.status===403){ say('Your sign-in has expired, or you don\u2019t have board access.',true); return; }
-    if(!r.ok){ say('Server error (HTTP '+r.status+').'); return; }
-    d=await r.json();
-    if(!d.ok){ say(d.error||'Could not load the figures.'); return; }
-  }catch(e){ say('Could not reach the server: '+e.message); return; }
 
   try{
     await new Promise(res => whenCharts(res));
-    const pick=(arr,key)=>Object.fromEntries((arr||[]).map(x=>[String(x[key!==undefined?key:'k']),x.n]));
-    const t=pick(d.byType), nvr=pick(d.newVsRenewal), news=pick(d.newsletter);
-    const total=(+t.Adult||0)+(+t.Exile||0)+(+t.Junior||0);
-    const kpi=(l,v)=>$('kpis').insertAdjacentHTML('beforeend','<div class="kpi"><span>'+l+'</span><b>'+v+'</b></div>');
-    kpi('Members 2026/27',total);
-    kpi('Adults',t.Adult||0); kpi('Exiles',t.Exile||0); kpi('Juniors',t.Junior||0);
-    kpi('New this season',nvr.New||0);
-    kpi('Lapsed to win back',d.chase||0);
-    kpi('Awaiting payment',d.pendingApplications||0);
+    const r=await fetch(EP+'/stats',{headers:{'Authorization':'Bearer '+session}});
+    if(r.status===401||r.status===403){ say('Please sign in to view the figures.',true); return; }
+    const d=await r.json();
+    if(!d.ok){ say(d.error||'Could not load the figures.'); return; }
+
+    $('msg').style.display='none'; $('dash').style.display='block';
+    const pick=(rows,k)=>{const f=(rows||[]).find(x=>String(x.k)===String(k));return f?f.n:0;};
+    const HB={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{precision:0}}}};
+    const VB={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,ticks:{precision:0}}}};
+    const DO={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},cutout:'58%'};
+
+    // ---------- the headline ----------
+    const hd=d.headline||{};
+    const diff=hd.previous?hd.members-hd.previous:null;
+    const pct=hd.previous?Math.round((hd.members-hd.previous)/hd.previous*1000)/10:null;
+    $('hero').innerHTML=
+      '<div class="big"><span>Members, '+d.season+'</span><b>'+hd.members+'</b>'+
+        (diff!==null?'<em class="'+(diff>=0?'up':'down')+'">'+(diff>=0?'+':'')+diff+' on '+d.previous+' ('+(pct>=0?'+':'')+pct+'%)</em>':'')+'</div>'+
+      (hd.shareOfCrowd!==null?'<div class="big"><span>Share of the home crowd</span><b>'+hd.shareOfCrowd+'%</b>'+
+        '<em>of '+(hd.attendance||0).toLocaleString()+' average</em></div>':'')+
+      '<div class="big"><span>Could be won back</span><b>'+hd.winBack+'</b>'+
+        '<em>'+hd.lapsedLastSeason+' lapsed from '+d.previous+' alone</em></div>'+
+      '<div class="big"><span>Have checked their details</span><b>'+hd.confirmed+'</b>'+
+        '<em>of '+hd.members+' this season</em></div>';
+
+    // ---------- the smaller numbers ----------
+    const kpi=(l,v,note,cls)=>$('kpis').insertAdjacentHTML('beforeend',
+      '<div class="kpi'+(cls?' '+cls:'')+'"><span>'+l+'</span><b>'+v+'</b>'+(note?'<em>'+note+'</em>':'')+'</div>');
+    $('kpis').innerHTML='';
+    kpi('Adults',pick(d.byType,'Adult'));
+    kpi('Exiles',pick(d.byType,'Exile'));
+    kpi('Juniors',pick(d.byType,'Junior'));
+    kpi('Overseas',(d.countries||[]).reduce((a,c)=>a+c.n,0),'in '+(d.countries||[]).length+' countries');
+    kpi('Newsletter',pick(d.newsletter,'1'),'opted in','good');
+    if(hd.noEmail) kpi('No email address',hd.noEmail,'cannot be emailed','warn');
+    if(hd.pending) kpi('Awaiting payment',hd.pending,'not yet members','warn');
+
+    // ---------- twenty-four seasons ----------
+    if(d.history && d.history.length){
+      const rows=d.history.slice().sort((a,b)=>a.season.localeCompare(b.season));
+      new Chart($('cHistory'),{data:{labels:rows.map(r=>r.season),
+        datasets:[
+          {type:'bar',label:'Members',data:rows.map(r=>r.total),backgroundColor:ROYAL,borderRadius:3,order:2,yAxisID:'y'},
+          {type:'line',label:'Share of home crowd',data:rows.map(r=>r.pct?Math.round(r.pct*10)/10:null),
+           borderColor:GOLD,backgroundColor:GOLD,borderWidth:3,tension:.3,pointRadius:2.5,order:1,yAxisID:'y1'}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+          scales:{y:{beginAtZero:true,title:{display:true,text:'Members'}},
+            y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}},
+            x:{ticks:{maxRotation:60,minRotation:60,font:{size:9}}}}}});
+    }
 
     new Chart($('cType'),{type:'doughnut',data:{labels:['Adult','Exile','Junior'],
-      datasets:[{data:[t.Adult||0,t.Exile||0,t.Junior||0],backgroundColor:[ROYAL,GOLD,GREEN]}]},
-      options:{plugins:{legend:{position:'bottom'}}}});
-    new Chart($('cNvr'),{type:'bar',data:{labels:['Renewing','New'],
-      datasets:[{data:[nvr.Rpt||0,nvr.New||0],backgroundColor:[NAVY,ROYAL]}]},
-      options:{plugins:{legend:{display:false}}}});
-    const seasons=(d.bySeason||[]).map(x=>x.k), counts=(d.bySeason||[]).map(x=>x.n);
-    new Chart($('cSeason'),{type:'bar',data:{labels:seasons,
-      datasets:[{data:counts,backgroundColor:seasons.map(s=>s==='2026/27'?ROYAL:GREY)}]},
-      options:{plugins:{legend:{display:false}}}});
-    // twenty-four seasons of official figures
-    try{
-      const oh = await (await fetch(EP+'/official',{headers:{'Authorization':'Bearer '+session}})).json();
-      if(oh.ok && oh.history && oh.history.length){
-        const rows = oh.history.slice().sort((a,b)=>a.season.localeCompare(b.season));
-        new Chart($('cHistory'),{
-          data:{labels:rows.map(r=>r.season),
-            datasets:[
-              {type:'bar',label:'Members',data:rows.map(r=>r.total),
-               backgroundColor:'#0057A7',borderRadius:3,order:2,yAxisID:'y'},
-              {type:'line',label:'Share of home crowd (%)',data:rows.map(r=>r.pct?Math.round(r.pct*10)/10:null),
-               borderColor:'#E8B84B',backgroundColor:'#E8B84B',borderWidth:3,tension:.3,
-               pointRadius:3,order:1,yAxisID:'y1'}
-            ]},
-          options:{responsive:true,maintainAspectRatio:false,
-            plugins:{legend:{position:'bottom'}},
-            scales:{
-              y:{beginAtZero:true,title:{display:true,text:'Members'}},
-              y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},
-                  title:{display:true,text:'% of home crowd'},ticks:{callback:v=>v+'%'}},
-              x:{ticks:{maxRotation:60,minRotation:60,font:{size:10}}}
-            }}
-        });
-      }
-    }catch(e){}
+      datasets:[{data:[pick(d.byType,'Adult'),pick(d.byType,'Exile'),pick(d.byType,'Junior')],
+        backgroundColor:[ROYAL,GOLD,GREEN],borderWidth:0}]},options:DO});
+
+    new Chart($('cGender'),{type:'doughnut',data:{labels:(d.gender||[]).map(g=>g.k),
+      datasets:[{data:(d.gender||[]).map(g=>g.n),backgroundColor:[ROYAL,'#E2679A',GREY],borderWidth:0}]},options:DO});
+
+    const AGES=['Under 16','16 to 29','30 to 44','45 to 59','60 to 74','75 and over','Not recorded'];
+    new Chart($('cAge'),{type:'bar',data:{labels:AGES,
+      datasets:[{data:AGES.map(a=>pick(d.age,a)),backgroundColor:AGES.map(a=>a==='Not recorded'?GREY:ROYAL),borderRadius:4}]},options:VB});
+
+    new Chart($('cNvr'),{type:'doughnut',data:{labels:['Renewing','New'],
+      datasets:[{data:[pick(d.newVsRenewal,'Rpt'),pick(d.newVsRenewal,'New')],
+        backgroundColor:[ROYAL,GREEN],borderWidth:0}]},options:DO});
+
+    if(d.lapsed && d.lapsed.length){
+      new Chart($('cLapsed'),{type:'bar',data:{labels:d.lapsed.map(l=>'Lapsed from '+l.k),
+        datasets:[{data:d.lapsed.map(l=>l.n),backgroundColor:d.lapsed.map((l,i)=>i===d.lapsed.length-1?GOLD:'#7FA8D4'),borderRadius:4}]},
+        options:VB});
+    }
+
+    new Chart($('cTowns'),{type:'bar',data:{labels:(d.towns||[]).map(t=>t.k),
+      datasets:[{data:(d.towns||[]).map(t=>t.n),backgroundColor:ROYAL,borderRadius:4}]},options:HB});
+
+    new Chart($('cCountries'),{type:'bar',data:{labels:(d.countries||[]).map(c=>c.k),
+      datasets:[{data:(d.countries||[]).map(c=>c.n),backgroundColor:GOLD,borderRadius:4}]},options:HB});
+
+    const VIA={online:'Joined online',import:'From the spreadsheet',manual:'Added by hand',desk:'Trust Desk',unknown:'Not recorded'};
+    new Chart($('cVia'),{type:'doughnut',data:{labels:(d.joinVia||[]).map(v=>VIA[v.k]||v.k),
+      datasets:[{data:(d.joinVia||[]).map(v=>v.n),backgroundColor:[ROYAL,'#7FA8D4',GREEN,GOLD,GREY],borderWidth:0}]},options:DO});
 
     new Chart($('cNews'),{type:'doughnut',data:{labels:['Opted in','Declined'],
-      datasets:[{data:[news['1']||0,news['0']||0],backgroundColor:[GREEN,GREY]}]},
-      options:{plugins:{legend:{position:'bottom'}}}});
+      datasets:[{data:[pick(d.newsletter,'1'),pick(d.newsletter,'0')],
+        backgroundColor:[GREEN,GREY],borderWidth:0}]},options:DO});
 
-    $('stamp').textContent='Live from the Trust\u2019s membership database \u00b7 generated '+new Date(d.generated).toLocaleString('en-GB');
-    $('msg').style.display='none'; $('dash').style.display='block';
-  }catch(err){ say('Display error: '+err.message); }
+    $('stamp').textContent='Live from the Trust\u2019s membership database \u00b7 generated '+new Date(d.generated).toLocaleString('en-GB')+' \u00b7 no personal details appear on this page';
+  }catch(e){ say('Could not load the figures just now.'); }
 })();
 </script>
 </body>
