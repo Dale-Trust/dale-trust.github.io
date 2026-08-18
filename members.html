@@ -93,6 +93,12 @@
   .pbtn{background:#fff;border:1.5px solid var(--line);border-radius:100px;padding:10px 18px;font:600 14px 'Montserrat';color:var(--body);cursor:pointer;width:auto}
   .pbtn.on{background:var(--royal);border-color:var(--royal);color:#fff}
   #signin,#area{display:none}
+  .helplink{display:inline-block;margin-top:14px;font-size:13.5px;color:#7A8AA5;text-decoration:underline;cursor:pointer;background:none;border:0;padding:0;width:auto}
+  .helpbox{display:none;margin-top:14px;background:#F2F5F9;border-left:4px solid #0057A7;border-radius:0 9px 9px 0;padding:14px 16px}
+  .helpbox p{font-size:13.5px;margin-bottom:8px}
+  .helpbox textarea{width:100%;min-height:80px;padding:10px;border:1.5px solid #DCE3EC;border-radius:8px;font:inherit}
+  .helpbox button{margin-top:8px;width:auto;padding:9px 18px;font-size:12.5px}
+
 </style>
 </head>
 <body>
@@ -112,6 +118,15 @@
       <label for="email">Your email address</label>
       <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
       <div style="margin-top:14px"><button onclick="requestLink()">Email me a sign-in link</button></div>
+      <button class="helplink" onclick="toggleHelp()">Not getting the email, or something not right?</button>
+      <div class="helpbox" id="helpPanel">
+        <p><b>First, worth checking:</b> the link comes from membership@daletrust.uk and can land in junk the first time. It works once and lasts two hours, and needs opening on the same device you asked from.</p>
+        <p>Still stuck? Tell us what happened and we'll sort it.</p>
+        <textarea id="helpNote" placeholder="e.g. the email never arrives, or you hold the wrong address for me"></textarea>
+        <button onclick="sendHelp()">Send it</button>
+        <p id="helpMsg" style="margin-top:8px;font-weight:600"></p>
+      </div>
+
       <p class="msg" id="simsg"></p>
       <p class="hint">Not a member yet? <a href="join.html">Join the Trust</a> &mdash; &pound;7.50 for the season, juniors free.</p>
     </div>
@@ -476,6 +491,23 @@ async function renew(){
 
 function signOut(){try{localStorage.removeItem('dt_member');}catch(e){}location.reload();}
 load();
+function toggleHelp(){
+  const b=document.getElementById('helpPanel');
+  b.style.display = b.style.display==='block' ? 'none' : 'block';
+}
+async function sendHelp(){
+  const emailEl=document.getElementById('email');
+  const note=document.getElementById('helpNote').value.trim();
+  const msg=document.getElementById('helpMsg');
+  msg.textContent='Sending…';
+  try{
+    await fetch('https://join.daletrust.uk/help',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:emailEl?emailEl.value.trim():'',note,page:'members'})});
+    msg.innerHTML='<span style="color:#1E8E5A">Sent — someone will come back to you.</span>';
+    document.getElementById('helpNote').value='';
+  }catch(e){ msg.innerHTML='<span style="color:#C0392B">Could not send just now — email membership@daletrust.co.uk</span>'; }
+}
+
 </script>
 </body>
 </html>

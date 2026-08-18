@@ -53,6 +53,12 @@
   .guide-banner .gb-go{position:relative;flex:none;background:#fff;color:#0E1F3D;font-family:'Oswald',sans-serif;font-size:13.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:11px 20px;border-radius:9px}
   @media(max-width:620px){.guide-banner{flex-wrap:wrap}.guide-banner .gb-go{width:100%;text-align:center}}
 
+  .helplink{display:inline-block;margin-top:14px;font-size:13.5px;color:#7A8AA5;text-decoration:underline;cursor:pointer;background:none;border:0;padding:0;width:auto}
+  .helpbox{display:none;margin-top:14px;background:#F2F5F9;border-left:4px solid #0057A7;border-radius:0 9px 9px 0;padding:14px 16px}
+  .helpbox p{font-size:13.5px;margin-bottom:8px}
+  .helpbox textarea{width:100%;min-height:80px;padding:10px;border:1.5px solid #DCE3EC;border-radius:8px;font:inherit}
+  .helpbox button{margin-top:8px;width:auto;padding:9px 18px;font-size:12.5px}
+
 </style>
 </head>
 <body>
@@ -112,6 +118,15 @@
       <input id="nTitle" placeholder="Role (e.g. Membership)">
       <button onclick="addOfficer()">Add officer</button>
     </div>
+      <button class="helplink" onclick="toggleHelp()">Not getting the email, or something not right?</button>
+      <div class="helpbox" id="helpPanel">
+        <p><b>First, worth checking:</b> the link comes from membership@daletrust.uk and can land in junk the first time. It works once and lasts two hours, and needs opening on the same device you asked from.</p>
+        <p>Still stuck? Tell us what happened and we'll sort it.</p>
+        <textarea id="helpNote" placeholder="e.g. the email never arrives, or you hold the wrong address for me"></textarea>
+        <button onclick="sendHelp()">Send it</button>
+        <p id="helpMsg" style="margin-top:8px;font-weight:600"></p>
+      </div>
+
     <p class="msg" id="omsg"></p>
   </div>
 </div>
@@ -177,6 +192,7 @@ function show(){
   if(me.can_articles) tile('tools/post-import.html','Import old posts','Republish the WordPress archive onto the new site');
   if(me.can_board) tile('board.html','Board figures','Membership at a glance \u2014 live, no personal data');
   tile('decisions.html','Decisions &amp; tasks','Everything raised about the website \u2014 answer your items here');
+  if(me.is_admin) tile('activity.html','Activity','Everything officers have done, newest first');
   if(me.can_coach) tile('coach.html','Coach travel','Set up coaches, take phone bookings, print the passenger list');
   tile('tools/coach-poster.html','Coach poster maker','Matchday travel posters in four fields');
   tile('awayteams.html','Visiting trusts','The note we send before an away following visits, and who to send it to');
@@ -293,6 +309,23 @@ function logout(){try{localStorage.removeItem('dt_session');}catch(e){}location.
   if(await verifyFromHash()){show();return;}
   if(await whoami()){show();return;}
 })();
+function toggleHelp(){
+  const b=document.getElementById('helpPanel');
+  b.style.display = b.style.display==='block' ? 'none' : 'block';
+}
+async function sendHelp(){
+  const emailEl=document.getElementById('email');
+  const note=document.getElementById('helpNote').value.trim();
+  const msg=document.getElementById('helpMsg');
+  msg.textContent='Sending…';
+  try{
+    await fetch('https://join.daletrust.uk/help',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:emailEl?emailEl.value.trim():'',note,page:'admin'})});
+    msg.innerHTML='<span style="color:#1E8E5A">Sent — someone will come back to you.</span>';
+    document.getElementById('helpNote').value='';
+  }catch(e){ msg.innerHTML='<span style="color:#C0392B">Could not send just now — email membership@daletrust.co.uk</span>'; }
+}
+
 </script>
 </body>
 </html>
