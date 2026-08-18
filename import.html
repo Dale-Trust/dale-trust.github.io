@@ -209,7 +209,11 @@ function useSheet(name){
     : /2023|23-24/i.test(name) ? '2023/24|paid' : '2026/27|desk';
   if (ss) ss.value = guessSeason;
   $('loaded').innerHTML = '<span class="ok">Tab &ldquo;' + name + '&rdquo;: ' + rows.length + ' rows</span> \u00b7 headers on row ' + (hi+1) +
-    (hscore < 3 ? '<br><span class="bad">These don\u2019t look like member columns \u2014 try another tab.</span>' : '');
+    (hscore < 3 ? '<br><span class="bad">Only ' + hscore + ' column' + (hscore===1?'':'s') +
+      ' recognised.</span> If this tab really is a member list, set the columns yourself below and it will import fine. ' +
+      'If it is a summary or a count, use a different tab.' +
+      '<br><small style="color:#7A8AA5">Headers found: ' +
+      headers.filter(Boolean).slice(0,14).map(x=>String(x).replace(/</g,'&lt;')).join(' &middot; ') + '</small>' : '');
   buildMaps(); preview();
   $('mapPanel').style.display = 'block';
 }
