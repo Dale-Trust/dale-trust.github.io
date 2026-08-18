@@ -20,8 +20,8 @@
   .panel h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
   label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:10px 0 4px}
   input,select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
-  .searchrow{display:grid;grid-template-columns:1fr 180px auto;gap:10px;align-items:end}
-  @media(max-width:700px){.searchrow{grid-template-columns:1fr}}
+  .searchrow{display:grid;grid-template-columns:1fr 170px 190px auto;gap:10px;align-items:end}
+  @media(max-width:900px){.searchrow{grid-template-columns:1fr}}
   .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
   @media(max-width:640px){.g2,.g3{grid-template-columns:1fr}}
@@ -97,6 +97,7 @@
     <div><label>Search by name, email, member number, postcode or town</label>
       <input id="q" placeholder="e.g. Culshaw, OL11, DT-2026-1002" onkeydown="if(event.key==='Enter')search()"></div>
     <div><label>Season</label><select id="season" onchange="search()"><option value="">All seasons</option></select></div>
+    <div><label>Show</label><select id="onlyIncomplete" onchange="search()"><option value="">Everyone</option><option value="1">Only those needing details</option></select></div>
     <div><button onclick="search()">Search</button></div>
   </div>
   <p class="msg" id="count"></p>
@@ -174,6 +175,7 @@ const noEmail=e=>!e||e==='none@daletrust.uk';
 
 async function search(){
   const q=encodeURIComponent($('q').value.trim()), s=encodeURIComponent($('season').value);
+  const inc=$('onlyIncomplete').value;
   try{
     const r=await fetch(EP+'/members/search?q='+q+'&season='+s,{headers:H()});
     if(r.status===401||r.status===403){location.href='admin.html';return;}
@@ -185,10 +187,13 @@ async function search(){
     $('count').innerHTML='<b>'+d.total+'</b> record'+(d.total===1?'':'s')+(d.total>60?' — showing the first 60':'');
     $('list').innerHTML=d.members.map(m=>
       '<div class="row" onclick="openMember('+m.id+')">'+
-      '<div class="grow"><b>'+esc(m.first_name+' '+m.last_name)+'</b>'+
+      '<div class="grow"><b>'+
+        ((m.first_name||m.last_name) ? esc((m.first_name+' '+m.last_name).trim())
+          : '<span style="color:#C0392B">Name not known yet</span>')+'</b>'+
       '<small>'+esc(m.member_no||m.app_ref)+' · '+esc(m.membership_type)+' · '+esc(m.season)+
       ' · '+esc(m.town||'')+' '+esc(m.postcode||'')+
       (noEmail(m.email)?' · <span style="color:#C0392B">no email</span>':' · '+esc(m.email))+'</small></div>'+
+      (m.needs_details?'<span class="tag" style="background:#FFF3E4;border-color:#EAD198;color:#8A4B00">details needed</span>':'')+
       (m.joined_via==='manual'?'<span class="tag">by hand</span>':'')+
       '<span class="pill '+m.payment_status+'">'+m.payment_status+'</span></div>').join('')
       || '<p style="padding:14px 6px;color:#7A8AA5">Nobody found.</p>';
