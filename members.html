@@ -212,7 +212,7 @@
         <div class="cardbot">
           <div class="no" id="cNo">—<span>Membership number</span></div>
           <div style="display:flex;align-items:flex-end;gap:8px">
-            <div class="partners">Ten local businesses<br>offer members a discount<br><b>daletrust.uk/partners</b></div>
+            <div class="partners">Partners of the Trust<br>offer members a discount<br><b>daletrust.uk/partners</b></div>
             <img class="cardqr" id="cQr" alt="" src="">
           </div>
         </div>
@@ -441,7 +441,7 @@ async function saveMyCard(){
   x.textAlign='right';
   const rx=qx-20;
   x.fillStyle='#C7D6EC'; x.font='500 23px Montserrat, sans-serif';
-  x.fillText('Ten local businesses',rx,H-pad-88);
+  x.fillText('Partners of the Trust',rx,H-pad-88);
   x.fillText('offer members a discount',rx,H-pad-58);
   x.fillStyle='#fff'; x.font='700 23px Montserrat, sans-serif';
   x.fillText('daletrust.uk/partners',rx,H-pad-28);
@@ -470,7 +470,7 @@ function printMyCard(){
         '<div class="ptype">'+esc(r.membership_type||'')+' member</div></div>'+
       '<div class="pbot"><div class="pno">'+esc(r.member_no)+'<i>Membership number</i></div>'+
         '<div style="display:flex;align-items:flex-end;gap:2mm">'+
-          '<div class="purl">Ten local businesses<br>offer members a discount<br><b>daletrust.uk/partners</b></div>'+
+          '<div class="purl">Partners of the Trust<br>offer members a discount<br><b>daletrust.uk/partners</b></div>'+
           '<span class="pqr"><img src="'+qr+'" alt=""></span></div></div>'+
     '</div></div></div>'+
     '<p style="font-size:8.5pt;color:#666">Printing on card rather than paper gives a sturdier result. Set your printer to actual size rather than fit-to-page, or it will come out slightly small.</p>';
