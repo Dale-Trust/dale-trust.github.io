@@ -121,22 +121,45 @@ const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
 
 // fill the conditions and placeholders
 function fill(text, m){
-  const isJunior = m.membership_type==='Junior';
-  const isNew = String(m.new_or_renewal||'').toLowerCase().startsWith('n');
-  const don = Number(m.donation)||0;
-  const flags = {junior:isJunior, new:isNew, renewal:!isNew, donation:don>0};
+  const isJunior = m.membership_type === 'Junior';
+  const isNew = String(m.new_or_renewal || '').toLowerCase().startsWith('n');
+  const don = Number(m.donation) || 0;
+  const flags = { junior: isJunior, new: isNew, renewal: !isNew, donation: don > 0 };
+
+  // walk the text and keep or drop each block, rather than wrestling with escaping
+  function block(s, key, on){
+    const open = '{{#' + key + '}}', notOpen = '{{^' + key + '}}', close = '{{/' + key + '}}';
+    let out = '', i = 0;
+    while (i < s.length) {
+      const a = s.indexOf(open, i), b = s.indexOf(notOpen, i);
+      const first = (a === -1) ? b : (b === -1 ? a : Math.min(a, b));
+      if (first === -1) { out += s.slice(i); break; }
+      const isNeg = (first === b);
+      out += s.slice(i, first);
+      const startTag = isNeg ? notOpen : open;
+      const bodyStart = first + startTag.length;
+      const bodyEnd = s.indexOf(close, bodyStart);
+      if (bodyEnd === -1) { out += s.slice(first); break; }
+      const inner = s.slice(bodyStart, bodyEnd);
+      const keep = isNeg ? !on : on;
+      if (keep) out += inner;
+      i = bodyEnd + close.length;
+    }
+    return out;
+  }
+
   let s = text;
-  Object.entries(flags).forEach(([k,on])=>{
-    s = s.replace(new RegExp('\\\\{\\\\{#'+k+'\\\\}\\\\}([\\\\s\\\\S]*?)\\\\{\\\\{\\\\/'+k+'\\\\}\\\\}','g'), on?'$1':'');
-    s = s.replace(new RegExp('\\\\{\\\\{\\\\^'+k+'\\\\}\\\\}([\\\\s\\\\S]*?)\\\\{\\\\{\\\\/'+k+'\\\\}\\\\}','g'), on?'':'$1');
-  });
+  Object.keys(flags).forEach(k => { s = block(s, k, flags[k]); });
+
   return s
-    .split('{{first_name}}').join(m.first_name||'')
-    .split('{{last_name}}').join(m.last_name||'')
-    .split('{{member_no}}').join(m.member_no||'')
-    .split('{{season}}').join(m.season||'')
-    .split('{{type}}').join(m.membership_type||'')
-    .split('{{donation}}').join('\u00a3'+don.toFixed(2));
+    .split('{{first_name}}').join(m.first_name || '')
+    .split('{{last_name}}').join(m.last_name || '')
+    .split('{{member_no}}').join(m.member_no || '')
+    .split('{{season}}').join(m.season || '')
+    .split('{{type}}').join(m.membership_type || '')
+    .split('{{donation}}').join('\u00a3' + don.toFixed(2))
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 function render(text){
