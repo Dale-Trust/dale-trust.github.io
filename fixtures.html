@@ -39,6 +39,16 @@
   .quick input{width:90px;text-align:center;font-family:'Oswald';font-size:18px}
   .msg{font-size:13.5px;font-weight:600;margin-top:10px}
   #editor{display:none}
+  .fx .qs{width:74px;padding:5px 7px;border:1.5px solid var(--line);border-radius:7px;
+    font:600 14px 'Montserrat';text-align:center;color:var(--ink);background:#fff}
+  .fx .qs:focus{border-color:var(--royal);outline:none}
+  .fx .qb{background:var(--royal);color:#fff;border:0;border-radius:7px;padding:6px 10px;
+    font:600 11px 'Oswald';text-transform:uppercase;letter-spacing:.05em;cursor:pointer;margin-left:5px}
+  .fx .qb:hover{background:var(--bright,#1173D4)}
+  .fx .ed{background:#fff;color:var(--body);border:1.5px solid var(--line);border-radius:7px;
+    padding:6px 12px;font:600 11px 'Oswald';text-transform:uppercase;letter-spacing:.05em;cursor:pointer}
+  .fx .ed:hover{border-color:var(--royal);color:var(--royal)}
+  .fx .dt,.fx .tm,.fx .comp{cursor:pointer}
 </style>
 </head>
 <body>
@@ -52,7 +62,6 @@
   <h2>The season</h2>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
     <button class="ghost sm" onclick="setView('all')" id="v_all">Everything</button>
-    <button class="ghost sm" onclick="setView('todo')" id="v_todo">Needs a score</button>
     <button class="ghost sm" onclick="setView('played')" id="v_played">Played</button>
     <button class="ghost sm" onclick="setView('upcoming')" id="v_upcoming">To come</button>
   </div>
@@ -90,7 +99,7 @@ const $=id=>document.getElementById(id);
 let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
 if(!session) location.href='admin.html';
 const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
-let fixtures=[], editing=null, view='todo';
+let fixtures=[], editing=null, view='all';
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 const dt=k=>new Date(k.replace(' ','T'));
 const fmt=k=>dt(k).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' · '+k.slice(11,16);
@@ -101,12 +110,11 @@ async function load(){
   if(!d.ok){$('list').textContent=d.error;return;}
   fixtures=d.fixtures;
   const now=new Date();
+  // a plain count now — the scores are typed straight into the list below
   const todo=fixtures.filter(f=>dt(f.kickoff)<=now && !f.score);
   $('needsBox').innerHTML = todo.length
-    ? '<div class="needs"><b>'+todo.length+' game'+(todo.length===1?'':'s')+' still need'+(todo.length===1?'s':'')+' a score.</b>'+
-      todo.map(f=>'<div class="quick"><span>'+esc(f.home)+' v '+esc(f.away)+' \u00b7 '+fmt(f.kickoff)+'</span>'+
-        '<input id="q'+f.id+'" placeholder="2-1"><button class="green sm" onclick="quickScore('+f.id+')">Save</button></div>').join('')+
-      '</div>'
+    ? '<div class="needs"><b>'+todo.length+' game'+(todo.length===1?'':'s')+' still need'+(todo.length===1?'s':'')+
+      ' a score.</b> Type it in beside the game below and press Save, or just press Enter.</div>'
     : '';
   draw();
 }
@@ -114,35 +122,42 @@ async function load(){
 function setView(v){view=v;draw();}
 
 function draw(){
-  ['all','todo','played','upcoming'].forEach(v=>{
+  ['all','played','upcoming'].forEach(v=>{
     const b=$('v_'+v); if(b) b.style.cssText = v===view
       ? 'background:var(--royal);color:#fff;border:1.5px solid var(--royal)' : '';
   });
   const now=new Date();
   let list=fixtures;
-  if(view==='todo') list=fixtures.filter(f=>dt(f.kickoff)<=now && !f.score);
   if(view==='played') list=fixtures.filter(f=>f.score);
   if(view==='upcoming') list=fixtures.filter(f=>dt(f.kickoff)>now);
   if(!list.length){$('list').innerHTML='<p style="color:#7A8AA5;padding:12px 4px">Nothing here.</p>';return;}
   $('list').innerHTML=list.map(f=>{
     const played=dt(f.kickoff)<=now;
-    return '<div class="fx" onclick="editFixture('+f.id+')">'+
-      '<span class="dt">'+fmt(f.kickoff)+'</span>'+
-      '<span class="tm">'+(isDale(f.home)?'<b>'+esc(f.home)+'</b>':esc(f.home))+' v '+
+    return '<div class="fx">'+
+      '<span class="dt" onclick="editFixture('+f.id+')">'+fmt(f.kickoff)+'</span>'+
+      '<span class="tm" onclick="editFixture('+f.id+')">'+(isDale(f.home)?'<b>'+esc(f.home)+'</b>':esc(f.home))+' v '+
         (isDale(f.away)?'<b>'+esc(f.away)+'</b>':esc(f.away))+'</span>'+
-      (f.score?'<span class="sc">'+esc(f.score.split(' ')[0])+'</span>'
-             :(played?'<span class="sc none">no score</span>':'<span class="sc" style="color:#C7D6EC">—</span>'))+
-      '<span class="comp">'+esc(f.competition)+'</span></div>';
+      (played
+        ? '<span class="sc"><input class="qs" id="q'+f.id+'" value="'+esc(f.score?f.score.split(' ')[0]:'')+'" '+
+          'placeholder="0-0" onkeydown="if(event.key===\'Enter\')quickScore('+f.id+')">'+
+          '<button class="qb" onclick="quickScore('+f.id+')" title="Save the score">Save</button></span>'
+        : '<span class="sc" style="color:#C7D6EC" onclick="editFixture('+f.id+')">\u2014</span>')+
+      '<span class="comp" onclick="editFixture('+f.id+')">'+esc(f.competition)+'</span>'+
+      '<button class="ed" onclick="editFixture('+f.id+')" title="Edit this fixture">Edit</button></div>';
   }).join('');
 }
 
 async function quickScore(id){
-  const v=$('q'+id).value.trim();
-  if(!/^\d+\s*-\s*\d+/.test(v)){alert('Type the score like 2-1');return;}
+  const el=$('q'+id); const v=el.value.trim();
+  if(v && !/^\d+\s*-\s*\d+$/.test(v)){
+    alert('Type the score like 2-1, or leave it empty to clear it.');
+    el.focus(); return;
+  }
   const f=fixtures.find(x=>x.id===id);
+  el.disabled=true;
   const d=await (await fetch(EP+'/fixtures/save',{method:'POST',headers:H(),
-    body:JSON.stringify({...f,score:v})})).json();
-  if(d.ok) load(); else alert(d.error);
+    body:JSON.stringify({...f,score:v||null})})).json();
+  if(d.ok){ load(); } else { el.disabled=false; alert(d.error||'Could not save.'); }
 }
 
 function newFixture(){
