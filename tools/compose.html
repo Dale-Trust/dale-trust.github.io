@@ -108,8 +108,8 @@
     <div id="checks" style="margin-top:8px"></div>
     <p class="hint">No formatting skills needed &mdash; the preview shows exactly how it publishes. Spelling is checked as you type (British English).</p>
     <div id="suggestBox" style="display:none;border:1px solid var(--line);border-left:4px solid var(--royal);border-radius:0 10px 10px 0;padding:14px 16px;margin-top:16px;background:#F7FAFF">
-      <label style="margin:0"><input type="checkbox" id="wantEmail" onchange="toggleSuggest()" style="width:auto;margin-right:8px">Suggest this is emailed out too</label>
-      <p class="hint" style="margin-top:4px">Choose who you think should get it. Whoever approves your piece can send it as it stands, or change your suggestion.</p>
+      <label style="margin:0;font-size:15.5px;text-transform:none;letter-spacing:0"><input type="checkbox" id="wantEmail" onchange="toggleSuggest()" style="width:auto;margin-right:8px"><b id="emailQ">Email this out to members as well?</b></label>
+      <p class="hint" style="margin-top:4px" id="emailHint">Most pieces just go on the website. Tick this only if members should get it in their inbox too.</p>
       <div id="suggestFields" style="display:none;margin-top:12px">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div><label>Who</label><select id="sug_who" onchange="sugChanged()">
@@ -191,9 +191,13 @@ if(!session){ location.href='../admin.html'; }
     if(me.ok){
       $('author').value=me.officer.name; $('whoami').textContent=me.officer.name; render(); runChecks();
       window._perm=me.officer;
-      if(me.officer.can_send === false && me.officer.can_posts){
+      if(me.officer.can_articles || me.officer.can_posts){
         $('suggestBox').style.display='block';
         loadAudOptions();
+        if(me.officer.can_send === false){
+          $('emailQ').textContent='Suggest this is emailed out to members as well?';
+          $('emailHint').textContent='Most pieces just go on the website. If you think members should get this one in their inbox, tick this and say who — whoever approves your piece can send it as it stands, or change your suggestion.';
+        }
       }
       if(me.officer.can_publish === false){
         const btn=document.querySelector('.go');
@@ -280,6 +284,14 @@ function load(){try{return JSON.parse(localStorage.getItem('dtq')||'[]')}catch(e
 function save(q){try{localStorage.setItem('dtq',JSON.stringify(q))}catch(e){}}
 async function publish(){
   if(!$('title').value.trim()){alert('Give it a title first.');return;}
+
+  // if this person can send, and they have ticked the box, say plainly what is about to happen
+  const willEmail = window._perm && window._perm.can_send && $('wantEmail') && $('wantEmail').checked;
+  if(willEmail){
+    const n = (window._sugCount === undefined) ? '' : window._sugCount;
+    if(!confirm('Publish this and email it to '+(n===''?'the chosen members':n+' member'+(n===1?'':'s'))+'?\n\n'+
+                'It will go on the website and out by email straight away. Emails cannot be unsent.')) return;
+  }
   const at = mode==='later' && $('when').value ? new Date($('when').value).toISOString() : new Date().toISOString();
   const body={ id: currentPostId, title:$('title').value, category:$('cat').value, body:$('body').value,
                status: mode==='later' ? 'scheduled' : 'published', publish_at: at ,image:headerImage};Object.assign(body, suggestion()||{});
@@ -287,6 +299,30 @@ async function publish(){
     const d = await (await fetch(CMS_ENDPOINT+'/posts/save',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
     if(!d.ok){alert(d.error||'Could not save.');return;}
     currentPostId=d.id;
+
+    if(willEmail && !d.queued){
+      try{
+        const m = await (await fetch(CMS_ENDPOINT+'/mailshot',{method:'POST',headers:HDRS(),
+          body:JSON.stringify({post_id:d.id, filters:sugFilters()})})).json();
+        if(m.ok){
+          $('after').innerHTML =
+            '<div style="background:#EAF7F0;border:1px solid #B7E0CB;border-left:5px solid var(--green);border-radius:0 12px 12px 0;padding:18px 20px;margin-top:14px">'+
+            '<b style="font-family:Oswald;text-transform:uppercase;font-size:18px;color:var(--ink);display:block">Published and emailed</b>'+
+            '<p style="margin-top:6px">It is on the website, and <b>'+m.sent+'</b> member'+(m.sent===1?'':'s')+' have been emailed.</p>'+
+            '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">'+
+            '<button class="go" style="margin:0;width:auto" onclick="startAnother()">Write another &rarr;</button>'+
+            '<a href="../admin.html"><button class="save" style="margin:0" type="button">Back to admin</button></a>'+
+            '</div></div>';
+          $('after').scrollIntoView({behavior:'smooth',block:'center'});
+          return;
+        }
+        alert('It was published, but the email did not send: '+(m.error||'unknown problem')+
+              '\n\nYou can still send it from the news screen.');
+      }catch(e){
+        alert('It was published, but the email did not send. You can still send it from the news screen.');
+      }
+    }
+
     if(d.queued){
       const sentTitle=$('title').value;
       $('queue').innerHTML='<div class="qi"><span class="pill sched">Waiting</span>'+
@@ -470,9 +506,14 @@ async function loadPolicies(){
     const d=await (await fetch(CMS_ENDPOINT+'/policies/admin',{headers:HDRS()})).json();
     if(!d.ok)return;
     const sel=$('policyPick');
-    sel.innerHTML='<option value="">No</option>'+d.policies
-      .filter(p=>p.status==='published')
-      .map(p=>'<option value="'+p.slug+'">'+p.title+'</option>').join('');
+    const live=d.policies.filter(p=>p.status==='published');
+    sel.innerHTML='<option value="">No</option>'+
+      live.map(p=>'<option value="'+p.slug+'">'+p.title+'</option>').join('');
+    if(!live.length){
+      sel.disabled=true;
+      const hint=sel.parentElement.querySelector('.hint');
+      if(hint) hint.innerHTML='<b>No policies are published yet.</b> Once the code of conduct and travel policy are written and published, they will appear here and can be linked from a post.';
+    }
   }catch(e){}
 }
 
@@ -547,6 +588,7 @@ function sugCount(){
     box.textContent='Counting\u2026';
     try{
       const d=await (await fetch(CMS_ENDPOINT+'/audience/count',{method:'POST',headers:HDRS(),body:JSON.stringify(sugFilters())})).json();
+      window._sugCount = d.ok ? d.count : undefined;
       box.innerHTML = d.ok
         ? '<b>'+d.count+'</b> people would get it \u2014 <span style="color:#7A8AA5">'+d.description+'</span>'
         : (d.error||'Could not count.');
