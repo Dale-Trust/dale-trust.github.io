@@ -208,7 +208,6 @@
         </div>
       </div></div>
       <div id="cPending"></div>
-      <p class="hist" id="cHist"></p>
       <button class="cardprint" onclick="printMyCard()">Print my card</button>
     </div>
 
@@ -437,9 +436,6 @@ function render(){
   $('cType').textContent=rec.membership_type;
   $('cSeason').textContent=rec.season;
   $('cPending').innerHTML = rec.payment_status==='pending' ? '<span class="pending">Awaiting payment</span>' : '';
-  $('cHist').textContent = p.seasons.length>1
-    ? 'Member since '+p.since+' \u00b7 '+p.seasons.length+' seasons on record'
-    : 'Member for '+p.seasons[0];
 
   if(cur && data.renewals_open && !p.renewed){
     $('statusBanner').innerHTML='<div class="banner"><b>Renewals for '+esc(data.next)+' are open.</b> '+
