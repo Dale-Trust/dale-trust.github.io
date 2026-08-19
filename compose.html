@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dale Trust — Post Composer</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--gold:#E8B84B;--green:#1E8E5A}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:15px}
+  h1,h2,h3{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .top{background:var(--navy);color:#fff;padding:16px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .top h1{font-size:20px;letter-spacing:.04em}
+  .top small{color:#8FC1FF;font-size:12px;display:block}
+  .top .who{margin-left:auto;font-size:13px;color:#C7D6EC}
+  .wrap{max-width:1240px;margin:0 auto;padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:960px){.wrap{grid-template-columns:1fr}}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px}
+  .panel h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  label{display:block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);margin:12px 0 5px}
+  input,select,textarea{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
+  textarea{min-height:260px;resize:vertical;line-height:1.6}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bright)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .hint{font-size:12px;color:#7A8AA5;margin-top:4px}
+  .pubrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}
+  .seg{display:flex;border:1.5px solid var(--line);border-radius:9px;overflow:hidden}
+  .seg button{border:0;background:#fff;padding:10px 18px;font:600 13px 'Montserrat';color:var(--body);cursor:pointer}
+  .seg button.sel{background:var(--royal);color:#fff}
+  #when{width:auto;display:none}
+  .save{margin-left:auto;background:#fff;color:var(--body);border:1.5px solid var(--line);border-radius:9px;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.07em;padding:11px 22px;cursor:pointer}
+  .save:hover{border-color:var(--royal);color:var(--royal)}
+  .savedNote{font-size:13px;color:var(--green);font-weight:600;width:100%;margin-top:6px}
+  .go{background:var(--green);color:#fff;border:0;border-radius:9px;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.07em;padding:12px 26px;cursor:pointer}
+  .go:hover{filter:brightness(1.08)}
+  /* preview styled as the Trust site renders posts */
+  .pv{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .pv-head{background:linear-gradient(120deg,var(--navy),#16305C 60%,#00417E);padding:26px 24px;position:relative;overflow:hidden}
+  .pv-head::before{content:"";position:absolute;top:0;bottom:0;right:-12%;width:38%;background:var(--royal);transform:skewX(-14deg);opacity:.4}
+  .cat{display:inline-block;background:var(--bright);color:#fff;font:600 11px 'Montserrat';letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;position:relative}
+  .pv-head h2{color:#fff;font-size:clamp(22px,3vw,32px);margin-top:10px;position:relative;border:0;padding:0}
+  .pv-head .meta{color:#8FC1FF;font-size:12.5px;margin-top:8px;position:relative}
+  .pv-body{padding:22px 24px;font-size:15.5px;line-height:1.75;color:#333}
+  .pv-body h3{font-size:20px;margin:20px 0 8px;text-transform:none;font-family:'Oswald'}
+  .pv-body p{margin:0 0 14px}
+  .pv-body ul{margin:0 0 14px 22px}
+  .pv-body img{max-width:100%;border-radius:8px;margin:6px 0 16px}
+  .pv-body strong{color:var(--ink)}
+  /* queue */
+  .queue{grid-column:1/-1}
+  .qi{display:flex;gap:14px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line)}
+  .qi:last-child{border-bottom:0}
+  .qi .pill{font:600 11px 'Montserrat';letter-spacing:.06em;text-transform:uppercase;padding:4px 12px;border-radius:100px;color:#fff;flex:none}
+  .pill.live{background:var(--green)} .pill.sched{background:var(--gold);color:#3a2c00}
+  .qi b{color:var(--ink)}
+  .qi small{color:#7A8AA5;display:block;font-size:12px}
+  .qi button{margin-left:auto;background:none;border:1px solid var(--line);border-radius:7px;padding:6px 12px;cursor:pointer;font:600 12px 'Montserrat';color:#C0392B}
+  .note{grid-column:1/-1;background:#FDF6E3;border:1px solid #EAD198;border-radius:10px;padding:12px 16px;font-size:13px}
+</style>
+</head>
+<body>
+<div style="background:#0A1730;padding:8px 20px;font-family:Montserrat,system-ui,sans-serif;font-size:13px">
+  <a href="../admin.html" style="color:#8FC1FF;text-decoration:none;font-weight:600">&larr; Back to admin</a>
+</div>
+
+<div class="top">
+  <div><h1>Post Composer</h1><small>Write it once &mdash; the Trust look is applied for you</small><small style="display:block;color:#8FC1FF;font-size:11px;letter-spacing:.1em">COMPOSER v3 &middot; pictures enabled</small></div>
+  <div class="who">Signed in as: <b id="whoami">Chris Culshaw</b></div>
+</div>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Write</h2>
+    <label>Title</label>
+    <input id="title" lang="en-GB" spellcheck="true" placeholder="e.g. Coach booking open for Newport away">
+    <div class="row">
+      <div>
+        <label>Category</label>
+        <select id="cat">
+          <option>Trust News</option><option>Coach Travel</option><option>Exile News</option>
+          <option>Competitions</option><option>Community Work</option><option>Junior Dale</option>
+          <option>Meetings with the Club</option><option>Friends of the Trust</option>
+        </select>
+      <label>Include a policy?</label>
+      <select id="policyPick"><option value="">No</option></select>
+      <p class="hint">If this post is about something covered by a policy — coach travel, the code of conduct — pick it here and a link is added at the bottom.</p>
+      </div>
+      <div>
+        <label>Your name</label>
+        <input id="author" value="Chris Culshaw">
+      </div>
+    </div>
+    <label>Header image <small style="text-transform:none">(optional)</small></label>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <input type="file" id="img" accept="image/*" onchange="uploadImage(this)" style="flex:1;min-width:180px">
+      <button type="button" class="save" id="addPicBtn" style="margin:0" onclick="uploadImage(document.getElementById('img'))">Add the picture</button>
+    </div>
+    <p class="hint" id="imgMsg" style="margin-top:6px">A picture at the top of the piece. It is kept separate from your words.</p>
+    <div id="imgPreview"></div>
+    <label>Your words</label>
+    <textarea id="body" lang="en-GB" spellcheck="true" placeholder="Just write. Blank line = new paragraph.
+# A line starting with # becomes a heading
+**bold** for emphasis
+- lines starting with - become a bullet list
+[link text](https://example.com) makes a link
+![](https://example.com/photo.jpg) adds a photo"></textarea>
+    <div id="checks" style="margin-top:8px"></div>
+    <p class="hint">No formatting skills needed &mdash; the preview shows exactly how it publishes. Spelling is checked as you type (British English).</p>
+    <div id="suggestBox" style="display:none;border:1px solid var(--line);border-left:4px solid var(--royal);border-radius:0 10px 10px 0;padding:14px 16px;margin-top:16px;background:#F7FAFF">
+      <label style="margin:0;font-size:15.5px;text-transform:none;letter-spacing:0"><input type="checkbox" id="wantEmail" onchange="toggleSuggest()" style="width:auto;margin-right:8px"><b id="emailQ">Email this out to members as well?</b></label>
+      <p class="hint" style="margin-top:4px" id="emailHint">Most pieces just go on the website. Tick this only if members should get it in their inbox too.</p>
+      <div id="suggestFields" style="display:none;margin-top:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label>Who</label><select id="sug_who" onchange="sugChanged()">
+            <option value="current">Current members</option>
+            <option value="lapsed">Lapsed members</option></select></div>
+          <div><label>Newsletter</label><select id="sug_news" onchange="sugCount()">
+            <option value="in">Opted in only</option>
+            <option value="">Everyone with an email</option></select></div>
+        </div>
+        <label>Membership type</label>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:2px">
+          <label style="font-size:14px;text-transform:none;letter-spacing:0;font-weight:500;margin:0"><input type="checkbox" class="sugType" value="Adult" checked onchange="sugCount()" style="width:auto;margin-right:6px">Adult</label>
+          <label style="font-size:14px;text-transform:none;letter-spacing:0;font-weight:500;margin:0"><input type="checkbox" class="sugType" value="Exile" checked onchange="sugCount()" style="width:auto;margin-right:6px">Exile</label>
+          <label style="font-size:14px;text-transform:none;letter-spacing:0;font-weight:500;margin:0"><input type="checkbox" class="sugType" value="Junior" checked onchange="sugCount()" style="width:auto;margin-right:6px">Junior</label>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+          <div><label>Where</label><select id="sug_place" onchange="sugChanged()">
+            <option value="">Anywhere</option><option value="uk">UK</option><option value="overseas">Overseas</option>
+            <option value="county">A county</option><option value="country">A country</option></select></div>
+          <div id="sugPlaceWrap" style="display:none"><label>Which</label><select id="sug_which" onchange="sugCount()"></select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+          <div><label>Age</label><select id="sug_age" onchange="sugCount()">
+            <option value="">Any age</option><option value="u16">Under 16</option><option value="16-39">16 to 39</option>
+            <option value="40-59">40 to 59</option><option value="60plus">60 or over</option>
+            <option value="unknown">No date of birth recorded</option></select></div>
+          <div><label>Gender</label><select id="sug_gender" onchange="sugCount()">
+            <option value="">Everyone</option><option value="f">Women and girls</option>
+            <option value="m">Men and boys</option><option value="unknown">Not recorded</option></select></div>
+        </div>
+        <div id="sugCount" style="background:#fff;border:1px solid var(--line);padding:11px 13px;margin-top:12px;border-radius:8px;font-size:14px"></div>
+      </div>
+    </div>
+
+    <div class="pubrow">
+      <div class="seg" id="mode">
+        <button type="button" class="sel" data-m="now">Publish now</button>
+        <button type="button" data-m="later">Schedule</button>
+      </div>
+      <input type="datetime-local" id="when">
+      <button class="save" onclick="saveDraft()" id="saveBtn">Save</button>
+      <button class="go" onclick="publish()" id="mainBtn" style="display:none">Send it &rarr;</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Preview &mdash; how members will see it</h2>
+    <div class="pv">
+      <div class="pv-head">
+        <span class="cat" id="pvCat">Trust News</span>
+        <h2 id="pvTitle">Your headline appears here</h2>
+        <div class="meta" id="pvMeta">By you &middot; today</div>
+      </div>
+      <div id="pvImg"></div>
+      <div class="pv-body" id="pvBody"><p>Start typing and watch this update live&hellip;</p></div>
+    </div>
+  </div>
+
+  <div class="panel queue">
+    <h2>The queue &mdash; published &amp; scheduled</h2>
+    <div id="queue"><p class="hint">Nothing yet &mdash; your posts will appear here. Scheduled posts go live automatically at their time.</p></div>
+    <div id="after"></div>
+  </div>
+
+  <p class="note"><b>How this works:</b> posts save to the Trust's own database and appear on <b>daletrust.uk/news.html</b> immediately (or at their scheduled time). Emails are deliberately short and point readers to the website, so the full piece always lives at the Trust's own address.</p>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+// In production, set to the Cloudflare Worker endpoint — publishing then goes to the live site.
+const CMS_ENDPOINT = 'https://join.daletrust.uk';
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+const HDRS=()=>({'Content-Type':'application/json',...(session?{'Authorization':'Bearer '+session}:{})});
+let currentPostId=null, currentSlug=null, headerImage=null, audience={members:0,lapsed:0};
+if(!session){ location.href='../admin.html'; }
+(async()=>{
+  try{
+    const me=await (await fetch(CMS_ENDPOINT+'/auth/me',{headers:HDRS()})).json();
+    if(me.ok){
+      $('author').value=me.officer.name; $('whoami').textContent=me.officer.name; render(); runChecks();
+      window._perm=me.officer;
+      if(me.officer.can_articles || me.officer.can_posts){
+        $('suggestBox').style.display='block';
+        loadAudOptions();
+        if(me.officer.can_send === false){
+          $('emailQ').textContent='Suggest this is emailed out to members as well?';
+          $('emailHint').textContent='Most pieces just go on the website. If you think members should get this one in their inbox, tick this and say who — whoever approves your piece can send it as it stands, or change your suggestion.';
+        }
+      }
+      if(me.officer.can_publish === false){
+        const btn=document.querySelector('.go');
+        if(btn) btn.textContent='Send for approval \u2192';
+        const row=document.querySelector('.pubrow');
+        if(row){
+          const n=document.createElement('p'); n.className='hint';
+          n.style.cssText='margin-top:8px;background:#E8F1FC;padding:10px 12px;border-radius:8px';
+          n.innerHTML='Your writing goes to whoever checks the website before it appears. You\u2019ll see it in the queue until then.';
+          row.insertAdjacentElement('afterend',n);
+        }
+      }
+    }
+    const a=await (await fetch(CMS_ENDPOINT+'/audience',{headers:HDRS()})).json();
+    if(a.ok){ audience=a; const el=$('audienceNote'); if(el) el.textContent='Current audience: '+a.members+' members opted in \u00b7 '+a.lapsed+' lapsed to win back'; }
+  }catch(e){}
+})();
+
+let imgData=null, mode='now';
+$('img').onchange=e=>{
+  const f=e.target.files[0]; if(!f){imgData=null;render();return;}
+  const r=new FileReader(); r.onload=()=>{imgData=r.result;render();}; r.readAsDataURL(f);
+};
+document.querySelectorAll('#mode button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#mode button').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel'); mode=b.dataset.m;
+  $('when').style.display = mode==='later' ? 'inline-block':'none';
+});
+
+function md(t){
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const blocks = esc(t).split(/\n{2,}/);
+  return blocks.map(b=>{
+    b=b.trim(); if(!b)return '';
+    if(b.split('\n').every(l=>l.trim().startsWith('- ')))
+      return '<ul>'+b.split('\n').map(l=>'<li>'+inline(l.trim().slice(2))+'</li>').join('')+'</ul>';
+    if(b.startsWith('# ')) return '<h3>'+inline(b.slice(2))+'</h3>';
+    return '<p>'+inline(b).replace(/\n/g,'<br>')+'</p>';
+  }).join('');
+  function inline(s){
+    return s
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:6px 0">')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  }
+}
+function render(){
+  $('pvCat').textContent=$('cat').value;
+  $('pvTitle').textContent=$('title').value||'Your headline appears here';
+  const who=$('author').value||'Chris Culshaw';
+  $('whoami').textContent=$('author').value||'Chris Culshaw';
+  $('pvMeta').textContent='By '+who+' \u00B7 '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  let html = imgData?'<img src="'+imgData+'" alt="">':'';
+  html += md($('body').value)||'<p>Start typing and watch this update live\u2026</p>';
+  $('pvImg').innerHTML = headerImage ? '<img src="'+headerImage+'" style="width:100%;display:block">' : '';
+  $('pvBody').innerHTML=html;
+}
+['title','cat','author','body'].forEach(id=>$(id).addEventListener('input',()=>{render();runChecks();}));
+const imgEl=$('img');
+if(imgEl){ imgEl.addEventListener('change',()=>uploadImage(imgEl)); }
+
+function runChecks(){
+  const box=$('checks'); if(!box) return;
+  const title=$('title').value.trim(), body=$('body').value;
+  const words=body.trim()?body.trim().split(/\s+/).length:0;
+  const first=(body.replace(/[#*]/g,'').split(/\n{2,}/)[0]||'').replace(/\n/g,' ').trim();
+  const notes=[];
+  if(!title) notes.push(['bad','It needs a title before it can go anywhere']);
+  else if(title.length>75) notes.push(['warn','That title is long \u2014 it may be cut short in the email and on the home page']);
+  if(words&&words<25) notes.push(['warn','Very short \u2014 is there more to say?']);
+  if(first.length>220) notes.push(['warn','The opening paragraph is long. Its first part becomes the summary in the email and on the home page, so a short opening reads better']);
+  const bad=[...body.matchAll(/\]\(([^)]+)\)/g)].map(m=>m[1]).filter(u=>!/^(https?:\/\/|mailto:|\/|[a-z0-9._-]+\.html)/i.test(u));
+  if(bad.length) notes.push(['bad','A link does not look right: '+bad[0]+' \u2014 web addresses should start with https://']);
+  const stray=[...body.matchAll(/\[([^\]]+)\](?!\()/g)];
+  if(stray.length) notes.push(['warn','\u201c'+stray[0][1]+'\u201d looks like a link but has no web address after it']);
+  if(/\bhttps?:\/\/\S+/.test(body.replace(/\]\([^)]+\)/g,''))) notes.push(['warn','There is a bare web address in the text \u2014 [words like this](the address) reads better']);
+  box.innerHTML = (words?('<span class="hint">'+words+' word'+(words===1?'':'s')+'</span>'):'') +
+    notes.map(n=>'<div style="font-size:13px;margin-top:5px;padding:7px 11px;border-radius:7px;background:'+
+      (n[0]==='bad'?'#FBE9E7;color:#9B2B20':'#FFF9E8;color:#8A4B00')+'">'+n[1]+'</div>').join('');
+}
+
+// queue (device-local for the prototype)
+function load(){try{return JSON.parse(localStorage.getItem('dtq')||'[]')}catch(e){return[]}}
+function save(q){try{localStorage.setItem('dtq',JSON.stringify(q))}catch(e){}}
+async function publish(){
+  if(!$('title').value.trim()){alert('Give it a title first.');return;}
+
+  // if this person can send, and they have ticked the box, say plainly what is about to happen
+  const willEmail = window._perm && window._perm.can_send && $('wantEmail') && $('wantEmail').checked;
+  if(willEmail){
+    const n = (window._sugCount === undefined) ? '' : window._sugCount;
+    if(!confirm('Publish this and email it to '+(n===''?'the chosen members':n+' member'+(n===1?'':'s'))+'?\n\n'+
+                'It will go on the website and out by email straight away. Emails cannot be unsent.')) return;
+  }
+  const at = mode==='later' && $('when').value ? new Date($('when').value).toISOString() : new Date().toISOString();
+  const body={ id: currentPostId, title:$('title').value, category:$('cat').value, body:$('body').value,
+               status: mode==='later' ? 'scheduled' : 'published', publish_at: at ,image:headerImage};Object.assign(body, suggestion()||{});
+  try{
+    const d = await (await fetch(CMS_ENDPOINT+'/posts/save',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
+    if(!d.ok){alert(d.error||'Could not save.');return;}
+    currentPostId=d.id;
+
+    if(willEmail && !d.queued){
+      try{
+        const m = await (await fetch(CMS_ENDPOINT+'/mailshot',{method:'POST',headers:HDRS(),
+          body:JSON.stringify({post_id:d.id, filters:sugFilters()})})).json();
+        if(m.ok){
+          $('after').innerHTML =
+            '<div style="background:#EAF7F0;border:1px solid #B7E0CB;border-left:5px solid var(--green);border-radius:0 12px 12px 0;padding:18px 20px;margin-top:14px">'+
+            '<b style="font-family:Oswald;text-transform:uppercase;font-size:18px;color:var(--ink);display:block">Published and emailed</b>'+
+            '<p style="margin-top:6px">It is on the website, and <b>'+m.sent+'</b> member'+(m.sent===1?'':'s')+' have been emailed.</p>'+
+            '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">'+
+            '<button class="go" style="margin:0;width:auto" onclick="startAnother()">Write another &rarr;</button>'+
+            '<a href="../admin.html"><button class="save" style="margin:0" type="button">Back to admin</button></a>'+
+            '</div></div>';
+          $('after').scrollIntoView({behavior:'smooth',block:'center'});
+          return;
+        }
+        alert('It was published, but the email did not send: '+(m.error||'unknown problem')+
+              '\n\nYou can still send it from the news screen.');
+      }catch(e){
+        alert('It was published, but the email did not send. You can still send it from the news screen.');
+      }
+    }
+
+    if(d.queued){
+      const sentTitle=$('title').value;
+      $('queue').innerHTML='<div class="qi"><span class="pill sched">Waiting</span>'+
+        '<div><b>'+sentTitle+'</b><small>Sent for checking just now</small></div></div>';
+      $('after').innerHTML=
+        '<div style="background:#EAF7F0;border:1px solid #B7E0CB;border-left:5px solid var(--green);border-radius:0 12px 12px 0;padding:18px 20px;margin-top:14px">'+
+        '<b style="font-family:Oswald;text-transform:uppercase;font-size:18px;color:var(--ink);display:block">Sent for approval</b>'+
+        '<p style="margin-top:6px">Thank you \u2014 <b>'+sentTitle+'</b> has gone off to be checked. '+
+        'Whoever looks after the website has been emailed, and you\u2019ll hear back once they\u2019ve read it. '+
+        'It won\u2019t appear on the site until then.</p>'+
+        (suggestion() ? '<p style="margin-top:8px">You also suggested it goes out by email \u2014 they can send it when they approve it.</p>' : '')+
+        '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">'+
+        '<button class="go" style="margin:0;width:auto" onclick="startAnother()">Write another &rarr;</button>'+
+        '<a href="../admin.html"><button class="save" style="margin:0" type="button">Back to admin</button></a>'+
+        '</div></div>';
+      $('after').scrollIntoView({behavior:'smooth',block:'center'});
+      clearComposer();
+      return;
+    }
+    const url='https://daletrust.uk/news.html?p='+d.slug;
+    $('queue').innerHTML='<div class="qi"><span class="pill '+(mode==='later'?'sched':'live')+'">'+(mode==='later'?'Scheduled':'Live')+'</span>'+
+      '<div><b>'+$('title').value+'</b><small>'+$('cat').value+' \u00b7 <a href="'+url+'" target="_blank">view on the website</a></small></div></div>';
+    $('after').innerHTML='<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">'+
+      '<b style="font-family:Oswald;text-transform:uppercase">Email it out?</b>'+
+      '<p class="hint" style="margin:4px 0 12px">Choose who should get it. The number updates as you narrow it down.</p>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
+        '<div><label>Who</label><select id="aud_who" onchange="audChanged()">'+
+          '<option value="current">Current members</option>'+
+          '<option value="lapsed">Lapsed members</option>'+
+          '<option value="season">Members from a past season</option></select></div>'+
+        '<div id="seasonWrap" style="display:none"><label>Season</label><select id="aud_season" onchange="audCount()"></select></div>'+
+      '</div>'+
+      '<label>Membership type</label>'+
+      '<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:2px">'+
+        ['Adult','Exile','Junior'].map(t=>'<label style="font-size:14px;text-transform:none;letter-spacing:0;font-weight:500;margin:0"><input type="checkbox" class="audType" value="'+t+'" checked onchange="audCount()" style="width:auto;margin-right:6px">'+t+'</label>').join('')+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">'+
+        '<div><label>Where</label><select id="aud_place" onchange="audChanged()">'+
+          '<option value="">Anywhere</option><option value="uk">UK</option><option value="overseas">Overseas</option>'+
+          '<option value="county">A county</option><option value="country">A country</option></select></div>'+
+        '<div id="placeWrap" style="display:none"><label>Which</label><select id="aud_which" onchange="audCount()"></select></div>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">'+
+        '<div><label>Age</label><select id="aud_age" onchange="audCount()">'+
+          '<option value="">Any age</option><option value="u16">Under 16</option><option value="16-39">16 to 39</option>'+
+          '<option value="40-59">40 to 59</option><option value="60plus">60 or over</option>'+
+          '<option value="unknown">No date of birth recorded</option></select></div>'+
+        '<div><label>Newsletter</label><select id="aud_news" onchange="audCount()">'+
+          '<option value="in">Opted in only</option><option value="">Everyone with an email</option></select></div>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">'+
+        '<div><label>Gender</label><select id="aud_gender" onchange="audCount()">'+
+          '<option value="">Everyone</option><option value="f">Women and girls</option>'+
+          '<option value="m">Men and boys</option><option value="unknown">Not recorded</option></select></div>'+
+        '<div><label>Details</label><select id="aud_confirmed" onchange="audCount()">'+
+          '<option value="">Everyone</option>'+
+          '<option value="never">Have never confirmed their details</option>'+
+          '<option value="done">Have confirmed their details</option></select></div>'+
+      '</div>'+
+      '<div id="audCount" style="background:var(--wash);border-left:4px solid var(--royal);padding:12px 14px;margin-top:14px;border-radius:0 8px 8px 0"></div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'+
+      '<button class="go" style="width:auto;background:#46536B" onclick="mailshot(true)">Send me a test</button>'+
+      '<button class="go" style="width:auto" id="sendBtn" onclick="mailshot(false)">Send it</button>'+
+      '</div>'+
+      '<p class="hint" style="margin-top:8px">Emails are short and link back to the website \u2014 the full piece always lives on daletrust.uk.</p>'+
+      '<p id="mailmsg" style="margin-top:8px;font-weight:600"></p></div>'+
+      '<div id="sharePanel" style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px"></div>';
+    if(!window._perm || window._perm.can_social !== false) buildShare(url);
+    else $('sharePanel').innerHTML='<p class="hint">Sharing on Facebook, X and Instagram is handled by the Media Officer.</p>';
+    loadAudOptions();
+  }catch(e){alert('Could not reach the server.');}
+}
+
+const HASHTAGS = '#RochdaleAFC #UTD #DaleTrust';
+
+function tagged(url, where){
+  return url + (url.includes('?') ? '&' : '?') + 'from=' + where;
+}
+
+function shareTexts(url){
+  const title = $('title').value.trim();
+  const body  = $('body').value.replace(/[#*]/g,'').trim();
+  const first = body.split(/\n{2,}/)[0].replace(/\n/g,' ').trim();
+  const short = s => s.length > 180 ? s.slice(0,177).replace(/\s+\S*$/,'') + '\u2026' : s;
+  const xBody = (title + ' \u2014 ' + short(first));
+  const xText = (xBody.length > 240 ? xBody.slice(0,237).replace(/\s+\S*$/,'') + '\u2026' : xBody) + '\n\n' + tagged(url,'x') + '\n' + HASHTAGS;
+  return {
+    facebook: title + '\n\n' + short(first) + '\n\nRead the full story \uD83D\uDC47\n' + tagged(url,'facebook'),
+    x: xText,
+    linkedin: title + '\n\n' + short(first) + '\n\nDale Supporters Trust is the independent, fan-owned supporters\u2019 trust of Rochdale AFC.\n\n' + tagged(url,'linkedin'),
+    instagram: title + '\n\n' + short(first) + '\n\n\uD83D\uDD17 Full story via the link in our bio\n\n' + HASHTAGS + ' #Rochdale #EFL #FanOwned',
+    youtube: title + '\n\n' + short(first) + '\n\nFull story: ' + tagged(url,'youtube') + '\n\nDale Supporters Trust \u2014 the independent supporters\u2019 trust of Rochdale AFC.\nJoin from \u00A37.50 a season: https://daletrust.uk/join.html'
+  };
+}
+
+function buildShare(url){
+  const t = shareTexts(url);
+  const enc = encodeURIComponent;
+  const rows = [
+    ['Facebook','#1877F2', t.facebook, 'https://www.facebook.com/sharer/sharer.php?u=' + enc(tagged(url,'facebook')), 'Opens Facebook with the link \u2014 paste the text in'],
+    ['X','#000000', t.x, 'https://twitter.com/intent/tweet?text=' + enc(t.x), 'Opens X with the post ready to send'],
+    ['LinkedIn','#0A66C2', t.linkedin, 'https://www.linkedin.com/sharing/share-offsite/?url=' + enc(tagged(url,'linkedin')), 'Opens LinkedIn with the link \u2014 paste the text in'],
+    ['Instagram','#C13584', t.instagram, '', 'Instagram will not allow a clickable link in a caption \u2014 copy this, post your image, and keep daletrust.uk as the link in your bio'],
+    ['YouTube','#FF0000', t.youtube, '', 'For a video description or community post']
+  ];
+  document.getElementById('sharePanel').innerHTML =
+    '<b style="font-family:Oswald;text-transform:uppercase">Share it</b>'+
+    '<p class="hint" style="margin:4px 0 12px">Text is tailored for each platform \u2014 copy it, or open the platform with it ready.</p>'+
+    rows.map((r,i)=>
+      '<div style="border:1px solid var(--line);border-left:4px solid '+r[1]+';border-radius:8px;padding:12px 14px;margin-bottom:10px">'+
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
+      '<b style="font-family:Oswald;text-transform:uppercase;color:'+r[1]+'">'+r[0]+'</b>'+
+      '<span class="hint" style="flex:1;min-width:180px">'+r[4]+'</span>'+
+      '<button class="go" style="width:auto;padding:8px 14px;background:#46536B" onclick="copyShare('+i+')">Copy text</button>'+
+      (r[3] ? '<a class="go" style="width:auto;padding:8px 14px;background:'+r[1]+';text-decoration:none;display:inline-block" href="'+r[3]+'" target="_blank" rel="noopener">Open '+r[0]+'</a>' : '')+
+      '</div>'+
+      '<textarea id="share'+i+'" readonly style="width:100%;margin-top:10px;min-height:'+(r[0]==='X'?70:88)+'px;font-size:13.5px;background:#F7FAFF">'+r[2].replace(/</g,'&lt;')+'</textarea>'+
+      (r[0]==='X' ? '<p class="hint" style="margin-top:4px">'+r[2].length+' characters</p>' : '')+
+      '</div>').join('')+
+    '<p class="hint">Tip: post the same story natively on each platform rather than cross-posting links \u2014 it reaches far more people.</p>';
+}
+
+function copyShare(i){
+  const el = document.getElementById('share'+i);
+  el.select(); el.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(el.value).then(()=>{
+    const b = el.parentElement.querySelector('button');
+    const old = b.textContent; b.textContent = 'Copied \u2713';
+    setTimeout(()=>b.textContent = old, 1500);
+  }).catch(()=>document.execCommand('copy'));
+}
+
+let audOptions=null;
+
+function audFilters(){
+  const who=$('aud_who').value;
+  const place=$('aud_place').value;
+  const f={who, newsletter:$('aud_news').value, age:$('aud_age').value, place,
+    gender: $('aud_gender') ? $('aud_gender').value : '',
+    confirmed: $('aud_confirmed') ? $('aud_confirmed').value : '',
+    types:[...document.querySelectorAll('.audType:checked')].map(x=>x.value)};
+  if(who==='lapsed'||who==='season') f.season=$('aud_season').value;
+  if(place==='county') f.county=$('aud_which').value;
+  if(place==='country') f.country=$('aud_which').value;
+  return f;
+}
+
+async function audChanged(){
+  const who=$('aud_who').value, place=$('aud_place').value;
+  $('seasonWrap').style.display=(who==='lapsed'||who==='season')?'block':'none';
+  const pw=$('placeWrap');
+  if(place==='county'||place==='country'){
+    const list=place==='county'?audOptions.counties:audOptions.countries;
+    $('aud_which').innerHTML=list.map(x=>'<option>'+x+'</option>').join('');
+    pw.style.display='block';
+  } else pw.style.display='none';
+  audCount();
+}
+
+let audTimer=null;
+function audCount(){
+  clearTimeout(audTimer);
+  audTimer=setTimeout(async()=>{
+    const box=$('audCount');
+    box.innerHTML='Counting\u2026';
+    try{
+      const d=await (await fetch(CMS_ENDPOINT+'/audience/count',{method:'POST',headers:HDRS(),body:JSON.stringify(audFilters())})).json();
+      if(!d.ok){box.textContent=d.error;return;}
+      box.innerHTML='<b style="font-family:Oswald;font-size:26px;color:var(--ink)">'+d.count+'</b> '+
+        '<span style="font-size:14px">will get this email</span>'+
+        '<div class="hint" style="margin-top:4px">'+d.description+'</div>'+
+        (d.without_email?'<div class="hint">'+d.without_email+' members have no email address and are left out automatically.</div>':'');
+      $('sendBtn').textContent = d.count ? ('Send to '+d.count+' people') : 'Nobody to send to';
+      $('sendBtn').disabled = !d.count;
+    }catch(e){box.textContent='Could not count just now.';}
+  },250);
+}
+
+async function loadPolicies(){
+  try{
+    const d=await (await fetch(CMS_ENDPOINT+'/policies/admin',{headers:HDRS()})).json();
+    if(!d.ok)return;
+    const sel=$('policyPick');
+    const live=d.policies.filter(p=>p.status==='published');
+    sel.innerHTML='<option value="">No</option>'+
+      live.map(p=>'<option value="'+p.slug+'">'+p.title+'</option>').join('');
+    if(!live.length){
+      sel.disabled=true;
+      const hint=sel.parentElement.querySelector('.hint');
+      if(hint) hint.innerHTML='<b>No policies are published yet.</b> Once the code of conduct and travel policy are written and published, they will appear here and can be linked from a post.';
+    }
+  }catch(e){}
+}
+
+async function loadAudOptions(){
+  try{
+    audOptions=await (await fetch(CMS_ENDPOINT+'/audience/options',{headers:HDRS()})).json();
+    if(!audOptions.ok)return;
+    const ss=$('aud_season');
+    if(ss){
+      ss.innerHTML=audOptions.seasons.map(s=>'<option>'+s+'</option>').join('');
+      const prev=audOptions.seasons.filter(s=>s!==audOptions.current)[0];
+      if(prev) ss.value=prev;
+    }
+    if($('sugCount')) sugCount();
+    if($('audCount')) audCount();
+  }catch(e){}
+}
+
+function clearComposer(){
+  currentPostId=null; currentSlug=null; headerImage=null;
+  $('title').value=''; $('body').value='';
+  const el=$('img'); if(el) el.value='';
+  $('imgMsg').textContent='A picture at the top of the piece. It is kept separate from your words.';
+  showPicture();
+  $('mainBtn').style.display='none';
+  $('saveBtn').textContent='Save';
+  const n=document.querySelector('.savedNote'); if(n) n.remove();
+  render(); runChecks();
+}
+
+function startAnother(){
+  $('after').innerHTML='';
+  $('title').focus();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function toggleSuggest(){
+  const on=$('wantEmail').checked;
+  $('suggestFields').style.display=on?'block':'none';
+  if(on) sugCount();
+}
+
+function sugFilters(){
+  const who=$('sug_who').value, place=$('sug_place').value;
+  const f={who, place,
+    newsletter:$('sug_news').value,
+    age:$('sug_age').value,
+    gender:$('sug_gender').value,
+    types:[...document.querySelectorAll('.sugType:checked')].map(x=>x.value)};
+  if(who==='lapsed') f.season='2025/26';
+  if(place==='county') f.county=$('sug_which').value;
+  if(place==='country') f.country=$('sug_which').value;
+  return f;
+}
+
+async function sugChanged(){
+  const place=$('sug_place').value;
+  if((place==='county'||place==='country') && !audOptions){ await loadAudOptions(); }
+  if((place==='county'||place==='country')&&audOptions){
+    const list=place==='county'?audOptions.counties:audOptions.countries;
+    $('sug_which').innerHTML=list.map(x=>'<option>'+x.replace(/</g,'&lt;')+'</option>').join('');
+    $('sugPlaceWrap').style.display='block';
+  } else $('sugPlaceWrap').style.display='none';
+  sugCount();
+}
+
+let sugTimer=null;
+function sugCount(){
+  clearTimeout(sugTimer);
+  sugTimer=setTimeout(async()=>{
+    const box=$('sugCount'); if(!box) return;
+    box.textContent='Counting\u2026';
+    try{
+      const d=await (await fetch(CMS_ENDPOINT+'/audience/count',{method:'POST',headers:HDRS(),body:JSON.stringify(sugFilters())})).json();
+      window._sugCount = d.ok ? d.count : undefined;
+      box.innerHTML = d.ok
+        ? '<b>'+d.count+'</b> people would get it \u2014 <span style="color:#7A8AA5">'+d.description+'</span>'
+        : (d.error||'Could not count.');
+    }catch(e){ box.textContent='Could not count just now.'; }
+  },250);
+}
+
+function suggestion(){
+  if(!$('wantEmail') || !$('wantEmail').checked) return null;
+  return { proposed_send:1, proposed_audience:sugFilters() };
+}
+
+async function saveDraft(){
+  const t=$('title').value.trim(), b=$('body').value.trim();
+  if(!t||!b){alert('It needs a title and some words before it can be saved.');return;}
+  const body=Object.assign({id:currentPostId,title:t,category:$('cat').value,body:b,status:'draft',image:headerImage}, suggestion()||{});
+  try{
+    const d=await (await fetch(CMS_ENDPOINT+'/posts/save',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
+    if(!d.ok){alert(d.error||'Could not save.');return;}
+    currentPostId=d.id; currentSlug=d.slug;
+    let n=document.querySelector('.savedNote');
+    if(!n){ n=document.createElement('p'); n.className='savedNote'; document.querySelector('.pubrow').appendChild(n); }
+    n.textContent='Saved as a draft at '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+
+      ' \u2014 nobody can see it yet. Add pictures, then send it when you\u2019re ready.';
+    const main=$('mainBtn');
+    if(main){
+      main.style.display='inline-block';
+      main.innerHTML = (window._perm && window._perm.can_publish===false)
+        ? 'Send for approval \u2192' : 'Publish it \u2192';
+    }
+    $('saveBtn').textContent='Save again';
+  }catch(e){alert('Could not reach the server.');}
+}
+
+function showPicture(){
+  const box=$('imgPreview');
+  const btn=$('addPicBtn');
+  if(!headerImage){
+    box.innerHTML='';
+    if(btn){btn.textContent='Add the picture';btn.style.background='';btn.style.color='';btn.style.borderColor='';}
+    return;
+  }
+  box.innerHTML='<div style="display:flex;gap:12px;align-items:center;margin-top:10px">'+
+    '<img src="'+headerImage+'" style="width:150px;border-radius:8px;display:block">'+
+    '<button type="button" class="save" style="margin:0;color:#C0392B;border-color:#EDBDB7" onclick="removePicture()">Remove picture</button></div>';
+  if(btn){btn.textContent='Change the picture';btn.style.background='#EAF7F0';btn.style.color='#14653F';btn.style.borderColor='#B7E0CB';}
+}
+
+function removePicture(){
+  headerImage=null;
+  const el=$('img'); if(el) el.value='';
+  $('imgMsg').textContent='A picture at the top of the piece. It is kept separate from your words.';
+  showPicture(); render();
+}
+
+let uploading=false;
+async function uploadImage(input){
+  const msg=$('imgMsg') || document.createElement('p');
+  if(!input || !input.files || !input.files[0]){ msg.textContent='Choose a picture first.'; return; }
+  if(uploading) return;
+  uploading=true;
+  const f=input.files[0];
+  const abtn=$('addPicBtn');
+  if(abtn){abtn.textContent='Working\u2026';abtn.style.background='#FFF3E4';abtn.style.color='#8A4B00';abtn.style.borderColor='#EAD198';}
+  msg.textContent='Getting the picture ready\u2026';
+  try{
+    const dataUrl=await new Promise((res,rej)=>{
+      const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f);
+    });
+    // shrink it so it loads quickly on a phone
+    const img=await new Promise((res,rej)=>{
+      const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=dataUrl;
+    });
+    const max=1400;
+    const scale=Math.min(1, max/Math.max(img.width,img.height));
+    const c=document.createElement('canvas');
+    c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    const small=c.toDataURL('image/jpeg',0.82);
+    msg.textContent='Uploading\u2026';
+    const kb=Math.round(small.length*0.75/1024);
+    msg.textContent='Uploading \u2014 '+kb+'KB\u2026';
+    const r=await fetch(CMS_ENDPOINT+'/image/upload',{method:'POST',headers:HDRS(),
+      body:JSON.stringify({data:small,filename:f.name})});
+    let d;
+    try{ d=await r.json(); }
+    catch(err){ msg.innerHTML='<span style="color:var(--red)">The server did not understand that (HTTP '+r.status+'). Tell Chris.</span>'; return; }
+    if(!r.ok||!d.ok){msg.innerHTML='<span style="color:var(--red)">'+(d.error||('Upload failed \u2014 HTTP '+r.status))+'</span>';return;}
+    // remove any picture the old way put into the words
+    const body=$('body');
+    body.value = body.value.replace(/^!\[[^\]]*\]\([^)]*\)\s*\n*/, '');
+    headerImage = d.url;
+    render(); runChecks();
+    msg.innerHTML='<span style="color:var(--green)">Picture added.</span>';
+    showPicture();
+  }catch(e){ msg.innerHTML='<span style="color:var(--red)">Could not use that picture \u2014 '+(e && e.message ? e.message : 'unknown problem')+'</span>'; }
+  finally{ uploading=false; if(!headerImage){const a=$('addPicBtn'); if(a){a.textContent='Add the picture';a.style.background='';a.style.color='';a.style.borderColor='';}} }
+}
+
+async function mailshot(test){
+  const f=audFilters();
+  const body={post_id:currentPostId, filters:f};
+  if(!currentPostId){alert('Publish it first.');return;}
+  if(test){
+    const to=prompt('Send a test to which email?', $('author').value.includes('@')?$('author').value:'');
+    if(!to)return; body.test_to=to;
+  } else {
+    const d0=await (await fetch(CMS_ENDPOINT+'/audience/count',{method:'POST',headers:HDRS(),body:JSON.stringify(f)})).json();
+    if(!confirm('Send this to '+d0.count+' people?\n\n'+d0.description+'\n\nThis cannot be unsent.'))return;
+    if(f.who==='lapsed' && !confirm('Emailing lapsed members relies on the board\u2019s legitimate-interest minute, and every message carries an opt-out. Is that agreed?'))return;
+  }
+  $('mailmsg').textContent='Sending\u2026';
+  const d=await (await fetch(CMS_ENDPOINT+'/mailshot',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
+  $('mailmsg').textContent = d.ok ? (d.test?'Test sent.':'Sent to '+d.sent+' people.') : (d.error||'Failed.');
+}
+
+async function oldMailshot(segment, test){
+  if(!currentPostId){alert('Publish it first.');return;}
+  if(!test){
+    const n = segment==='lapsed'?audience.lapsed:audience.members;
+    if(!confirm('Send this to '+n+' '+(segment==='lapsed'?'lapsed members':'members')+'? This cannot be unsent.'))return;
+    if(segment==='lapsed' && !confirm('Lapsed mailshots need the board\u2019s legitimate-interest minute on record. Is that agreed?'))return;
+  }
+  const body={post_id:currentPostId, segment};
+  if(test){ const to=prompt('Send a test to which email?', $('author').value.includes('@')?$('author').value:''); if(!to)return; body.test_to=to; }
+  $('mailmsg').textContent='Sending\u2026';
+  const d = await (await fetch(CMS_ENDPOINT+'/mailshot',{method:'POST',headers:HDRS(),body:JSON.stringify(body)})).json();
+  $('mailmsg').textContent = d.ok ? (d.test?'Test sent.':'Sent to '+d.sent+' people.') : (d.error||'Failed.');
+}
+function drawQueue(){
+  const q=load(), now=Date.now(), el=$('queue');
+  if(!q.length){el.innerHTML='<p class="hint">Nothing yet \u2014 your posts will appear here.</p>';return;}
+  el.innerHTML=q.map(p=>{
+    const live=p.at<=now;
+    const when=new Date(p.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    return `<div class="qi">
+      <span class="pill ${live?'live':'sched'}">${live?'Live':'Scheduled'}</span>
+      <div><b>${p.title}</b><small>${p.cat} \u00B7 by ${p.author} \u00B7 ${live?'published':'goes live'} ${when}</small></div>
+      <button onclick="del(${p.id})">Remove</button></div>`;
+  }).join('');
+}
+function del(id){save(load().filter(p=>p.id!==id));drawQueue();}
+drawQueue(); render();
+setInterval(drawQueue, 30000); // scheduled items flip to Live automatically
+loadPolicies();
+</script>
+</body>
+</html>
