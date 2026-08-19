@@ -148,6 +148,33 @@
     <button style="background:var(--red);margin-left:auto" onclick="deleteMember()">Delete this record</button>
   </div>
   <p class="msg" id="emsg"></p>
+  <div style="border-top:1px solid var(--line);margin-top:18px;padding-top:16px">
+    <h2 style="font-size:15px;border-left:4px solid #2C2C2C;padding-left:10px;margin-bottom:10px">If they have left</h2>
+    <p style="font-size:13.5px;margin-bottom:10px">Recording a reason keeps their history and stops them being contacted. It is not the same as deleting.</p>
+    <div class="g2">
+      <div><label>Why did they leave?</label>
+        <select id="l_reason" onchange="decCheck()">
+          <option value="">Choose&hellip;</option>
+          <option>Payment defaulted</option>
+          <option>Standing order cancelled</option>
+          <option>Resigned</option>
+          <option>Moved away</option>
+          <option>Deceased</option>
+          <option>Asked not to be contacted</option>
+          <option>Other</option>
+        </select></div>
+      <div><label>Anything to add</label><input id="l_note" placeholder="Optional"></div>
+    </div>
+    <label style="display:flex;gap:10px;align-items:center;margin-top:12px;text-transform:none;letter-spacing:0;font-size:14.5px;font-weight:500">
+      <input type="checkbox" id="l_dnc" style="width:auto;transform:scale(1.2)"> Never contact this person again
+    </label>
+    <div id="decWarn" style="display:none;background:#2C2C2C;color:#fff;border-radius:9px;padding:12px 14px;margin-top:10px;font-size:14px">
+      <b>This will apply to every season they appear in</b>, mark them as never to be contacted, and stop any future spreadsheet import bringing them back. It is the right thing to do, and it cannot be undone here.
+    </div>
+    <div style="margin-top:12px"><button class="ghost" onclick="recordLeft()">Record it</button></div>
+    <p class="msg" id="lmsg"></p>
+  </div>
+
   <div id="delBox" style="display:none" class="warn">
     <b>Delete this record permanently?</b><br>
     This cannot be undone. If the member has simply left, set their payment status to <b>cancelled</b> instead &mdash; that keeps their history.
@@ -193,6 +220,8 @@ async function search(){
       '<small>'+esc(m.member_no||m.app_ref)+' · '+esc(m.membership_type)+' · '+esc(m.season)+
       ' · '+esc(m.town||'')+' '+esc(m.postcode||'')+
       (noEmail(m.email)?' · <span style="color:#C0392B">no email</span>':' · '+esc(m.email))+'</small></div>'+
+      (m.deceased?'<span class="tag" style="background:#2C2C2C;border-color:#2C2C2C;color:#fff">deceased</span>':'')+
+      (m.do_not_contact&&!m.deceased?'<span class="tag" style="background:#FBE9E7;border-color:#E8B4AC;color:#9B2B20">do not contact</span>':'')+
       (m.needs_details?'<span class="tag" style="background:#FFF3E4;border-color:#EAD198;color:#8A4B00">details needed</span>':'')+
       (m.joined_via==='manual'?'<span class="tag">by hand</span>':'')+
       '<span class="pill '+m.payment_status+'">'+m.payment_status+'</span></div>').join('')
@@ -223,8 +252,35 @@ async function openMember(id){
   $('e_shareWrap').style.display=m.membership_type==='Exile'?'block':'none';
   if(m.membership_type==='Exile')$('e_share').value=m.exile_transport_share||'No';
   $('emsg').textContent=''; $('delBox').style.display='none';
+  $('l_reason').value=''; $('l_note').value=''; $('l_dnc').checked=!!m.do_not_contact;
+  $('decWarn').style.display='none';
+  $('lmsg').innerHTML = m.deceased
+    ? '<span style="color:#2C2C2C;font-weight:700">Recorded as deceased'+(m.left_reason?' \u2014 '+esc(m.left_reason):'')+'. This person will never be contacted.</span>'
+    : (m.left_reason ? '<span style="color:#7A8AA5">Previously recorded: '+esc(m.left_reason)+'</span>' : '');
   $('editor').style.display='block';
   $('editor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function decCheck(){
+  const dec=$('l_reason').value==='Deceased';
+  $('decWarn').style.display=dec?'block':'none';
+  if(dec) $('l_dnc').checked=true;
+}
+
+async function recordLeft(){
+  if(!current)return;
+  const reason=$('l_reason').value;
+  if(!reason){$('lmsg').innerHTML='<span style="color:var(--red)">Please choose a reason.</span>';return;}
+  const deceased=reason==='Deceased';
+  const note=$('l_note').value.trim();
+  if(deceased && !confirm('Record '+current.first_name+' '+current.last_name+' as deceased?\n\nThis applies to every season they appear in, stops them ever being contacted, and prevents any future import bringing them back.'))return;
+  const d=await (await fetch(EP+'/members/left',{method:'POST',headers:H(),
+    body:JSON.stringify({id:current.id,reason:note?reason+' — '+note:reason,
+      deceased,do_not_contact:$('l_dnc').checked,cancel:true})})).json();
+  if(d.ok){
+    $('lmsg').innerHTML='<span style="color:var(--green)">Recorded.</span>';
+    search();
+  } else $('lmsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';
 }
 
 async function saveMember(){
