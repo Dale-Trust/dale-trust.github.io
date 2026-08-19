@@ -165,13 +165,13 @@ function show(){
     '<span class="gb-go">Open the guide &rarr;</span></a>';
   const tile=(href,title,desc)=>t.insertAdjacentHTML('beforeend','<a class="tile" href="'+href+'"><b>'+title+'</b><small>'+desc+'</small></a>');
   if(me.can_members){
-    tile('dashboard.html','Membership dashboard','Live register analysis \u2014 drop the sheet, press Connect');
-    tile('register.html','Membership register','Look someone up, correct details, add a member by hand');
+    if(me.can_members) tile('dashboard.html','Membership dashboard','Live register analysis \u2014 drop the sheet, press Connect');
+    if(me.can_members) tile('register.html','Membership register','Look someone up, correct details, add a member by hand');
     if(me.can_renewals||me.is_admin) tile('renewals.html','Renewals','Where the season stands, and the reminders that bring members back');
-    tile('letters.html','Membership letters','Print the card letters — one wording, adapting to junior, new, renewing and donation');
+    if(me.can_members) tile('letters.html','Membership letters','Print the card letters — one wording, adapting to junior, new, renewing and donation');
   }
   if(me.can_import) tile('import.html','Member import','Load spreadsheet tabs into the database');
-  if(me.can_posts) tile('fixtures.html','Fixtures &amp; results','Put the score in \u2014 the home page updates itself');
+  if(me.can_articles) tile('fixtures.html','Fixtures &amp; results','Put the score in \u2014 the home page updates itself');
   if(me.can_posts) tile('tools/compose.html','Post composer', me.can_publish ? 'Write, publish and email it out' : 'Write something — it goes for checking before it appears');
   if(me.can_articles) tile('posts.html','Manage articles','Find, edit, approve or archive anything on the site');
   if(me.can_articles) checkQueue();
