@@ -313,6 +313,19 @@ async function pay(method){
       e.textContent='Server replied ('+r.status+'): '+raw.slice(0,160);
       return;
     }
+    // already on the register: send them to sign in rather than paying again
+    if(d.alreadyMember || d.comeBack){
+      e.style.display='block';
+      e.style.background='#E8F1FC'; e.style.borderColor='#0057A7'; e.style.color='#10203A';
+      e.innerHTML = '<b>'+(d.alreadyMember?'You are already a member':'Welcome back')+'</b><br>'+
+        (d.error||'')+
+        '<div style="margin-top:14px"><a href="members.html" style="display:inline-block;background:#0057A7;color:#fff;'+
+        'text-decoration:none;font-weight:700;padding:13px 24px;border-radius:9px">'+
+        (d.alreadyMember?'See my membership':'Sign in and renew')+' &rarr;</a></div>'+
+        '<p style="margin-top:10px;font-size:13.5px;color:#46536B">No password needed &mdash; we send you a link.</p>';
+      e.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
     if(!d.ok){e.style.display='block';e.textContent=d.error||'Something went wrong \u2014 please try again.';return;}
     $('memNo').textContent=d.member_no;
     $('memName').textContent=payload.first_name+' '+payload.last_name+' \u00B7 '+type;
