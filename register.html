@@ -65,6 +65,7 @@
   #oneoff h3{font-family:'Oswald';text-transform:uppercase;color:#002F7C;font-size:16pt;margin:0 0 3mm}
   #oneoff p{font-size:10pt;max-width:150mm;margin:0 0 3mm;color:#1a1a1a}
   @media print{
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
     .back,.top,.wrap{display:none!important}
     #oneoff{display:block!important}
     @page{size:A4;margin:0}
@@ -313,6 +314,19 @@ async function recordLeft(){
   } else $('lmsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';
 }
 
+
+// wait for every image in a block to finish loading before printing,
+// otherwise the print dialog opens while the crest and QR are still downloading
+function printWhenReady(el){
+  const imgs = Array.from(el.querySelectorAll('img'));
+  const waits = imgs.map(i => (i.complete && i.naturalWidth)
+    ? Promise.resolve()
+    : new Promise(res => { i.addEventListener('load', res, {once:true});
+                           i.addEventListener('error', res, {once:true});
+                           setTimeout(res, 4000); }));
+  Promise.all(waits).then(() => setTimeout(() => window.print(), 120));
+}
+
 function memberCard(m){
   const qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data='+
     encodeURIComponent('https://daletrust.uk/partners.html');
@@ -339,7 +353,7 @@ function printCard(){
     '<p>A replacement card for <b>'+esc(current.first_name+' '+current.last_name)+'</b>. Cut along the dotted line.</p>'+
     '<div class="cut">'+memberCard(current)+'</div>'+
     '<p style="font-size:8.5pt;color:#666;margin-top:6mm">Print on 300gsm card if you have it, and check the printer is set to actual size rather than fit-to-page.</p>';
-  window.print();
+  printWhenReady(document.getElementById('oneoff'));
 }
 
 async function saveMember(){

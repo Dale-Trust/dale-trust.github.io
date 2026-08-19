@@ -57,7 +57,8 @@
   .mc-qr{width:13mm;height:13mm;background:#fff;padding:0.6mm;flex:none}
   .mc-qr img{width:100%;height:100%;display:block}
   .mc-url{font-size:5.6pt;color:#C7D6EC;letter-spacing:.04em;text-align:right;line-height:1.3}
-  @media print{ .cardsheet{box-shadow:none;margin:0} }
+  @media print{
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important} .cardsheet{box-shadow:none;margin:0} }
 
   /* ---------- page two: the cut-out temporary card ---------- */
   .tempsheet{width:210mm;min-height:297mm;background:#fff;margin:0 auto 18px;padding:24mm 20mm;
@@ -284,7 +285,20 @@ function printAll(){
   if(!people.length){alert('Find the recipients first.');return;}
   if(!confirm('Print '+people.length+' letters?'))return;
   $('sheets').innerHTML=people.map(m=>sheet(m)+($('withCard').checked?tempCardPage(m):'')).join('');
-  window.print();
+  printWhenReady($('sheets'));
+}
+
+
+// wait for every image in a block to finish loading before printing,
+// otherwise the print dialog opens while the crest and QR are still downloading
+function printWhenReady(el){
+  const imgs = Array.from(el.querySelectorAll('img'));
+  const waits = imgs.map(i => (i.complete && i.naturalWidth)
+    ? Promise.resolve()
+    : new Promise(res => { i.addEventListener('load', res, {once:true});
+                           i.addEventListener('error', res, {once:true});
+                           setTimeout(res, 4000); }));
+  Promise.all(waits).then(() => setTimeout(() => window.print(), 120));
 }
 
 function card(m){
@@ -328,7 +342,7 @@ function printCards(){
   const sheets=Math.ceil(people.length/10);
   if(!confirm('Print '+people.length+' cards on '+sheets+' sheet'+(sheets===1?'':'s')+' of A4?\n\n300gsm card if you have it. Cut along the guides.'))return;
   $('sheets').innerHTML=cardSheets(people);
-  window.print();
+  printWhenReady($('sheets'));
 }
 
 function tempCardPage(m){

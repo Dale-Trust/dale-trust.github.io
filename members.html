@@ -381,6 +381,19 @@ function drawPeople(){
 }
 function pick(i){who=i;render();window.scrollTo({top:0,behavior:'smooth'});}
 
+
+// wait for every image in a block to finish loading before printing,
+// otherwise the print dialog opens while the crest and QR are still downloading
+function printWhenReady(el){
+  const imgs = Array.from(el.querySelectorAll('img'));
+  const waits = imgs.map(i => (i.complete && i.naturalWidth)
+    ? Promise.resolve()
+    : new Promise(res => { i.addEventListener('load', res, {once:true});
+                           i.addEventListener('error', res, {once:true});
+                           setTimeout(res, 4000); }));
+  Promise.all(waits).then(() => setTimeout(() => window.print(), 120));
+}
+
 async function saveMyCard(){
   const p = person() || {}; const r = p.record || {};
   if(!r.member_no){ alert('Your membership number comes through once payment has gone through.'); return; }
@@ -461,7 +474,7 @@ function printMyCard(){
           '<span class="pqr"><img src="'+qr+'" alt=""></span></div></div>'+
     '</div></div></div>'+
     '<p style="font-size:8.5pt;color:#666">Printing on card rather than paper gives a sturdier result. Set your printer to actual size rather than fit-to-page, or it will come out slightly small.</p>';
-  window.print();
+  printWhenReady(document.getElementById('printcard'));
 }
 
 function drawCheck(){
