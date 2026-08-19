@@ -47,6 +47,7 @@
   .card .cardbot{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
   .card .no{font-family:'Oswald';font-size:clamp(13px,3.6vw,18px);letter-spacing:.04em;line-height:1.1}
   .card .no span{display:block;font-family:'Montserrat';font-size:clamp(7px,1.8vw,9px);letter-spacing:.14em;text-transform:uppercase;color:#BBD6F5;font-weight:600;margin-top:2px}
+  .card .cardqr{width:15%;aspect-ratio:1;background:#fff;padding:2px;border-radius:3px;flex:none;display:block}
   .card .partners{font-size:clamp(7px,1.8vw,9px);color:#C7D6EC;line-height:1.35;text-align:right}
   .card .partners b{color:#fff;display:block}
   .pending{background:var(--gold);color:#3a2c00;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:4px 12px;border-radius:100px;display:inline-block;margin-top:12px;position:relative}
@@ -204,11 +205,17 @@
         </div>
         <div class="cardbot">
           <div class="no" id="cNo">—<span>Membership number</span></div>
-          <div class="partners">Ten local businesses<br>offer members a discount<br><b>daletrust.uk/partners</b></div>
+          <div style="display:flex;align-items:flex-end;gap:8px">
+            <div class="partners">Ten local businesses<br>offer members a discount<br><b>daletrust.uk/partners</b></div>
+            <img class="cardqr" id="cQr" alt="" src="">
+          </div>
         </div>
       </div></div>
       <div id="cPending"></div>
-      <button class="cardprint" onclick="printMyCard()">Print my card</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button class="cardprint" onclick="printMyCard()">Print my card</button>
+        <button class="cardprint" onclick="saveMyCard()">Save as an image</button>
+      </div>
     </div>
 
     <div class="panel">
@@ -368,7 +375,62 @@ function drawPeople(){
 }
 function pick(i){who=i;render();window.scrollTo({top:0,behavior:'smooth'});}
 
-async function printMyCard(){
+async function saveMyCard(){
+  const p = person() || {}; const r = p.record || {};
+  if(!r.member_no){ alert('Your membership number comes through once payment has gone through.'); return; }
+
+  const W=1004, H=650;                       // 85 x 55mm at 300dpi
+  const c=document.createElement('canvas'); c.width=W; c.height=H;
+  const x=c.getContext('2d');
+
+  const g=x.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,'#002F7C'); g.addColorStop(.62,'#0057A7'); g.addColorStop(1,'#00417E');
+  x.fillStyle=g; x.fillRect(0,0,W,H);
+  x.save(); x.globalAlpha=.34; x.fillStyle='#1173D4';
+  x.beginPath(); x.moveTo(W*0.60,0); x.lineTo(W,0); x.lineTo(W,H); x.lineTo(W*0.44,H); x.closePath(); x.fill(); x.restore();
+
+  const load = src => new Promise(res=>{ const i=new Image(); i.crossOrigin='anonymous';
+    i.onload=()=>res(i); i.onerror=()=>res(null); i.src=src; });
+
+  const pad=64;
+  const crest = await load('img/brand/dale-logo.png');
+  if(crest){
+    x.save(); x.beginPath(); x.arc(pad+65,124,65,0,Math.PI*2); x.closePath();
+    x.fillStyle='#fff'; x.fill(); x.clip();
+    x.drawImage(crest,pad,59,130,130); x.restore();
+  }
+  const tx = crest ? pad+150 : pad;
+  x.fillStyle='#fff'; x.font='700 32px Oswald, sans-serif';
+  x.fillText('DALE SUPPORTERS',tx,90); x.fillText('TRUST',tx,126);
+  x.fillStyle='#BBD6F5'; x.font='600 19px Montserrat, sans-serif';
+  x.fillText('MEMBER '+(r.season||''),tx,156);
+
+  x.fillStyle='#fff'; x.font='700 62px Oswald, sans-serif';
+  x.fillText(((r.first_name||'')+' '+(r.last_name||'')).trim().toUpperCase(),pad,388);
+  x.fillStyle='#BBD6F5'; x.font='600 23px Montserrat, sans-serif';
+  x.fillText((r.membership_type||'').toUpperCase()+' MEMBER',pad,442);
+
+  x.fillStyle='#fff'; x.font='700 38px Oswald, sans-serif';
+  x.fillText(r.member_no,pad,556);
+  x.fillStyle='#BBD6F5'; x.font='600 18px Montserrat, sans-serif';
+  x.fillText('MEMBERSHIP NUMBER',pad,584);
+
+  const qr = await load('https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data='+
+    encodeURIComponent('https://daletrust.uk/partners.html'));
+  if(qr){ x.fillStyle='#fff'; x.fillRect(W-pad-150,H-pad-150,150,150); x.drawImage(qr,W-pad-144,H-pad-144,138,138); }
+  x.fillStyle='#C7D6EC'; x.font='500 19px Montserrat, sans-serif'; x.textAlign='right';
+  const rx=W-pad-166;
+  x.fillText('Ten local businesses',rx,H-pad-96);
+  x.fillText('offer members a discount',rx,H-pad-70);
+  x.fillStyle='#fff'; x.font='700 19px Montserrat, sans-serif';
+  x.fillText('daletrust.uk/partners',rx,H-pad-44);
+
+  const a=document.createElement('a');
+  a.download='dale-trust-card-'+String(r.member_no).toLowerCase()+'.png';
+  a.href=c.toDataURL('image/png'); a.click();
+}
+
+function printMyCard(){
   const p = person() || {};
   const r = p.record || {};
   if(!r.member_no){
@@ -433,6 +495,8 @@ function render(){
   const p=person(), rec=p.record, cur=p.isMember;
   $('cName').textContent=p.name;
   $('cNo').firstChild.nodeValue=rec.member_no || 'Application '+rec.app_ref;
+  $('cQr').src='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data='+
+    encodeURIComponent('https://daletrust.uk/partners.html');
   $('cType').textContent=rec.membership_type;
   $('cSeason').textContent=rec.season;
   $('cPending').innerHTML = rec.payment_status==='pending' ? '<span class="pending">Awaiting payment</span>' : '';
