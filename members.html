@@ -310,7 +310,7 @@
     </div>
 
     <div class="panel">
-      <p style="font-size:14px">Something not right? Email <a href="mailto:membership@daletrust.co.uk">membership@daletrust.co.uk</a> and we'll sort it.</p>
+      <p style="font-size:14px">Something not right? Email <a href="mailto:membership@daletrust.uk">membership@daletrust.uk</a> and we'll sort it.</p>
       <div style="margin-top:12px"><button class="ghost" onclick="signOut()">Sign out</button></div>
     </div>
   </div>
@@ -571,7 +571,7 @@ async function sendHelp(){
       body:JSON.stringify({email:emailEl?emailEl.value.trim():'',note,page:'members'})});
     msg.innerHTML='<span style="color:#1E8E5A">Sent — someone will come back to you.</span>';
     document.getElementById('helpNote').value='';
-  }catch(e){ msg.innerHTML='<span style="color:#C0392B">Could not send just now — email membership@daletrust.co.uk</span>'; }
+  }catch(e){ msg.innerHTML='<span style="color:#C0392B">Could not send just now — email membership@daletrust.uk</span>'; }
 }
 
 </script>

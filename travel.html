@@ -79,7 +79,7 @@
       <li>All passengers aged <strong>15 or under MUST travel with a responsible adult aged 18 or over</strong></li>
       <li><strong>No Alcohol / Vaping</strong> on board</li>
       <li><strong>No refund for no-shows.</strong> The coach is paid for whether you're on it or not, so please let us know as early as you can if you can't travel</li>
-      <li>Any questions: <a href="mailto:travel@daletrust.co.uk">travel@daletrust.co.uk</a></li>
+      <li>Any questions: <a href="mailto:travel@daletrust.uk">travel@daletrust.uk</a></li>
     </ul>
     <p style="margin-top:14px;font-size:14px"><a href="policies.html?p=code-of-conduct">Read the coach travel code of conduct &rarr;</a></p>
   </div>
@@ -110,7 +110,7 @@ async function load(){
     const d=await (await fetch(EP+'/coach/trips')).json();
     if(!d.ok){$('list').textContent='Could not load the coaches just now.';return;}
     trips=d.trips;
-    if(!trips.length){$('list').innerHTML='<p>No coaches are open for booking at the moment. Keep an eye here, or email <a href="mailto:travel@daletrust.co.uk">travel@daletrust.co.uk</a>.</p>';return;}
+    if(!trips.length){$('list').innerHTML='<p>No coaches are open for booking at the moment. Keep an eye here, or email <a href="mailto:travel@daletrust.uk">travel@daletrust.uk</a>.</p>';return;}
     $('list').innerHTML=trips.map(t=>{
       const cls=t.remaining===0?'none':(t.remaining<=6?'low':'');
       const left=t.remaining===0?'Fully booked':(t.remaining<=6?'Only '+t.remaining+' seats left':t.remaining+' seats available');
