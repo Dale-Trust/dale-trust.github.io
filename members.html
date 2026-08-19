@@ -39,7 +39,7 @@
   .card::before{content:"";position:absolute;top:0;bottom:0;right:-16%;width:46%;background:var(--bright);transform:skewX(-14deg);opacity:.34}
   .card .inner{position:relative;height:100%;padding:5.9cqw 6.5cqw;display:flex;flex-direction:column;justify-content:space-between}
   .card .cardtop{display:flex;align-items:center;gap:3.5cqw}
-  .card .cardlogo{width:12.9%;aspect-ratio:1;border-radius:50%;background:#fff;flex:none;object-fit:contain;padding:1px}
+  .card .cardlogo{width:12.9cqw;height:12.9cqw;box-sizing:border-box;aspect-ratio:1;border-radius:50%;background:#fff;flex:none;object-fit:contain;padding:1px}
   .card .brand{font-family:'Oswald';text-transform:uppercase;font-size:3.3cqw;letter-spacing:.02em;line-height:1.15}
   .card .season{font-size:2.2cqw;letter-spacing:.16em;text-transform:uppercase;color:#BBD6F5;margin-top:0.5cqw}
   .card .name{font-family:'Oswald';text-transform:uppercase;font-size:5.8cqw;line-height:1.05;margin:0;letter-spacing:.01em}
@@ -47,7 +47,7 @@
   .card .cardbot{display:flex;justify-content:space-between;align-items:flex-end;gap:3.5cqw}
   .card .no{font-family:'Oswald';font-size:3.7cqw;letter-spacing:.04em;line-height:1.1;white-space:nowrap;flex:none}
   .card .no span{display:block;font-family:'Montserrat';font-size:2.2cqw;letter-spacing:.14em;text-transform:uppercase;color:#BBD6F5;font-weight:600;margin-top:0.6cqw;white-space:nowrap}
-  .card .cardqr{width:15.3%;aspect-ratio:1;background:#fff;padding:0.7cqw;border-radius:3px;flex:none;display:block}
+  .card .cardqr{width:15.3cqw;height:15.3cqw;aspect-ratio:1;background:#fff;padding:0.7cqw;border-radius:3px;flex:none;display:block;box-sizing:border-box}
   .card .partners{font-size:2.3cqw;color:#C7D6EC;line-height:1.3;text-align:right}
   .card .partners b{color:#fff;display:block}
   .pending{background:var(--gold);color:#3a2c00;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:4px 12px;border-radius:100px;display:inline-block;margin-top:12px;position:relative}
@@ -436,15 +436,15 @@ async function saveMyCard(){
 
   const qr = await load('https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data='+
     encodeURIComponent('https://daletrust.uk/partners.html'));
-  const qs=190, qx=W-pad-qs-250, qy=H-pad-qs;
-  if(qr){ x.fillStyle='#fff'; x.fillRect(qx,qy,qs,qs); x.drawImage(qr,qx+7,qy+7,qs-14,qs-14); }
-  x.textAlign='left';
-  const rx=qx+qs+18;
-  x.fillStyle='#C7D6EC'; x.font='500 19px Montserrat, sans-serif';
-  x.fillText('Ten local businesses',rx,H-pad-96);
-  x.fillText('offer members a discount',rx,H-pad-70);
+  const qs=154, qx=W-pad-qs, qy=H-pad-qs;           // 15.3% of the width, hard against the right
+  if(qr){ x.fillStyle='#fff'; x.fillRect(qx,qy,qs,qs); x.drawImage(qr,qx+6,qy+6,qs-12,qs-12); }
+  x.textAlign='right';
+  const rx=qx-20;
+  x.fillStyle='#C7D6EC'; x.font='500 23px Montserrat, sans-serif';
+  x.fillText('Ten local businesses',rx,H-pad-88);
+  x.fillText('offer members a discount',rx,H-pad-58);
   x.fillStyle='#fff'; x.font='700 23px Montserrat, sans-serif';
-  x.fillText('daletrust.uk/partners',rx,H-pad-44);
+  x.fillText('daletrust.uk/partners',rx,H-pad-28);
 
   const a=document.createElement('a');
   a.download='dale-trust-card-'+String(r.member_no).toLowerCase()+'.png';
