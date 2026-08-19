@@ -56,6 +56,9 @@
   .readrow span{color:#7A8AA5;flex:none}
   .readrow b{color:var(--ink);text-align:right;font-weight:600}
   .checked{background:#EAF7F0;border:1px solid #B7E0CB;border-left:5px solid var(--green);border-radius:10px;padding:14px 18px;font-size:14px;margin-bottom:16px}
+  .cardprint{background:#fff;color:var(--body);border:1.5px solid var(--line);border-radius:9px;
+    padding:10px 18px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer;margin-top:12px;width:auto}
+  .cardprint:hover{border-color:var(--royal);color:var(--royal)}
   .hist{font-size:13.5px;color:#7A8AA5;margin-top:10px}
   .bencat{font-family:'Oswald';text-transform:uppercase;font-size:14px;color:var(--royal);letter-spacing:.06em;margin:16px 0 6px}
   .bencat:first-of-type{margin-top:6px}
@@ -102,6 +105,36 @@
   .helpbox textarea{width:100%;min-height:80px;padding:10px;border:1.5px solid #DCE3EC;border-radius:8px;font:inherit}
   .helpbox button{margin-top:8px;width:auto;padding:9px 18px;font-size:12.5px}
 
+  /* printing your own card: exact size, cut line, hidden on screen */
+  #printcard{display:none}
+  @media print{
+    body > *{display:none!important}
+    #printcard{display:block!important;padding:26mm 22mm}
+    #printcard h3{font-family:'Oswald';text-transform:uppercase;color:#002F7C;font-size:16pt;margin:0 0 3mm}
+    #printcard p{font-size:10pt;color:#1a1a1a;margin:0 0 3mm;max-width:150mm;line-height:1.5}
+    #printcard .cut{display:inline-block;padding:8mm;border:0.4mm dashed #9AA7B8;position:relative;margin:6mm 0}
+    #printcard .cut::after{content:"\2702  cut along the dotted line";position:absolute;top:-3.4mm;left:8mm;
+      background:#fff;padding:0 2mm;font-size:7.5pt;color:#8595AA}
+    #printcard .pc{width:85mm;height:55mm;position:relative;overflow:hidden;color:#fff;
+      background:linear-gradient(125deg,#002F7C 0%,#0057A7 62%,#00417E 100%);
+      -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    #printcard .pc::before{content:"";position:absolute;top:0;bottom:0;right:-16%;width:46%;background:#1173D4;transform:skewX(-14deg);opacity:.34}
+    #printcard .pin{position:relative;height:100%;padding:5mm 5.5mm;display:flex;flex-direction:column;justify-content:space-between}
+    #printcard .ptop{display:flex;align-items:center;gap:3mm}
+    #printcard .pcrest{width:11mm;height:11mm;border-radius:50%;background:#fff;flex:none;overflow:hidden}
+    #printcard .pcrest img{width:100%;height:100%;object-fit:contain}
+    #printcard .ptop b{font-family:'Oswald';text-transform:uppercase;font-size:8pt;letter-spacing:.06em;line-height:1.15;display:block}
+    #printcard .ptop i{font-style:normal;font-size:5.4pt;letter-spacing:.16em;text-transform:uppercase;color:#BBD6F5;display:block;margin-top:0.4mm}
+    #printcard .pname{font-family:'Oswald';text-transform:uppercase;font-size:14pt;line-height:1.05}
+    #printcard .ptype{font-size:6.6pt;letter-spacing:.14em;text-transform:uppercase;color:#BBD6F5;margin-top:1mm}
+    #printcard .pbot{display:flex;justify-content:space-between;align-items:flex-end;gap:3mm}
+    #printcard .pno{font-family:'Oswald';font-size:9pt;letter-spacing:.04em}
+    #printcard .pno i{font-style:normal;display:block;font-family:'Montserrat';font-size:5.4pt;letter-spacing:.14em;text-transform:uppercase;color:#BBD6F5;font-weight:600}
+    #printcard .pqr{width:13mm;height:13mm;background:#fff;padding:0.6mm;flex:none}
+    #printcard .pqr img{width:100%;height:100%;display:block}
+    #printcard .purl{font-size:5.6pt;color:#C7D6EC;text-align:right;line-height:1.3}
+    @page{size:A4;margin:0}
+  }
 </style>
 </head>
 <body>
@@ -176,6 +209,7 @@
       </div></div>
       <div id="cPending"></div>
       <p class="hist" id="cHist"></p>
+      <button class="cardprint" onclick="printMyCard()">Print my card</button>
     </div>
 
     <div class="panel">
@@ -334,6 +368,32 @@ function drawPeople(){
     (p.isMember?'':' <span style="opacity:.7">(lapsed)</span>')+'</button>').join('');
 }
 function pick(i){who=i;render();window.scrollTo({top:0,behavior:'smooth'});}
+
+async function printMyCard(){
+  const p = person() || {};
+  const r = p.record || {};
+  if(!r.member_no){
+    alert('Your membership number comes through once your payment has gone through. Once it has, the card will be here.');
+    return;
+  }
+  const qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data='+
+    encodeURIComponent('https://daletrust.uk/partners.html');
+  document.getElementById('printcard').innerHTML =
+    '<h3>Your membership card</h3>'+
+    '<p>Cut along the dotted line. It works exactly the same as the posted card at any of our Partners of the Trust.</p>'+
+    '<div class="cut"><div class="pc"><div class="pin">'+
+      '<div class="ptop"><span class="pcrest"><img src="img/brand/dale-logo.png" alt=""></span>'+
+        '<span><b>Dale Supporters<br>Trust</b><i>Member '+esc(r.season||'')+'</i></span></div>'+
+      '<div><div class="pname">'+esc(((r.first_name||'')+' '+(r.last_name||'')).trim())+'</div>'+
+        '<div class="ptype">'+esc(r.membership_type||'')+' member</div></div>'+
+      '<div class="pbot"><div class="pno">'+esc(r.member_no)+'<i>Membership number</i></div>'+
+        '<div style="display:flex;align-items:flex-end;gap:2mm">'+
+          '<div class="purl">Ten local businesses<br>offer members a discount<br><b>daletrust.uk/partners</b></div>'+
+          '<span class="pqr"><img src="'+qr+'" alt=""></span></div></div>'+
+    '</div></div></div>'+
+    '<p style="font-size:8.5pt;color:#666">Printing on card rather than paper gives a sturdier result. Set your printer to actual size rather than fit-to-page, or it will come out slightly small.</p>';
+  window.print();
+}
 
 async function drawVotes(){
   const box=$('votePanel'); if(!box) return;
@@ -515,5 +575,6 @@ async function sendHelp(){
 }
 
 </script>
+<div id="printcard"></div>
 </body>
 </html>
