@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Membership letters | Dale Trust admin</title>
+<title>Your welcome letter | Dale Supporters Trust</title>
 <meta name="robots" content="noindex">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&family=Caveat:wght@600&display=swap" rel="stylesheet">
 <style>
+
   :root{--badge:#002F7C;--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
@@ -98,89 +99,34 @@
     .sheet{box-shadow:none;margin:0;width:auto;min-height:auto}
     @page{size:A4;margin:0}
   }
+
+  body{background:#EEF2F7}
+  .bar{background:var(--navy);color:#fff;padding:16px 22px}
+  .bar .in{max-width:210mm;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  .bar b{font-family:'Oswald';text-transform:uppercase;font-size:17px;display:block}
+  .bar em{font-style:normal;font-size:13px;color:#8FC1FF}
+  .bar button{background:#fff;color:var(--navy)}
+  .stage{padding:20px 12px 50px}
+  #out{max-width:210mm;margin:0 auto}
+  .note{max-width:210mm;margin:0 auto 14px;background:#fff;border-left:4px solid var(--royal);border-radius:0 10px 10px 0;padding:14px 18px;font-size:14.5px;color:var(--body)}
+  @media print{ .bar,.note{display:none!important} .stage{padding:0} body{background:#fff} }
 </style>
 </head>
 <body>
-<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
-<div class="top"><h1>Membership letters</h1><small>One letter, adapting itself to junior, new, renewing and donation &mdash; print the lot in one go</small></div>
-
-<div class="wrap">
-  <div class="panel">
-    <h2>Print the letters</h2>
-    <div class="g3">
-      <div><label>Season</label><select id="season"></select></div>
-      <div><label>Who</label><select id="only">
-        <option value="">Everyone with a membership number</option>
-        <option value="adult">Adults and exiles only</option>
-        <option value="junior">Juniors only</option>
-        <option value="new">New members only</option>
-        <option value="donation">Those who donated</option>
-      </select></div>
-      <div><label>&nbsp;</label><button onclick="load()">Find them</button></div>
-    </div>
-    <div class="count" id="count"></div>
-    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-      <button class="ghost" onclick="preview()">Preview a letter</button>
-      <button class="green" onclick="printAll()">Print the letters</button>
-      <button class="ghost" onclick="previewCards()">Preview the cards</button>
-      <button class="green" onclick="printCards()">Print the cards</button>
-    </div>
-    <label style="display:flex;gap:10px;align-items:center;margin-top:14px;text-transform:none;letter-spacing:0;font-size:14.5px;font-weight:500">
-      <input type="checkbox" id="withCard" checked style="width:auto;transform:scale(1.2)">
-      Add a cut-out temporary card as page two of each letter
-    </label>
-    <p class="hint">Useful for exiles and anyone who cannot get to the Trust Desk &mdash; they can use it the day the letter arrives.</p>
-    <p class="hint">Cards come out <b>ten to an A4 sheet</b> on standard business-card size (85 &times; 55mm), with light cutting guides. Print on 300gsm card if you have it. Each one carries the member&rsquo;s name and number, so there is nothing to write on by hand.</p>
-    <p class="hint">Printing opens your browser&rsquo;s print box &mdash; choose <b>Save as PDF</b> if you want a file rather than paper.</p>
-  </div>
-
-  <div class="panel">
-    <h2>Send yourself a test</h2>
-    <p style="font-size:13.5px;margin-bottom:10px">See exactly what a member gets. The letter link in it will be live and personalised, so you can check the whole thing end to end.</p>
-    <div class="g3">
-      <div><label>Which email</label><select id="t_kind">
-        <option value="welcome">Welcome &mdash; sent when payment lands</option>
-        <option value="unpaid">Application started &mdash; sent before they pay</option>
-      </select></div>
-      <div><label>Use whose details?</label><select id="t_member"><option value="">A made-up member</option></select></div>
-      <div><label>Send it to</label><input id="t_to" placeholder="your email"></div>
-    </div>
-    <div style="margin-top:14px"><button onclick="sendTest()">Send the test</button></div>
-    <p class="msg" id="testmsg"></p>
-  </div>
-
-  <div class="panel">
-    <h2>The wording</h2>
-    <p style="font-size:13.5px;margin-bottom:6px">One letter that changes itself depending on who it is going to. Edit it here and every letter follows.</p>
-    <div class="tags" style="margin-bottom:10px">
-      <code>{{first_name}}</code><code>{{member_no}}</code><code>{{season}}</code><code>{{donation}}</code><code>{{type}}</code>
-      <br>
-      <code>{{#junior}}…{{/junior}}</code><code>{{#new}}…{{/new}}</code><code>{{#renewal}}…{{/renewal}}</code><code>{{#donation}}…{{/donation}}</code>
-    </div>
-    <p class="hint" style="margin-bottom:10px">Anything between <code>{{#junior}}</code> and <code>{{/junior}}</code> only appears on junior letters. Same for new, renewal and donation. <code>{{^junior}}</code> means everyone <em>except</em> juniors. A line starting with <code>#</code> becomes a heading, and <code>**bold**</code> comes out bold.</p>
-    <textarea id="body"></textarea>
-    <div class="g3">
-      <div><label>Signed by</label><input id="signed_by"></div>
-      <div><label>Their role</label><input id="signed_role"></div>
-      <div><label>Version</label><input id="version"></div>
-    </div>
-    <label>What have you changed? (optional)</label><input id="note" placeholder="Kept against the version you are replacing">
-    <div style="margin-top:14px"><button class="green" onclick="saveTemplate()">Save the wording</button></div>
-    <p class="msg" id="tmsg"></p>
-  </div>
+<div class="bar"><div class="in">
+  <span><b>Your welcome letter</b><em id="who"></em></span>
+  <button onclick="window.print()">Print or save as PDF</button>
+</div></div>
+<div class="stage">
+  <div class="note" id="note">Loading your letter&hellip;</div>
+  <div id="out"></div>
 </div>
-
-<div id="sheets"></div>
 <script>
 const EP='https://join.daletrust.uk';
 const $=id=>document.getElementById(id);
-let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
-if(!session) location.href='admin.html';
-const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
-let tpl=null, people=[];
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+let tpl=null;
 
-// fill the conditions and placeholders
 function fill(text, m){
   const isJunior = m.membership_type === 'Junior';
   const isNew = String(m.new_or_renewal || '').toLowerCase().startsWith('n');
@@ -250,43 +196,6 @@ function sheet(m){
     '</div></div>';
 }
 
-async function loadTemplate(){
-  const d=await (await fetch(EP+'/letters/template',{headers:H()})).json();
-  if(!d.ok)return;
-  tpl=d.template;
-  $('body').value=tpl.body||''; $('signed_by').value=tpl.signed_by||'';
-  $('signed_role').value=tpl.signed_role||''; $('version').value=tpl.version||'';
-}
-
-async function load(){
-  const d=await (await fetch(EP+'/letters/recipients?season='+encodeURIComponent($('season').value)+'&only='+$('only').value,{headers:H()})).json();
-  if(!d.ok){$('count').textContent=d.error;return;}
-  people=d.recipients; tpl=d.template;
-  const j=people.filter(p=>p.membership_type==='Junior').length;
-  const dn=people.filter(p=>Number(p.donation)>0).length;
-  $('t_member').innerHTML='<option value="">A made-up member</option>'+
-    people.slice(0,60).map(p=>'<option value="'+p.id+'">'+esc(p.first_name+' '+p.last_name)+' \u00b7 '+esc(p.membership_type)+(Number(p.donation)>0?' \u00b7 donated':'')+'</option>').join('');
-  $('count').innerHTML='<b>'+people.length+'</b> letter'+(people.length===1?'':'s')+' to print'+
-    (j?' &middot; '+j+' junior':'')+(dn?' &middot; '+dn+' with a donation':'')+
-    '<div class="hint">Only members with a membership number are included &mdash; anyone unpaid is left out.</div>';
-}
-
-function preview(){
-  if(!people.length){alert('Find the recipients first.');return;}
-  const w=window.open('','_blank');
-  w.document.write('<html><head><title>Letter preview</title>'+document.head.innerHTML+
-    '</head><body style="background:#eef2f7;padding:20px">'+sheet(people[0])+
-    ($('withCard').checked?tempCardPage(people[0]):'')+'</body></html>');
-  w.document.close();
-}
-
-function printAll(){
-  if(!people.length){alert('Find the recipients first.');return;}
-  if(!confirm('Print '+people.length+' letters?'))return;
-  $('sheets').innerHTML=people.map(m=>sheet(m)+($('withCard').checked?tempCardPage(m):'')).join('');
-  window.print();
-}
-
 function card(m){
   const qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data='+
     encodeURIComponent('https://daletrust.uk/partners.html');
@@ -307,30 +216,6 @@ function card(m){
   '</div></div>';
 }
 
-function cardSheets(list){
-  let html='';
-  for(let i=0;i<list.length;i+=10){
-    html+='<div class="cardsheet">'+list.slice(i,i+10).map(card).join('')+'</div>';
-  }
-  return html;
-}
-
-function previewCards(){
-  if(!people.length){alert('Find the recipients first.');return;}
-  const w=window.open('','_blank');
-  w.document.write('<html><head><title>Membership cards</title>'+document.head.innerHTML+
-    '</head><body style="background:#eef2f7;padding:20px">'+cardSheets(people.slice(0,10))+'</body></html>');
-  w.document.close();
-}
-
-function printCards(){
-  if(!people.length){alert('Find the recipients first.');return;}
-  const sheets=Math.ceil(people.length/10);
-  if(!confirm('Print '+people.length+' cards on '+sheets+' sheet'+(sheets===1?'':'s')+' of A4?\n\n300gsm card if you have it. Cut along the guides.'))return;
-  $('sheets').innerHTML=cardSheets(people);
-  window.print();
-}
-
 function tempCardPage(m){
   return '<div class="tempsheet">'+
     '<h3>Your membership card</h3>'+
@@ -344,29 +229,26 @@ function tempCardPage(m){
   '</div>';
 }
 
-async function sendTest(){
-  const body={kind:$('t_kind').value, to:$('t_to').value.trim(), member_id:$('t_member').value||null};
-  if(!body.to){$('testmsg').innerHTML='<span style="color:var(--red)">Where should it go?</span>';return;}
-  $('testmsg').textContent='Sending…';
-  const d=await (await fetch(EP+'/test/email',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
-  $('testmsg').innerHTML=d.ok
-    ? '<span style="color:var(--green)">Sent to '+esc(d.to)+'. Check your inbox — and your junk folder the first time.</span>'
-    : '<span style="color:var(--red)">'+esc(d.error)+'</span>';
-}
-
-async function saveTemplate(){
-  const d=await (await fetch(EP+'/letters/template',{method:'POST',headers:H(),body:JSON.stringify({
-    slug:'membership-card', body:$('body').value, signed_by:$('signed_by').value.trim(),
-    signed_role:$('signed_role').value.trim(), version:$('version').value.trim(), note:$('note').value.trim()})})).json();
-  $('tmsg').innerHTML=d.ok?'<span style="color:var(--green)">Saved.</span>':'<span style="color:var(--red)">'+esc(d.error)+'</span>';
-  if(d.ok){ $('note').value=''; loadTemplate(); }
-}
 
 (async()=>{
-  const s=await (await fetch(EP+'/members/search?q=&season=',{headers:H()})).json();
-  if(s.ok&&s.seasons) $('season').innerHTML=s.seasons.map(x=>'<option>'+x+'</option>').join('');
-  await loadTemplate();
-  load();
+  const p=new URLSearchParams(location.search);
+  const t=p.get('t')||'', ref=p.get('ref')||'';
+  let session=null; try{session=localStorage.getItem('dt_member');}catch(e){}
+  const headers = (!t && session) ? {'Authorization':'Bearer '+session} : {};
+  try{
+    const d=await (await fetch(EP+'/letter/mine?t='+encodeURIComponent(t)+'&ref='+encodeURIComponent(ref),{headers})).json();
+    if(!d.ok){
+      $('note').innerHTML='<b>'+esc(d.error)+'</b><br><a href="members.html">Sign in to your membership</a> and your letter will be there.';
+      return;
+    }
+    tpl=d.template;
+    const m=d.member;
+    $('who').textContent=' \u00b7 '+m.first_name+' '+m.last_name+' \u00b7 '+m.member_no;
+    $('note').innerHTML='This is your copy \u2014 <b>print it or save it as a PDF</b> with the button above. Page two has a temporary membership card you can cut out and use straight away.';
+    $('out').innerHTML=sheet(m)+tempCardPage(m);
+  }catch(e){
+    $('note').textContent='Could not load your letter just now. Please try again shortly.';
+  }
 })();
 </script>
 </body>
