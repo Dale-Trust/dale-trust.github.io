@@ -239,8 +239,18 @@ function drawBookings(){
 }
 
 async function mark(id,status){
-  if(status==='cancelled'&&!confirm('Cancel this booking?'))return;
-  await fetch(EP+'/coach/booking',{method:'POST',headers:H(),body:JSON.stringify({id,payment_status:status})});
+  const body={id,payment_status:status};
+  if(status==='cancelled'){
+    const b=(bookings||[]).find(x=>x.id===id)||{};
+    const paid=['paid','cash'].includes(b.payment_status);
+    if(!confirm('Cancel '+(b.name||'this booking')+'?'+
+      (b.email?'\n\nThey will be emailed to let them know'+(paid?', and told we will be in touch about their refund.':'.'):
+               '\n\nThere is no email address on this booking, so you will need to tell them yourself.')))return;
+    const why=prompt('Why? (optional \u2014 this goes in the email to them)\n\ne.g. coach cancelled, match postponed, at your request');
+    if(why===null)return;
+    if(why.trim()) body.reason=why.trim();
+  }
+  await fetch(EP+'/coach/booking',{method:'POST',headers:H(),body:JSON.stringify(body)});
   load(current.id);
 }
 
