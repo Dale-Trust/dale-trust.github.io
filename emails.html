@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trust email addresses | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--badge:#002F7C;--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:21px}.top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:1000px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:6px}
+  .panel .lede{font-size:13.5px;color:#7A8AA5;margin:0 0 14px 14px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{background:var(--navy);color:#fff;text-align:left;padding:9px 10px;font-size:11px;
+     letter-spacing:.06em;text-transform:uppercase;font-weight:700;position:sticky;top:0}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:nth-child(even) td{background:#FAFCFE}
+  tr:hover td{background:#F2F7FD}
+  td b{color:var(--ink)}
+  .addr{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--badge);cursor:pointer;border-bottom:1px dotted var(--royal)}
+  .addr:hover{background:#E8F1FC}
+  .muted{color:#7A8AA5;font-size:12.5px}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    padding:2px 8px;border-radius:100px;background:var(--wash);color:#5A6880;margin:1px 3px 1px 0}
+  .pill.open{background:#EAF7F0;color:#14653F}
+  .pill.closed{background:#FFF3E4;color:#8A4B00}
+  .note{background:var(--wash);border-left:4px solid var(--royal);border-radius:0 9px 9px 0;padding:12px 14px;font-size:13.5px;margin-top:14px}
+  .copied{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;
+    padding:10px 20px;border-radius:100px;font-weight:600;font-size:13.5px;display:none;z-index:9}
+  @media(max-width:700px){ th:nth-child(2),td:nth-child(2){display:none} }
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>Trust email addresses</h1><small>Who has what, and where the shared ones go &mdash; tap any address to copy it</small></div>
+<div class="wrap">
+  <div class="panel">
+    <h2>Everyone</h2>
+    <p class="lede">Each person has a personal address and a role address. Both arrive in the same inbox.</p>
+    <div style="overflow-x:auto"><table id="people"><tr><td>Loading&hellip;</td></tr></table></div>
+    <div class="note"><b>Reply from the role address when it is Trust business.</b> Both come to the same place, but there is a
+      &ldquo;From&rdquo; dropdown when you write an email. That way anything on the website or a poster keeps working
+      when someone else takes the job on.</div>
+  </div>
+
+  <div class="panel">
+    <h2>Shared addresses</h2>
+    <p class="lede">More than one person receives these, and anyone on them can reply as the address rather than as themselves.</p>
+    <div style="overflow-x:auto"><table id="groups"></table></div>
+    <div class="note"><b>info@, help@ and support@ all reach the same people.</b> Three addresses because a member who is
+      stuck at eleven at night will type whichever comes to mind. They cost nothing.</div>
+  </div>
+
+  <div class="panel">
+    <h2>Getting it on your phone</h2>
+    <p class="lede">Nothing to set up beyond signing in.</p>
+    <p style="font-size:14.5px;margin-bottom:8px"><b>On your phone</b> &mdash; download <b>Zoho Mail</b> from the App Store or Play Store and sign in.</p>
+    <p style="font-size:14.5px"><b>On a computer</b> &mdash; go to <b>mail.zoho.eu</b> and sign in there. Nothing to install.</p>
+    <div class="note">Getting it into your normal Mail app or Outlook is coming &mdash; for now this gets you going.</div>
+  </div>
+</div>
+<div class="copied" id="copied">Copied</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+
+const GROUPS=[
+ ['info@daletrust.uk','The main public address on the website','info'],
+ ['help@daletrust.uk','Same inbox — for anyone who is stuck','help'],
+ ['support@daletrust.uk','Same inbox again','support'],
+ ['matchday@daletrust.uk','Ticketing, stewarding, kiosks, crowd issues','matchday'],
+ ['board@daletrust.uk','Anything for the board as a whole','board'],
+ ['partners@daletrust.uk','Local businesses offering member discounts','partners'],
+ ['travel@daletrust.uk','Coach booking enquiries','travel'],
+ ['formerplayers@daletrust.uk','Former Players Association','formerplayers'],
+ ['rochdalefpa@daletrust.uk','Former Players Association, second address','rochdalefpa'],
+];
+
+function copyable(a){
+  return '<span class="addr" onclick="copyIt(this.textContent)">'+esc(a)+'</span>';
+}
+function copyIt(t){
+  navigator.clipboard.writeText(t.trim()).then(()=>{
+    const c=$('copied'); c.style.display='block';
+    clearTimeout(window._ct); window._ct=setTimeout(()=>c.style.display='none',1200);
+  }).catch(()=>{});
+}
+
+(async()=>{
+  try{
+    const d=await (await fetch(EP+'/emailsetup/list',{headers:{'Authorization':'Bearer '+session}})).json();
+    if(!d.ok){$('people').innerHTML='<tr><td>'+esc(d.error)+'</td></tr>';return;}
+    const people=d.people;
+
+    $('people').innerHTML='<tr><th>Person</th><th>Role</th><th>Their address</th><th>Role address</th></tr>'+
+      people.map(p=>{
+        const aliases=(p.role_alias||'').split(',').map(a=>a.trim()).filter(Boolean);
+        return '<tr><td><b>'+esc(p.person)+'</b></td>'+
+          '<td class="muted">'+esc(p.role_title||'')+'</td>'+
+          '<td>'+copyable(p.personal_address||'')+'</td>'+
+          '<td>'+(aliases.length
+            ? aliases.map(a=>copyable(a.includes('@daletrust')?a:a.replace(/@?$/,'@daletrust.uk'))).join('<br>')
+            : '<span class="muted">shared — see below</span>')+'</td></tr>';
+      }).join('');
+
+    // who is on each shared address
+    const on={};
+    people.forEach(p=>{
+      let g=[]; try{g=JSON.parse(p.groups||'[]');}catch(e){}
+      g.forEach(k=>{ (on[k]=on[k]||[]).push(p.person.split(' ')[0]); });
+    });
+    // the two FPA addresses are Keith and Siobhan whatever the ticks say
+    on['formerplayers']=['Keith','Siobhan']; on['rochdalefpa']=['Keith','Siobhan'];
+
+    $('groups').innerHTML='<tr><th>Address</th><th>What it is for</th><th>Who gets it</th><th>Who can send</th></tr>'+
+      GROUPS.map(([addr,what,key])=>{
+        const who=(on[key]||[]);
+        const board=key==='board';
+        return '<tr><td>'+copyable(addr)+'</td>'+
+          '<td class="muted">'+esc(what)+'</td>'+
+          '<td>'+(board?'<span class="pill">Everyone</span>'
+                       :(who.length?who.map(n=>'<span class="pill">'+esc(n)+'</span>').join('')
+                                   :'<span class="muted">nobody yet</span>'))+'</td>'+
+          '<td>'+(board?'<span class="pill closed">Trust only</span>':'<span class="pill open">Anyone</span>')+'</td></tr>';
+      }).join('');
+  }catch(e){ $('people').innerHTML='<tr><td>Could not load just now.</td></tr>'; }
+})();
+</script>
+</body>
+</html>
