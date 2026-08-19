@@ -78,6 +78,11 @@
   .perk span{font-size:13px;color:#C7D6EC;display:block;margin-top:3px;line-height:1.5}
   .benfoot{font-size:13px;color:#7A8AA5;margin-top:14px}
   .lapsedben{opacity:.6}
+  .checkcard{background:#fff;border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:0 14px 14px 0;padding:18px 20px;margin-bottom:16px}
+  .checkcard b{font-family:'Oswald';text-transform:uppercase;font-size:18px;color:var(--ink);display:block}
+  .checkcard p{font-size:14.5px;margin:5px 0 12px}
+  .checkcard a.go{display:inline-block;background:var(--royal);color:#fff;text-decoration:none;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:11px 20px;border-radius:9px;cursor:pointer}
+  .checkcard .done{display:inline-block;background:#EAF7F0;color:#14653F;font-size:13px;font-weight:700;padding:6px 14px;border-radius:100px}
   .votecard{background:#fff;border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:0 14px 14px 0;padding:18px 20px;margin-bottom:16px}
   .votecard b{font-family:'Oswald';text-transform:uppercase;font-size:18px;color:var(--ink);display:block}
   .votecard p{font-size:14.5px;margin:4px 0 12px}
@@ -171,6 +176,7 @@
 
   <!-- MEMBER AREA -->
   <div id="area">
+    <div id="checkPanel"></div>
     <div id="votePanel"></div>
 
     <a class="coach" href="travel.html">
@@ -218,7 +224,7 @@
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="detailsPanel">
       <h2>Your details</h2>
       <div id="confirmedNote"></div>
       <p style="font-size:14.5px" id="detailsIntro">Please check these are right. It takes a moment and it means we can always reach you.</p>
@@ -458,6 +464,30 @@ function printMyCard(){
   window.print();
 }
 
+function drawCheck(){
+  const box=$('checkPanel'); if(!box) return;
+  const p=person()||{}, r=p.record||{};
+  if(!r.member_no){ box.innerHTML=''; return; }
+
+  const when = r.details_confirmed_at ? new Date(r.details_confirmed_at.replace(' ','T')+'Z') : null;
+  const days = when ? Math.floor((Date.now()-when)/86400000) : null;
+
+  if(when && days < 180){
+    box.innerHTML='<div class="checkcard"><b>Your details</b>'+
+      '<p>You checked these on '+when.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+
+      ' \u2014 nothing to do.</p>'+
+      '<span class="done">\u2713 Up to date</span></div>';
+    return;
+  }
+
+  box.innerHTML='<div class="checkcard"><b>Are these still right?</b>'+
+    '<p>'+(when
+      ? 'You last checked your details in '+when.toLocaleDateString('en-GB',{month:'long',year:'numeric'})+'. '
+      : 'We have never had these confirmed by you. ')+
+    'If your address, phone or email has changed, please put it right \u2014 it takes a minute, and it is how we make sure you get what you have paid for.</p>'+
+    '<a class="go" onclick="document.getElementById(\'detailsPanel\').scrollIntoView({behavior:\'smooth\',block:\'start\'})">Check my details &darr;</a></div>';
+}
+
 async function drawVotes(){
   const box=$('votePanel'); if(!box) return;
   try{
@@ -491,6 +521,7 @@ function drawBookings(){
 }
 
 function render(){
+  drawCheck();
   drawVotes();
   drawBookings();
   drawPeople();

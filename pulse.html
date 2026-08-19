@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How it's going | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{--badge:#002F7C;--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:21px}.top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:1000px;margin:0 auto;padding:18px}
+  .hero{background:linear-gradient(120deg,var(--badge),#16305C 60%,#00417E);color:#fff;border-radius:14px;padding:22px 24px;margin-bottom:16px;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:0;bottom:0;right:-14%;width:44%;background:var(--royal);transform:skewX(-14deg);opacity:.35}
+  .hero .in{position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px}
+  .hero .big span{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#8FC1FF;display:block;margin-bottom:2px}
+  .hero .big b{font-family:'Oswald';font-size:42px;color:#fff;line-height:1;display:block}
+  .hero .big em{font-style:normal;font-size:13px;color:#C7D6EC;display:block;margin-top:3px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+  .kpi{background:#fff;border:1px solid var(--line);border-left:4px solid var(--royal);border-radius:12px;padding:14px 16px}
+  .kpi.warn{border-left-color:var(--gold)}.kpi.bad{border-left-color:var(--red)}.kpi.good{border-left-color:var(--green)}
+  .kpi span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#7A8AA5;display:block}
+  .kpi b{font-family:'Oswald';font-size:27px;color:var(--ink);line-height:1.1}
+  .kpi em{font-style:normal;font-size:12px;color:#7A8AA5;display:block;margin-top:2px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+  .card h2{font-size:15px;margin-bottom:10px;border-left:4px solid var(--royal);padding-left:10px}
+  .card canvas{max-height:220px}
+  .bar{background:var(--wash);border-radius:8px;height:30px;overflow:hidden;position:relative;margin-bottom:8px}
+  .bar i{display:block;height:100%;background:var(--royal)}
+  .bar span{position:absolute;left:12px;top:5px;font-size:13.5px;font-weight:600;color:var(--ink)}
+  .stamp{font-size:12.5px;color:#7A8AA5;text-align:center;padding:16px 0 40px}
+  .msg{padding:26px;text-align:center;color:#7A8AA5}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>How it's going</h1><small>Whether the site is being used, not just that it exists</small></div>
+<div class="wrap">
+  <p class="msg" id="msg">Loading&hellip;</p>
+  <div id="dash" style="display:none">
+    <div class="hero"><div class="in" id="hero"></div></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="grid">
+      <div class="card"><h2>Members signing in</h2><canvas id="cSign"></canvas></div>
+      <div class="card"><h2>Joining online</h2><canvas id="cJoin"></canvas></div>
+      <div class="card"><h2>Email getting through</h2><div id="health"></div></div>
+      <div class="card"><h2>Who has been busy</h2><div id="busy"></div></div>
+    </div>
+    <p class="stamp" id="stamp"></p>
+  </div>
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+const ROYAL='#0057A7',GREEN='#1E8E5A',GOLD='#E8B84B',RED='#C0392B',GREY='#8C9299';
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+function whenCharts(cb,t){ if(window.Chart) return cb();
+  if((t||0)>60) return; setTimeout(()=>whenCharts(cb,(t||0)+1),100); }
+
+(async()=>{
+  try{
+    await new Promise(r=>whenCharts(r));
+    const res=await fetch(EP+'/pulse',{headers:{'Authorization':'Bearer '+session}});
+    if(res.status===401||res.status===403){$('msg').textContent='You do not have access to this page.';return;}
+    const d=await res.json();
+    if(!d.ok){$('msg').textContent=d.error||'Could not load.';return;}
+    $('msg').style.display='none'; $('dash').style.display='block';
+
+    $('hero').innerHTML=
+      '<div class="big"><span>Members, '+d.season+'</span><b>'+d.members+'</b></div>'+
+      '<div class="big"><span>Signed in, last 30 days</span><b>'+d.signins+'</b><em>'+d.signinPct+'% of members</em></div>'+
+      '<div class="big"><span>Details checked</span><b>'+d.confirmed+'</b><em>'+d.confirmedPct+'% of members</em></div>'+
+      '<div class="big"><span>Coach seats booked</span><b>'+d.coachSeats+'</b><em>£'+Number(d.coachTaken).toFixed(2)+' taken</em></div>';
+
+    const kpi=(l,v,note,cls)=>$('kpis').insertAdjacentHTML('beforeend',
+      '<div class="kpi'+(cls?' '+cls:'')+'"><span>'+l+'</span><b>'+v+'</b>'+(note?'<em>'+note+'</em>':'')+'</div>');
+    $('kpis').innerHTML='';
+    kpi('Survey responses',d.surveyResponses,d.surveyVerified+' from verified members');
+    kpi('Articles published',d.postsPublished,'last 30 days');
+    kpi('Emails sent',d.mailshots,d.mailReached+' people reached');
+    if(d.bounced) kpi('Bad addresses',d.bounced,'cannot be reached','bad');
+    if(d.noEmail) kpi('No email at all',d.noEmail,'need reaching another way','warn');
+    if(d.pending) kpi('Awaiting payment',d.pending,'not yet members','warn');
+    if(d.helpRequests) kpi('Asked for help',d.helpRequests,'last 30 days','warn');
+
+    const line=(el,rows,label,colour)=>new Chart($(el),{type:'line',
+      data:{labels:rows.map(r=>new Date(r.d+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'})),
+        datasets:[{label,data:rows.map(r=>r.n),borderColor:colour,backgroundColor:colour+'22',
+          fill:true,tension:.3,pointRadius:2}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+    if(d.signinTrend.length) line('cSign',d.signinTrend,'Signed in',ROYAL);
+    else $('cSign').parentElement.innerHTML='<h2>Members signing in</h2><p style="color:#7A8AA5;font-size:13.5px">Nobody yet — this fills up after the go-live email.</p>';
+    if(d.joinsTrend.length) line('cJoin',d.joinsTrend,'Joined',GREEN);
+    else $('cJoin').parentElement.innerHTML='<h2>Joining online</h2><p style="color:#7A8AA5;font-size:13.5px">No online joins yet.</p>';
+
+    const LBL={delivered:'Arrived',bounced:'Bounced',complained:'Marked as spam',opened:'Opened',clicked:'Clicked',sent:'Sent'};
+    const COL={delivered:GREEN,bounced:RED,complained:RED,opened:ROYAL,clicked:ROYAL,sent:GREY};
+    const tot=d.emailHealth.reduce((a,e)=>a+e.n,0);
+    $('health').innerHTML = tot
+      ? d.emailHealth.sort((a,b)=>b.n-a.n).map(e=>
+          '<div class="bar"><i style="width:'+Math.round(e.n/tot*100)+'%;background:'+(COL[e.event]||GREY)+'"></i>'+
+          '<span>'+(LBL[e.event]||e.event)+' &mdash; '+e.n+'</span></div>').join('')
+      : '<p style="color:#7A8AA5;font-size:13.5px">Nothing recorded yet. This fills in once the Resend webhook is connected.</p>';
+
+    const maxB=Math.max(1,...d.busiest.map(b=>b.n));
+    $('busy').innerHTML = d.busiest.length
+      ? d.busiest.map(b=>'<div class="bar"><i style="width:'+Math.round(b.n/maxB*100)+'%"></i>'+
+          '<span>'+esc((b.officer||'').split('@')[0])+' &mdash; '+b.n+'</span></div>').join('')
+      : '<p style="color:#7A8AA5;font-size:13.5px">Nothing in the last 30 days.</p>';
+
+    $('stamp').textContent='Live from the Trust\u2019s own database \u00b7 '+new Date(d.generated).toLocaleString('en-GB');
+  }catch(e){ $('msg').textContent='Could not load just now.'; }
+})();
+</script>
+</body>
+</html>

@@ -48,6 +48,17 @@
 <div class="top"><h1>Renewals</h1><small>Where the season stands, and the reminders that bring members back</small></div>
 <div class="wrap">
 
+<div class="panel" style="border-left:5px solid var(--gold)">
+  <h2>The go-live email</h2>
+  <p style="font-size:13.5px;margin-bottom:10px">Sent once, to every member of this season. It tells them their membership is now online, signs them straight in, and asks them to check the details we hold.</p>
+  <div id="goliveStats"></div>
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="ghost" onclick="goliveSend(true)">Send me a test</button>
+    <button id="goliveBtn" onclick="goliveSend(false)">Send it</button>
+  </div>
+  <p class="msg" id="gomsg"></p>
+</div>
+
 <div class="panel">
   <h2>Where we are</h2>
   <div id="stats">Loading&hellip;</div>
@@ -95,6 +106,43 @@ const STAGES=[
   {id:'reminder', name:'Reminder', text:'Two weeks later, to whoever still has not renewed.'},
   {id:'last', name:'Last call', text:'The final one. Says plainly that it is the last reminder.'}
 ];
+
+async function goliveLoad(){
+  try{
+    const d=await (await fetch(EP+'/golive/count',{headers:H()})).json();
+    if(!d.ok){$('goliveStats').textContent=d.error;return;}
+    $('goliveStats').innerHTML=
+      '<div class="kpis">'+
+      '<div class="kpi"><b>'+d.reachable+'</b><span>Would get it</span></div>'+
+      '<div class="kpi"><b>'+d.alreadyChecked+'</b><span>Already checked their details</span></div>'+
+      (d.noEmail?'<div class="kpi"><b>'+d.noEmail+'</b><span>No email address</span></div>':'')+
+      (d.bounced?'<div class="kpi"><b>'+d.bounced+'</b><span>Bad address</span></div>':'')+
+      (d.optedOut?'<div class="kpi"><b>'+d.optedOut+'</b><span>Asked not to be contacted</span></div>':'')+
+      '</div>'+
+      (d.sentAlready
+        ? '<div class="warnbox" style="margin-top:10px"><b>This has been sent '+d.sentAlready+' time'+(d.sentAlready===1?'':'s')+' already.</b> Sending it again means members get it twice.</div>'
+        : '');
+    $('goliveBtn').textContent = d.reachable ? ('Send to '+d.reachable+' members') : 'Nobody to send to';
+    $('goliveBtn').disabled = !d.reachable;
+  }catch(e){ $('goliveStats').textContent='Could not load just now.'; }
+}
+
+async function goliveSend(test){
+  const body={};
+  if(test){
+    const to=prompt('Send a test to which email?'); if(!to)return; body.test_to=to;
+  } else {
+    const d0=await (await fetch(EP+'/golive/count',{headers:H()})).json();
+    if(!confirm('Send the go-live email to '+d0.reachable+' members?\n\nThis is the one that tells everyone the site is live. It cannot be unsent.'))return;
+    if(!confirm('Last check \u2014 '+d0.reachable+' emails, going out now?'))return;
+  }
+  $('gomsg').textContent='Sending…';
+  const d=await (await fetch(EP+'/golive/send',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+  $('gomsg').innerHTML=d.ok
+    ? '<span style="color:var(--green)">'+(d.test?'Test sent.':'Sent to '+d.sent+' members.')+'</span>'
+    : '<span style="color:var(--red)">'+esc(d.error)+'</span>';
+  if(d.ok && !d.test) goliveLoad();
+}
 
 async function load(){
   try{
@@ -173,6 +221,7 @@ async function rollover(){
   if(d.ok) load();
 }
 
+goliveLoad();
 load();
 </script>
 </body>
