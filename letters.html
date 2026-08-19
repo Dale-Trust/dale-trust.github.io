@@ -59,6 +59,17 @@
   .mc-url{font-size:5.6pt;color:#C7D6EC;letter-spacing:.04em;text-align:right;line-height:1.3}
   @media print{ .cardsheet{box-shadow:none;margin:0} }
 
+  /* ---------- page two: the cut-out temporary card ---------- */
+  .tempsheet{width:210mm;min-height:297mm;background:#fff;margin:0 auto 18px;padding:24mm 20mm;
+    box-shadow:0 10px 30px rgba(4,30,66,.14);page-break-after:always;box-sizing:border-box}
+  .tempsheet h3{font-family:'Oswald';text-transform:uppercase;color:var(--badge);font-size:16pt;margin:0 0 3mm}
+  .tempsheet p{font-size:10pt;line-height:1.6;color:#1a1a1a;margin:0 0 3mm;max-width:150mm}
+  .tempsheet .small{font-size:8.5pt;color:#666}
+  .cut{margin:12mm 0 6mm;padding:8mm;border:0.4mm dashed #9AA7B8;display:inline-block;position:relative}
+  .cut::after{content:"\2702  cut along the dotted line";position:absolute;top:-3.4mm;left:8mm;background:#fff;
+    padding:0 2mm;font-size:7.5pt;color:#8595AA;letter-spacing:.04em}
+  @media print{ .tempsheet{box-shadow:none;margin:0} }
+
   /* ---------- the letter itself ---------- */
   #sheets{display:none}
   .sheet{width:210mm;min-height:297mm;background:#fff;margin:0 auto 18px;padding:0;position:relative;
@@ -114,6 +125,11 @@
       <button class="ghost" onclick="previewCards()">Preview the cards</button>
       <button class="green" onclick="printCards()">Print the cards</button>
     </div>
+    <label style="display:flex;gap:10px;align-items:center;margin-top:14px;text-transform:none;letter-spacing:0;font-size:14.5px;font-weight:500">
+      <input type="checkbox" id="withCard" checked style="width:auto;transform:scale(1.2)">
+      Add a cut-out temporary card as page two of each letter
+    </label>
+    <p class="hint">Useful for exiles and anyone who cannot get to the Trust Desk &mdash; they can use it the day the letter arrives.</p>
     <p class="hint">Cards come out <b>ten to an A4 sheet</b> on standard business-card size (85 &times; 55mm), with light cutting guides. Print on 300gsm card if you have it. Each one carries the member&rsquo;s name and number, so there is nothing to write on by hand.</p>
     <p class="hint">Printing opens your browser&rsquo;s print box &mdash; choose <b>Save as PDF</b> if you want a file rather than paper.</p>
   </div>
@@ -241,14 +257,16 @@ async function load(){
 function preview(){
   if(!people.length){alert('Find the recipients first.');return;}
   const w=window.open('','_blank');
-  w.document.write('<html><head><title>Letter preview</title>'+document.head.innerHTML+'</head><body style="background:#eef2f7;padding:20px">'+sheet(people[0])+'</body></html>');
+  w.document.write('<html><head><title>Letter preview</title>'+document.head.innerHTML+
+    '</head><body style="background:#eef2f7;padding:20px">'+sheet(people[0])+
+    ($('withCard').checked?tempCardPage(people[0]):'')+'</body></html>');
   w.document.close();
 }
 
 function printAll(){
   if(!people.length){alert('Find the recipients first.');return;}
   if(!confirm('Print '+people.length+' letters?'))return;
-  $('sheets').innerHTML=people.map(sheet).join('');
+  $('sheets').innerHTML=people.map(m=>sheet(m)+($('withCard').checked?tempCardPage(m):'')).join('');
   window.print();
 }
 
@@ -294,6 +312,19 @@ function printCards(){
   if(!confirm('Print '+people.length+' cards on '+sheets+' sheet'+(sheets===1?'':'s')+' of A4?\n\n300gsm card if you have it. Cut along the guides.'))return;
   $('sheets').innerHTML=cardSheets(people);
   window.print();
+}
+
+function tempCardPage(m){
+  return '<div class="tempsheet">'+
+    '<h3>Your membership card</h3>'+
+    '<p>Your printed card is on its way. In the meantime, here is a temporary one you can cut out and use straight away &mdash; '+
+    'it works exactly the same at any of our Partners of the Trust.</p>'+
+    '<div class="cut">'+card(m)+'</div>'+
+    '<p class="small">Scan the code, or go to <b>daletrust.uk/partners</b>, for the full list of businesses offering members a discount. '+
+    'The list is kept up to date there, so it is always current.</p>'+
+    '<p class="small">You can also see your membership at <b>daletrust.uk</b> &mdash; your card, your details, coach travel and Player of the Month voting, '+
+    'all in one place. No password needed; we send you a link.</p>'+
+  '</div>';
 }
 
 async function saveTemplate(){
