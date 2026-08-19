@@ -45,10 +45,10 @@
   .card .name{font-family:'Oswald';text-transform:uppercase;font-size:clamp(20px,6vw,29px);line-height:1.04;margin:0}
   .card .type{font-size:clamp(8px,2.2vw,11px);letter-spacing:.14em;text-transform:uppercase;color:#BBD6F5;margin-top:3px}
   .card .cardbot{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
-  .card .no{font-family:'Oswald';font-size:clamp(13px,3.6vw,18px);letter-spacing:.04em;line-height:1.1}
-  .card .no span{display:block;font-family:'Montserrat';font-size:clamp(7px,1.8vw,9px);letter-spacing:.14em;text-transform:uppercase;color:#BBD6F5;font-weight:600;margin-top:2px}
-  .card .cardqr{width:26%;aspect-ratio:1;background:#fff;padding:4px;border-radius:4px;flex:none;display:block}
-  .card .partners{font-size:clamp(7.5px,2vw,10px);color:#C7D6EC;line-height:1.4;text-align:left}
+  .card .no{font-family:'Oswald';font-size:clamp(13px,3.6vw,18px);letter-spacing:.04em;line-height:1.1;white-space:nowrap;flex:none}
+  .card .no span{display:block;font-family:'Montserrat';font-size:clamp(7px,1.8vw,9px);letter-spacing:.14em;text-transform:uppercase;color:#BBD6F5;font-weight:600;margin-top:2px;white-space:nowrap}
+  .card .cardqr{width:16%;aspect-ratio:1;background:#fff;padding:3px;border-radius:3px;flex:none;display:block}
+  .card .partners{font-size:clamp(7px,1.85vw,9.5px);color:#C7D6EC;line-height:1.35;text-align:right}
   .card .partners b{color:#fff;display:block}
   .pending{background:var(--gold);color:#3a2c00;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:4px 12px;border-radius:100px;display:inline-block;margin-top:12px;position:relative}
   .banner{background:#FFF9E8;border:1px solid #EAD198;border-left:5px solid var(--gold);border-radius:10px;padding:16px 18px;margin-bottom:16px;font-size:14.5px}
@@ -206,8 +206,8 @@
         <div class="cardbot">
           <div class="no" id="cNo">—<span>Membership number</span></div>
           <div style="display:flex;align-items:flex-end;gap:8px">
-            <img class="cardqr" id="cQr" alt="" src="">
             <div class="partners">Ten local businesses<br>offer members a discount<br><b>daletrust.uk/partners</b></div>
+            <img class="cardqr" id="cQr" alt="" src="">
           </div>
         </div>
       </div></div>
