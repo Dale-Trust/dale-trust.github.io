@@ -265,25 +265,30 @@ refresh();
 
 // ---- switch-ons ----
 const PAY_ENDPOINT = 'https://join.daletrust.uk';
-// Paste the Turnstile SITE key here (Cloudflare dashboard > Turnstile > your widget).
-// It starts 0x4... and is safe to have in the page — it is the secret key that stays in the Worker.
-const TURNSTILE_SITE_KEY = '';
+// The Turnstile site key comes from the Worker, so it is never lost when this file is replaced.
+// Set TURNSTILE_SITE_KEY in the Cloudflare dashboard under the Worker's variables.
+let TURNSTILE_SITE_KEY = '';
 
-if (TURNSTILE_SITE_KEY) {
-  const s = document.createElement('script');
-  s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=_tsReady';
-  s.async = true; document.head.appendChild(s);
-  window._tsReady = () => turnstile.render('#captcha', { sitekey: TURNSTILE_SITE_KEY, theme: 'light' });
-} else {
-  // no key set: say so plainly rather than failing at the server with nothing to go on
-  document.addEventListener('DOMContentLoaded', () => {
-    const box = document.getElementById('captcha');
-    if (box) box.innerHTML =
+(async function loadTurnstile(){
+  const box = document.getElementById('captcha');
+  try{
+    const cfg = await (await fetch(PAY_ENDPOINT.replace(/\/$/,'') + '/config')).json();
+    TURNSTILE_SITE_KEY = (cfg && cfg.turnstile_site_key) || '';
+  }catch(e){}
+
+  if (TURNSTILE_SITE_KEY) {
+    const s = document.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=_tsReady';
+    s.async = true; document.head.appendChild(s);
+    window._tsReady = () => turnstile.render('#captcha', { sitekey: TURNSTILE_SITE_KEY, theme: 'light' });
+  } else if (box) {
+    box.innerHTML =
       '<div style="background:#FFF9E8;border:1px solid #EAD198;border-left:4px solid #E8B84B;' +
       'border-radius:0 8px 8px 0;padding:12px 14px;font-size:13.5px;color:#8A4B00">' +
-      '<b>Human check not switched on.</b> Joining will be refused until the Turnstile site key is added to this page.</div>';
-  });
-}
+      '<b>Human check not switched on.</b> Joining will be refused until TURNSTILE_SITE_KEY is set ' +
+      'on the Worker in the Cloudflare dashboard.</div>';
+  }
+})();
 
 async function pay(method){
   const errs=[];
