@@ -44,6 +44,17 @@
 <div class="top"><h1>Email members</h1><small>For things members should know that do not belong on the website</small></div>
 <div class="wrap">
 
+  <div class="panel" id="queuePanel" style="display:none;border-left:5px solid var(--gold)">
+    <h2 style="border-left-color:var(--gold)">Waiting to be checked</h2>
+    <p class="lede" style="margin-left:14px">Written by someone else. Nothing has gone to members yet.</p>
+    <div id="queueList"></div>
+  </div>
+
+  <div class="panel" id="minePanel" style="display:none">
+    <h2>Yours</h2>
+    <div id="mineList"></div>
+  </div>
+
   <div class="panel">
     <h2>What is this for</h2>
     <p class="lede" style="margin-left:14px">Notices, not news.</p>
@@ -87,7 +98,7 @@
     <div id="pv"></div>
     <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:18px">
       <button class="go" id="sendBtn" onclick="sendIt()">Send it</button>
-      <p class="hint" style="margin-top:8px">You will be asked twice. Emails cannot be unsent.</p>
+      <p class="hint" style="margin-top:8px" id="sendHint">You will be asked twice. Emails cannot be unsent.</p>
     </div>
     <p class="msg" id="msg"></p>
   </div>
@@ -104,7 +115,7 @@ let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
 if(!session) location.href='admin.html';
 const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
-let lastCount=0, timer=null;
+let lastCount=0, timer=null, canSend=false, queue=[];
 
 function filters(){
   const f={};
@@ -153,9 +164,28 @@ async function sendTest(){
 async function sendIt(){
   if(!$('subject').value.trim()){ say('It needs a subject.', true); return; }
   if(!$('body').value.trim()){ say('It needs something to say.', true); return; }
-  if(!confirm('Email '+lastCount+' member'+(lastCount===1?'':'s')+'?\n\n"'+$('subject').value.trim()+'"\n\nThis is not published anywhere — it goes straight to inboxes.')) return;
-  if(!confirm('Last check — '+lastCount+' emails, going now?')) return;
+  if(canSend){
+    if(!confirm('Email '+lastCount+' member'+(lastCount===1?'':'s')+'?\n\n"'+$('subject').value.trim()+'"\n\nThis is not published anywhere — it goes straight to inboxes.')) return;
+    if(!confirm('Last check — '+lastCount+' emails, going now?')) return;
+  } else {
+    if(!confirm('Send this for checking?\n\n"'+$('subject').value.trim()+'"\n\nNothing goes to members until someone who can email approves it.')) return;
+  }
   await post({}, null);
+}
+
+async function decide(id, action){
+  if(action==='back'){
+    const note=prompt('Send it back to them. What needs changing?\n\n(They will get this in an email)');
+    if(note===null) return;
+    const d=await (await fetch(EP+'/notices/decide',{method:'POST',headers:H(),body:JSON.stringify({id,action:'back',note:note.trim()})})).json();
+    if(d.ok){ say('Sent back.'); loadHistory(); } else say(d.error, true);
+    return;
+  }
+  const n=queue.find(q=>q.id===id)||{};
+  if(!confirm('Send this to members?\n\n"'+n.subject+'"\n\nTo '+(n.audience_note||'')+'. Emails cannot be unsent.')) return;
+  if(!confirm('Last check — going now?')) return;
+  const d=await (await fetch(EP+'/notices/decide',{method:'POST',headers:H(),body:JSON.stringify({id,action:'send'})})).json();
+  if(d.ok){ say('Sent to '+d.sent+' members.'); loadHistory(); } else say(d.error, true);
 }
 
 async function post(extra, okMsg){
@@ -176,10 +206,42 @@ async function loadHistory(){
   try{
     const d=await (await fetch(EP+'/notices',{headers:H()})).json();
     if(!d.ok){$('history').textContent=d.error;return;}
-    $('history').innerHTML = d.notices.length
-      ? d.notices.map(n=>'<div class="sent"><b>'+esc(n.subject)+'</b>'+
+    canSend=d.canSend; queue=d.waiting||[];
+
+    if(!canSend){
+      $('sendBtn').textContent='Send it for checking';
+      $('sendHint').textContent='It goes to someone who can email members. Nothing reaches anyone until they approve it.';
+    }
+
+    if(canSend && queue.length){
+      $('queuePanel').style.display='block';
+      $('queueList').innerHTML=queue.map(n=>
+        '<div style="border-bottom:1px solid var(--line);padding:14px 4px">'+
+        '<b style="color:var(--ink);font-size:15px">'+esc(n.subject)+'</b>'+
+        '<small style="display:block;color:#7A8AA5;margin-top:2px">Written by '+esc(n.submitted_by)+
+        ' · to '+esc(n.audience_note||'')+'</small>'+
+        '<div style="background:var(--wash);padding:12px 14px;border-radius:8px;margin-top:10px;font-size:13.5px;white-space:pre-wrap;max-height:200px;overflow:auto">'+
+          esc(n.body)+'</div>'+
+        '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">'+
+          '<button class="go" onclick="decide('+n.id+',\'send\')">Send it to members</button>'+
+          '<button class="ghost" onclick="decide('+n.id+',\'back\')">Send it back</button>'+
+        '</div></div>').join('');
+    } else $('queuePanel').style.display='none';
+
+    if((d.mine||[]).length){
+      $('minePanel').style.display='block';
+      $('mineList').innerHTML=d.mine.map(m=>
+        '<div class="sent"><b>'+esc(m.subject)+'</b><small>'+
+        (m.status==='waiting' ? 'Waiting for someone who can email members'
+          : 'Sent back'+(m.sent_back_note?' — '+esc(m.sent_back_note):''))+
+        '</small></div>').join('');
+    } else $('minePanel').style.display='none';
+
+    $('history').innerHTML = (d.sent||[]).length
+      ? d.sent.map(n=>'<div class="sent"><b>'+esc(n.subject)+'</b>'+
           '<small>'+n.recipients+' people · '+esc(n.audience_note||'')+' · '+
-          new Date(n.sent_at.replace(' ','T')+'Z').toLocaleString('en-GB')+' · '+esc(n.sent_by||'')+'</small></div>').join('')
+          new Date(n.sent_at.replace(' ','T')+'Z').toLocaleString('en-GB')+' · sent by '+esc(n.sent_by||'')+
+          (n.submitted_by && n.submitted_by!==n.sent_by ? ', written by '+esc(n.submitted_by) : '')+'</small></div>').join('')
       : '<p class="hint">Nothing sent yet.</p>';
   }catch(e){ $('history').textContent='Could not load.'; }
 }
