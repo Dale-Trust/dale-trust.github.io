@@ -29,6 +29,7 @@
 "address":{"@type":"PostalAddress","postOfficeBoxNumber":"PO Box 1907","addressLocality":"Rochdale","postalCode":"OL16 9EX","addressCountry":"GB"},
 "memberOf":{"@type":"Organization","name":"Football Supporters' Association"},
 "sport":"Football","identifier":"29690R"}
+
 </script>
 <!-- /SEO -->
 <link rel="icon" href="favicon.ico" sizes="48x48">
@@ -452,6 +453,19 @@
     .hero h1{font-size:32px}
   }
 
+  /* easyfundraising */
+  .ef{background:var(--navy);color:#C7D6EC;padding:52px 0}
+  .ef .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  .ef-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:38px;align-items:center}
+  .ef h2{color:#fff;font-family:'Oswald';text-transform:uppercase;font-size:clamp(24px,3.4vw,34px);line-height:1.12;margin:6px 0 14px}
+  .ef .kicker{font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#8FC1FF}
+  .ef p{margin-bottom:12px;max-width:56ch}
+  .ef .btn{margin-top:8px}
+  .ef-fig{background:rgba(255,255,255,.06);border:1px solid rgba(143,193,255,.25);border-radius:16px;padding:28px 26px;text-align:center}
+  .ef-fig b{display:block;font-family:'Oswald';font-size:clamp(42px,6vw,60px);color:#fff;line-height:1}
+  .ef-fig span{display:block;margin-top:8px;font-weight:600;color:#8FC1FF;font-size:14.5px}
+  .ef-fig em{display:block;margin-top:12px;font-style:normal;font-size:13px;color:#8CA2C4;line-height:1.5}
+  @media(max-width:820px){.ef-grid{grid-template-columns:1fr;gap:26px}}
 </style>
 </head>
 <body>
@@ -522,7 +536,7 @@
       </div>
       <div class="stats">
         <div class="stat"><b>3,000+</b><span>Season tickets sold</span></div>
-        <div class="stat"><b>&pound;10,600+</b><span>Raised for the Trust</span></div>
+        <div class="stat"><b id="efRaised">&pound;10,100+</b><span>Raised by shopping</span></div>
         <div class="stat"><b>Every game</b><span>Trust coach travel</span></div>
       </div>
     </div>
@@ -818,6 +832,25 @@
   </div>
 </div>
 
+<section class="ef" id="easyfundraising">
+  <div class="wrap">
+    <div class="ef-grid">
+      <div>
+        <p class="kicker">Free money for the Trust</p>
+        <h2>Shop as normal. The Trust gets paid.</h2>
+        <p>Over 8,000 retailers will donate a slice of whatever you spend to the Dale Trust &mdash; Amazon, Argos, eBay, Sainsbury&rsquo;s, Trainline, the lot. It costs you nothing. The retailer pays it, not you.</p>
+        <p>Sign up once, add the reminder to your browser, and it happens by itself every time you shop.</p>
+        <a class="btn btn-royal" href="https://www.easyfundraising.org.uk/causes/daletrust/" target="_blank" rel="noopener"><span>Sign up &mdash; it&rsquo;s free</span></a>
+      </div>
+      <div class="ef-fig">
+        <b id="efBig">&pound;10,100</b>
+        <span>raised so far, at no cost to anyone</span>
+        <em id="efPeople">by Dale supporters shopping as they normally would</em>
+      </div>
+    </div>
+  </div>
+</section>
+
 <footer id="contact">
   <div class="wrap">
     <div class="foot-grid">
@@ -866,6 +899,7 @@
           <li>
           <a href="privacy.html">Privacy &amp; GDPR policy</a></li>
           <li><a href="policies.html">All policies</a></li>
+          <li><a href="https://www.easyfundraising.org.uk/causes/daletrust/" target="_blank" rel="noopener">easyfundraising</a></li>
         </ul>
       </div>
     </div>
@@ -1057,6 +1091,22 @@ loadHub();
   } catch (e) {
     grid.innerHTML = '<p style="grid-column:1/-1;color:#7A8AA5">Latest stories are on <a href="news.html">the news page</a>.</p>';
   }
+})();
+
+// ---- easyfundraising: read the live total ----
+(async function(){
+  try{
+    const d = await (await fetch('https://join.daletrust.uk/easyfundraising')).json();
+    if(!d.ok || !d.raised) return;
+    const money = '\u00a3' + Math.floor(d.raised).toLocaleString('en-GB');
+    const a = document.getElementById('efRaised'); if(a) a.textContent = money + '+';
+    const b = document.getElementById('efBig');    if(b) b.textContent = money;
+    if(d.supporters){
+      const c = document.getElementById('efPeople');
+      if(c) c.textContent = d.supporters.toLocaleString('en-GB') +
+        ' Dale supporters are already doing it, shopping as they normally would';
+    }
+  }catch(e){}
 })();
 </script>
 </body>
