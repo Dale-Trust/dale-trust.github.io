@@ -347,9 +347,20 @@ async function pay(method){
     $('memName').textContent=payload.first_name+' '+payload.last_name+' \u00B7 '+type;
     const amt = (typeof d.amount==='number') ? d.amount : ((type==='Junior'?0:7.5)+don);
     if(d.pay_url){
-      $('successH').textContent='Almost there \u2014 one step left';
-      $('cardLabel').textContent='Dale Supporters Trust \u00B7 Membership reserved \u2014 activates on payment';
-      $('sumLine').innerHTML=`${type} membership <b>reserved \u2014 not yet active</b>${don?` with a \u00A3${don.toFixed(2)} donation \u2014 thank you`:''}. <b>One step left:</b> tap below to pay \u00A3${amt.toFixed(2)} securely with SumUp \u2014 card, Apple Pay or Google Pay, no account needed. Your membership activates when payment completes.`;
+      const back = !!d.returning;
+      $('successH').textContent = back
+        ? 'Welcome back \u2014 one step left'
+        : 'Almost there \u2014 one step left';
+      $('cardLabel').textContent = back
+        ? 'Dale Supporters Trust \u00B7 Rejoining \u2014 activates on payment'
+        : 'Dale Supporters Trust \u00B7 Membership reserved \u2014 activates on payment';
+      const opener = back
+        ? `<b>You are rejoining the Trust for ${d.season||'this season'}</b>${d.lastSeason?` \u2014 you were last a member in ${d.lastSeason}`:''}. Good to have you back. `
+        : `<b>You are joining the Trust for ${d.season||'this season'}.</b> `;
+      $('sumLine').innerHTML = opener +
+        `Your ${type} membership is <b>reserved but not yet active</b>${don?`, with a \u00A3${don.toFixed(2)} donation \u2014 thank you`:''}. ` +
+        `<b>One step left:</b> tap below to pay \u00A3${amt.toFixed(2)} securely with SumUp \u2014 card, Apple Pay or Google Pay, no account needed. ` +
+        `Your membership activates the moment payment completes.`;
       const btn=document.createElement('a');
       btn.href=d.pay_url; btn.textContent='Pay \u00A3'+amt.toFixed(2)+' now \u2192';
       btn.style.cssText='display:inline-block;margin-top:14px;background:#1E8E5A;color:#fff;text-decoration:none;font:600 17px Oswald;text-transform:uppercase;letter-spacing:.06em;padding:15px 30px;border-radius:10px';
