@@ -67,9 +67,10 @@
   mark{background:#FFF3C4;color:inherit;padding:0 2px;border-radius:2px}
   @media(max-width:760px){.findbar{grid-template-columns:1fr 1fr}.findbar input{grid-column:1 / -1}}
   /* the picture at the top of an article — capped, so a tall photo does not fill the screen */
-  article img.hero{width:100%;max-height:440px;object-fit:cover;object-position:center top;
-    border-radius:12px;margin:0 0 20px;display:block;background:var(--wash)}
-  @media(max-width:700px){ article img.hero{max-height:300px} }
+  /* the whole picture, scaled down to fit — nothing cropped */
+  article img.hero{max-width:100%;max-height:460px;width:auto;height:auto;
+    border-radius:12px;margin:0 auto 20px;display:block}
+  @media(max-width:700px){ article img.hero{max-height:340px} }
 </style>
 </head>
 <body>
