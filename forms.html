@@ -54,6 +54,8 @@
     </select>
     <button onclick="load()">Refresh</button>
     <button class="ghost" onclick="window.print()">Print this</button>
+    <button class="ghost" onclick="checkPayments()" id="chkBtn">Check SumUp for payments</button>
+    <span id="chkMsg" style="font-size:13.5px;font-weight:600"></span>
   </div>
   <div class="kpis" id="kpis"></div>
   <div id="out">Loading&hellip;</div>
@@ -73,6 +75,27 @@ function state(s, hasNo){
   if(s==='cancelled') return '<span class="pill bad">cancelled</span>';
   if(!hasNo) return '<span class="pill wait">no number</span>';
   return '<span class="pill ok">'+esc(s)+'</span>';
+}
+
+async function checkPayments(){
+  const b=$('chkBtn'), m=$('chkMsg');
+  b.disabled=true; m.textContent='Asking SumUp\u2026'; m.style.color='#7A8AA5';
+  try{
+    const d=await (await fetch(EP+'/payments/check',{headers:H()})).json();
+    if(!d.ok){ m.style.color='#C0392B'; m.textContent=d.error; b.disabled=false; return; }
+    if(d.activated){
+      m.style.color='#1E8E5A';
+      m.textContent=d.activated+' payment'+(d.activated===1?'':'s')+' found and sorted \u2014 '+
+        [].concat(d.members||[],d.coach||[]).join(', ');
+      load();
+    } else {
+      m.style.color='#7A8AA5';
+      m.textContent = d.checked
+        ? 'Checked '+d.checked+' \u2014 none of them have been paid yet.'
+        : 'Nothing waiting to be checked.';
+    }
+  }catch(e){ m.style.color='#C0392B'; m.textContent='Could not reach SumUp just now.'; }
+  b.disabled=false;
 }
 
 async function load(){
