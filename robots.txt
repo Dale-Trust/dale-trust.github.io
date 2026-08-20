@@ -1,9 +1,33 @@
 User-agent: *
 Allow: /
+
+# The admin. Nothing here works without signing in, but there is
+# no reason for any of it to turn up in a search result.
 Disallow: /admin.html
+Disallow: /register.html
+Disallow: /renewals.html
+Disallow: /letters.html
+Disallow: /letter.html
 Disallow: /import.html
 Disallow: /dashboard.html
 Disallow: /board.html
+Disallow: /pulse.html
+Disallow: /forms.html
+Disallow: /surveys.html
+Disallow: /coach.html
+Disallow: /fixtures.html
+Disallow: /posts.html
+Disallow: /graphics.html
+Disallow: /awayteams.html
+Disallow: /activity.html
+Disallow: /policy-admin.html
+Disallow: /notice.html
+Disallow: /emails.html
+Disallow: /decisions.html
+Disallow: /guide.html
+Disallow: /email-setup.html
+Disallow: /welcome.html
+Disallow: /members.html
 Disallow: /tools/
 
 Sitemap: https://daletrust.uk/sitemap.xml
