@@ -570,6 +570,17 @@ function render(){
     $('benTitle').textContent='Your membership gets you';
     $('benIntro').textContent='Just show your card.';
     $('benefitsPanel').classList.remove('lapsedben');
+  } else if(p.awaitingPayment){
+    $('statusBanner').innerHTML='<div class="banner" style="border-left-color:#E8B84B;background:#FFF9E8">'+
+      '<b>Nearly there, '+esc(p.name.split(' ')[0])+'.</b> Your '+esc(data.season)+' membership is started but '+
+      '<b>payment has not gone through</b>, so it is not active yet. '+
+      '<div style="margin-top:12px"><a class="btn" href="join.html" style="display:inline-block;background:#0057A7;color:#fff;'+
+      'text-decoration:none;font-weight:700;padding:12px 22px;border-radius:9px">Finish paying</a></div>'+
+      '<p style="margin-top:10px;font-size:13.5px;color:#8A4B00">If you think you have already paid, tell us at '+
+      '<a href="mailto:membership@daletrust.uk">membership@daletrust.uk</a> and we will sort it out.</p></div>';
+    $('renewPanel').style.display='none';
+    $('benTitle').textContent='What your membership will get you';
+    $('benIntro').textContent='Once payment is through.';
   } else {
     $('statusBanner').innerHTML='<div class="banner"><b>'+esc(p.name.split(' ')[0])+'\u2019s membership has lapsed.</b> The last season was '+
       esc(rec.season)+'. Renewing takes a minute \u2014 check the details below, then renew for '+esc(data.season)+'.</div>';
