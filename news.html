@@ -66,6 +66,10 @@
   .found b{color:var(--ink)}
   mark{background:#FFF3C4;color:inherit;padding:0 2px;border-radius:2px}
   @media(max-width:760px){.findbar{grid-template-columns:1fr 1fr}.findbar input{grid-column:1 / -1}}
+  /* the picture at the top of an article — capped, so a tall photo does not fill the screen */
+  article img.hero{width:100%;max-height:440px;object-fit:cover;object-position:center 28%;
+    border-radius:12px;margin:0 0 20px;display:block;background:var(--wash)}
+  @media(max-width:700px){ article img.hero{max-height:300px} }
 </style>
 </head>
 <body>
@@ -186,7 +190,7 @@ function clearAll(){
       document.title=p.title+' — Dale Supporters Trust';
       document.getElementById('heroTitle').textContent=p.category;
       document.getElementById('heroSub').textContent='Dale Trust news';
-      out.innerHTML='<article><h2>'+esc(p.title)+'</h2><p class="meta">By '+esc(p.author)+' \u00b7 '+fmt(p.publish_at)+'</p>'+(p.image?'<img src="'+p.image+'" alt="" style="width:100%;border-radius:12px;margin:0 0 18px;display:block">':'')+'<div class="body">'+md(p.body)+'</div>'+
+      out.innerHTML='<article><h2>'+esc(p.title)+'</h2><p class="meta">By '+esc(p.author)+' \u00b7 '+fmt(p.publish_at)+'</p>'+(p.image?'<img class="hero" src="'+p.image+'" alt="">':'')+'<div class="body">'+md(p.body)+'</div>'+
         (p.policy_slug ? '<div class="policybox"><b>Worth reading alongside this</b>'+
           '<a href="policies.html?p='+encodeURIComponent(p.policy_slug)+'">Read the policy &rarr;</a></div>' : '')+
         '<p style="margin-top:26px"><a href="news.html">&larr; All news &amp; newsletters</a></p></article>';
