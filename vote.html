@@ -67,7 +67,7 @@
 const EP='https://join.daletrust.uk';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-let survey=null, member=null, answers={};
+let survey=null, member=null, answers={}, votingAs=null;
 let msession=null; try{msession=localStorage.getItem('dt_member');}catch(e){}
 
 (async()=>{
@@ -173,6 +173,21 @@ function render(){
       '<label class="f">Your email</label><input type="email" id="vEmail">'+
       '<p style="font-size:13px;color:#7A8AA5;margin-top:6px">Only used to make sure everyone answers once. We won&rsquo;t add you to any mailing list.</p></div>';
   }
+  // an opt-in question, if this survey has one
+  if(survey.optin_label){
+    html += member
+      ? '<div class="q" style="background:#E8F1FC;border-left:4px solid var(--royal);border-radius:0 10px 10px 0">'+
+        '<label style="display:flex;gap:11px;align-items:flex-start;cursor:pointer;margin:0">'+
+        '<input type="checkbox" id="optIn" style="width:auto;margin-top:3px;transform:scale(1.25)">'+
+        '<span><b style="color:var(--ink);font-size:16px">'+esc(survey.optin_label)+'</b>'+
+        (survey.optin_note?'<span style="display:block;font-size:13.5px;color:#46536B;margin-top:4px">'+esc(survey.optin_note)+'</span>':'')+
+        '</span></label></div>'
+      : '<div class="q" style="background:var(--wash);border-left:4px solid #B8C6DA;border-radius:0 10px 10px 0">'+
+        '<b style="color:var(--ink)">'+esc(survey.optin_label)+'</b>'+
+        '<p style="font-size:13.5px;margin-top:4px">Trust members can also take part. '+
+        '<a href="members.html">Sign in</a> and you can enter.</p></div>';
+  }
+
   html+=(survey.members_only&&!member) ? '' : '<button onclick="submit()">Send my answers</button>';
   html+='<p class="msg" id="vmsg"></p></div>';
   $('out').innerHTML=html;
@@ -188,6 +203,8 @@ function rate(qid,n){
   [...document.querySelectorAll('#r'+qid+' button')].forEach((b,i)=>b.classList.toggle('on',i<n));
 }
 
+function voteAs(id){ votingAs=id; submit(); }
+
 async function submit(){
   const msg=$('vmsg');
   for(const q of survey.questions){
@@ -199,6 +216,8 @@ async function submit(){
     }
   }
   const body={survey_id:survey.id, answers};
+  const oi=$('optIn'); if(oi && oi.checked) body.opted_in=true;
+  if(votingAs) body.member_id=votingAs;
   if(!member){
     body.name=($('vName')||{}).value||''; body.email=($('vEmail')||{}).value||'';
     if(!body.name.trim()||!body.email.trim()){msg.innerHTML='<span style="color:var(--red)">Please give your name and email.</span>';return;}
@@ -207,6 +226,17 @@ async function submit(){
   const headers={'Content-Type':'application/json'};
   if(msession) headers['Authorization']='Bearer '+msession;
   const d=await (await fetch(EP+'/survey/respond',{method:'POST',headers,body:JSON.stringify(body)})).json();
+
+  // more than one member on this address — ask who is voting
+  if(d.choosePerson){
+    msg.innerHTML='<div style="background:#E8F1FC;border-left:4px solid var(--royal);border-radius:0 10px 10px 0;padding:16px 18px;text-align:left">'+
+      '<b style="color:var(--ink);font-size:16px">Who is voting?</b>'+
+      '<p style="font-size:13.5px;margin:6px 0 12px">There is more than one member at your address. Everyone gets their own vote.</p>'+
+      d.people.map(p=>'<button style="margin:0 8px 8px 0;width:auto;display:inline-block" onclick="voteAs('+p.id+')">'+
+        esc(p.name)+' <span style="opacity:.75;font-weight:400">\u00b7 '+esc(p.type)+'</span></button>').join('')+
+      '</div>';
+    return;
+  }
   if(!d.ok){msg.innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return;}
   $('out').innerHTML='<div class="card"><h2>Thank you</h2><p>Your '+(survey.kind==='potm'?'vote':'answers')+' '+
     (d.verified?'have been counted as a verified member.':'have been recorded.')+'</p>'+

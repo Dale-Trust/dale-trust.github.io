@@ -54,6 +54,18 @@
   </div>
 </div>
 
+<div class="panel" id="drawPanel" style="display:none;border-left:5px solid var(--gold)">
+  <h2 style="border-left-color:var(--gold)">The draw</h2>
+  <p style="font-size:13.5px;margin-bottom:12px" id="drawWho"></p>
+  <div id="drawCount" style="background:var(--wash);border-radius:10px;padding:14px 16px;font-size:14.5px"></div>
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="green" onclick="doDraw()">Draw a winner</button>
+    <button class="ghost" onclick="loadDraw()">Refresh</button>
+  </div>
+  <div id="drawHistory" style="margin-top:16px"></div>
+  <p class="msg" id="drawMsg"></p>
+</div>
+
 <div class="panel" id="editor">
   <h2 id="eTitle">New</h2>
   <label>Title</label><input id="s_title" placeholder="e.g. Player of the Month — August">
@@ -62,6 +74,14 @@
     <div><label>Status</label><select id="s_status">
       <option value="draft">Draft — not visible</option><option value="open">Open</option><option value="closed">Closed</option></select></div>
     <div><label>Who can take part</label><select id="s_members"><option value="0">Any Dale supporter</option><option value="1">Trust members only</option></select></div>
+  </div>
+  <div style="background:var(--wash);border-left:4px solid var(--royal);border-radius:0 10px 10px 0;padding:16px 18px;margin-top:16px">
+    <b style="font-family:'Oswald';text-transform:uppercase;font-size:15px;color:var(--ink)">Ask them something extra</b>
+    <p style="font-size:13.5px;margin:4px 0 12px">A tick box on the end &mdash; a prize draw, help at an event, anything. <b>Only signed-in members see it</b>, because you need a real person to come back to. Leave it empty for none.</p>
+    <label>The question</label>
+    <input id="s_optin" placeholder="e.g. Enter the draw to present the Player of the Month trophy">
+    <label>A line underneath (optional)</label>
+    <input id="s_optinnote" placeholder="e.g. One member will be drawn at random and invited to present the award on the pitch">
     <div><label>Closes (optional)</label><input id="s_closes" type="datetime-local"></div>
   </div>
   <label>Show the results publicly</label>
@@ -165,9 +185,12 @@ async function editSurvey(id){
   const d=await (await fetch(EP+'/survey/admin?id='+id,{headers:H()})).json();
   if(!d.ok){alert(d.error);return;}
   const s=d.survey; editing=s.id; window._kind=s.kind;
+  window._optin=s.optin_label||null;
+  loadDraw();
   $('eTitle').textContent=s.title;
   $('s_title').value=s.title; $('s_intro').value=s.intro||'';
   $('s_status').value=s.status; $('s_members').value=String(s.members_only||0);
+  $('s_optin').value=s.optin_label||''; $('s_optinnote').value=s.optin_note||'';
   $('s_closes').value=s.closes_at?s.closes_at.replace(' ','T').slice(0,16):'';
   $('s_results').value=s.results_visible||'closed';
   qs=s.questions.map(q=>({question:q.question,kind:q.kind,options:q.options.length?q.options:['',''],required:!!q.required}));
@@ -200,11 +223,48 @@ function setReq(i,v){qs[i].required=(v==='1');}
 function setKind(i,v){qs[i].kind=v;if((v==='single'||v==='multi')&&!qs[i].options.length)qs[i].options=['',''];drawQuestions();}
 function addQuestion(){qs.push({question:'',kind:'single',options:['',''],required:true});drawQuestions();}
 
+async function loadDraw(){
+  const p=$('drawPanel');
+  if(!editing || !window._optin){ p.style.display='none'; return; }
+  p.style.display='block';
+  $('drawWho').textContent='Everyone who ticked: \u201c'+window._optin+'\u201d';
+  try{
+    const d=await (await fetch(EP+'/survey/draw?survey_id='+editing,{headers:H()})).json();
+    if(!d.ok){ $('drawCount').textContent=d.error; return; }
+    $('drawCount').innerHTML='<b style="font-family:Oswald;font-size:24px;color:var(--ink)">'+d.entrants+'</b> '+
+      (d.entrants===1?'member has entered':'members have entered')+
+      (d.entrants? '<div style="color:#7A8AA5;font-size:13px;margin-top:6px">'+d.names.slice(0,40).map(esc).join(', ')+
+        (d.names.length>40?' and '+(d.names.length-40)+' more':'')+'</div>':'');
+    $('drawHistory').innerHTML = d.draws.length
+      ? '<b style="font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink)">Drawn before</b>'+
+        d.draws.map(w=>'<div style="border-bottom:1px solid var(--line);padding:10px 4px;font-size:13.5px">'+
+          '<b style="color:var(--ink)">'+esc(w.winner_name)+'</b> \u00b7 '+esc(w.winner_member_no||'')+
+          '<small style="display:block;color:#7A8AA5">from '+w.entrants+' entries \u00b7 '+
+          new Date(w.drawn_at.replace(" ","T")+"Z").toLocaleString('en-GB')+' \u00b7 '+esc(w.drawn_by||'')+'</small></div>').join('')
+      : '';
+  }catch(e){ $('drawCount').textContent='Could not load.'; }
+}
+
+async function doDraw(){
+  if(!confirm('Draw a winner at random?\n\nIt is recorded, so there is a record of who was drawn and when.')) return;
+  const note=prompt('Anything to note? (optional)\n\ne.g. drawn at the board meeting, 25 September','');
+  if(note===null) return;
+  const d=await (await fetch(EP+'/survey/draw',{method:'POST',headers:H(),
+    body:JSON.stringify({survey_id:editing, note:note.trim()||null})})).json();
+  const m=$('drawMsg');
+  if(!d.ok){ m.style.color='var(--red)'; m.textContent=d.error; return; }
+  m.style.color='var(--green)';
+  m.innerHTML='<b style="font-size:17px">'+esc(d.winner.name)+'</b> \u2014 drawn from '+d.entrants+' entries.<br>'+
+    '<span style="font-weight:400;color:#46536B">'+esc(d.winner.member_no)+' \u00b7 '+esc(d.winner.email)+'</span>';
+  loadDraw();
+}
+
 async function saveSurvey(){
   const body={id:editing,title:$('s_title').value.trim(),intro:$('s_intro').value.trim(),
     kind:window._kind||'survey',status:$('s_status').value,members_only:$('s_members').value==='1',
     closes_at:$('s_closes').value?new Date($('s_closes').value).toISOString():null,
     results_visible:$('s_results').value,
+    optin_label:$('s_optin').value.trim()||null, optin_note:$('s_optinnote').value.trim()||null,
     questions:qs.map(q=>({...q,options:(q.options||[]).map(o=>String(o).trim()).filter(Boolean)}))};
   if(!body.title){$('emsg').innerHTML='<span style="color:var(--red)">A title is needed.</span>';return;}
   const d=await (await fetch(EP+'/survey/save',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
