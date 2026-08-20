@@ -53,6 +53,9 @@
   <a href="#signin">Signing in</a>
   <a href="#who">Who does what</a>
   <a href="#register">Membership register</a>
+  <a href="#dashboard">Membership dashboard</a>
+  <a href="#letters">Membership letters</a>
+  <a href="#import">Member import</a>
   <a href="#renewals">Renewals</a>
   <a href="#fixtures">Fixtures &amp; results</a>
   <a href="#writing">Writing a post</a>
@@ -64,6 +67,8 @@
   <a href="#graphics">Graphics maker</a>
   <a href="#visiting">Visiting trusts</a>
   <a href="#figures">Board figures</a>
+  <a href="#pulse">How it&rsquo;s going</a>
+  <a href="#emails">Trust email addresses</a>
   <a href="#decisions">Decisions &amp; tasks</a>
   <a href="#policies">Policies</a>
   <a href="#activity">Activity</a>
@@ -109,6 +114,24 @@
   </ol>
   <p>If someone with that name and postcode is already on the register for that season it warns you and offers <strong>Add anyway</strong> &mdash; because families and namesakes exist.</p>
   <p>Anyone marked as paid gets a membership number straight away. Anyone marked <em>not paid yet</em> does not get one until the money arrives.</p>
+  <p><strong>Send them a welcome email</strong> is ticked by default. They get exactly the same welcome as someone joining online &mdash; their number, and a link to their own card and welcome letter. Untick it only if they have already been welcomed some other way.</p>
+
+  <h3>Someone who lapsed and has come back</h3>
+  <p>Do not retype them. Search their name, open the old record, and press <strong>Bring them back for this season</strong> &mdash; the green button only appears on records from an earlier season.</p>
+  <p>It asks how they paid and checks their email, then creates a fresh record for this season carrying over their address, phone, date of birth and everything else. They get a membership number and the welcome email, and they are recorded as renewing rather than new.</p>
+  <div class="box"><strong>Their old record is left exactly as it was.</strong> Nothing is overwritten, so the history stays intact.</div>
+
+  <h3>When someone leaves</h3>
+  <p>Each record has an <strong>If they have left</strong> panel. Choose a reason &mdash; payment defaulted, standing order cancelled, resigned, moved away, deceased, or asked not to be contacted &mdash; and add a note if it helps. This keeps their history and stops them being contacted. It is not the same as deleting.</p>
+  <div class="box"><strong>Deceased is different and permanent.</strong> It applies to every season that person appears in, removes them from every mailing and count, and stops any future spreadsheet import bringing them back. Use it, and use nothing else, when someone has died.</div>
+
+  <h3>What the tags mean</h3>
+  <ul>
+    <li><strong>details needed</strong> (amber) &mdash; imported with an email but no name. They can fill it in themselves when they sign in</li>
+    <li><strong>do not contact</strong> (red) &mdash; they have asked not to be emailed</li>
+    <li><strong>deceased</strong> (black) &mdash; will never be contacted again</li>
+    <li><strong>bad address</strong> &mdash; email to them has bounced. They are left out of every mailing until it is corrected</li>
+  </ul>
   <p>After adding someone, press <strong>Clear the form</strong> and the next one is ready.</p>
 
   <h3>Finding someone</h3>
@@ -124,8 +147,58 @@
   <p>Deleting is for genuine mistakes, duplicates, or where someone has asked to be removed entirely. Press <strong>Delete this record</strong>, say why, type <strong>DELETE</strong>, and confirm. It cannot be undone, and a note of what was removed is kept permanently.</p>
 </section>
 
+<section id="dashboard">
+  <h2>Membership dashboard</h2>
+  <p class="who">Tile: Membership dashboard &middot; needs <strong>Members</strong></p>
+  <p>Drop Scott&rsquo;s spreadsheet onto the page and it draws it: membership by type, new against renewing, age profile, where people live, overseas by country, how they joined, and a data health check showing what is missing.</p>
+  <p>It changes nothing. It is for looking at a spreadsheet before deciding whether to import it, or for answering a question the board figures do not cover.</p>
+  <div class="box">If you want the same picture from the live register rather than a spreadsheet, use <strong>Board figures</strong> instead. That one needs no file and is always current.</div>
+</section>
+
+<section id="letters">
+  <h2>Membership letters</h2>
+  <p class="who">Tile: Membership letters &middot; needs <strong>Members</strong></p>
+  <p>Prints the card letters, and the membership cards themselves. One wording that changes itself depending on who it is going to.</p>
+
+  <h3>Printing the letters</h3>
+  <ol>
+    <li>Choose the season and who &mdash; everyone, adults and exiles only, juniors only, new members, or those who donated</li>
+    <li>Press <strong>Find them</strong> to see how many</li>
+    <li><strong>Preview a letter</strong> to check it, then <strong>Print the letters</strong></li>
+  </ol>
+  <p>Only members with a membership number are included, so nobody unpaid gets one. Choose <em>Save as PDF</em> in the print box if you want a file rather than paper.</p>
+  <p><strong>Page two is a cut-out temporary card</strong>, on unless you untick it. Useful for exiles and anyone who cannot get to the Trust Desk &mdash; they can use it the day the letter arrives.</p>
+
+  <h3>Printing the cards</h3>
+  <p><strong>Print the cards</strong> puts ten to an A4 sheet at proper business-card size, with light cutting guides. Each one carries the member&rsquo;s name and number, so there is nothing to write by hand.</p>
+  <div class="box">Use 300gsm card if you have it, and set the printer to <strong>actual size</strong> rather than fit-to-page, or they come out slightly small. Print one sheet on plain paper first and hold a bank card against it.</div>
+  <p>For a single replacement card, use the <strong>Print their card</strong> button on the member&rsquo;s record in the register instead.</p>
+
+  <h3>Changing the wording</h3>
+  <p>The letter is one piece of text that adapts itself. Anything between <code>{{#junior}}</code> and <code>{{/junior}}</code> only appears on junior letters, and the same for <code>new</code>, <code>renewal</code> and <code>donation</code>. <code>{{first_name}}</code>, <code>{{member_no}}</code>, <code>{{season}}</code> and <code>{{donation}}</code> fill themselves in.</p>
+  <p>Every change is kept, so it is always clear what a member was actually sent.</p>
+
+  <h3>Checking an email before it goes</h3>
+  <p><strong>Send yourself a test</strong> shows exactly what a member receives &mdash; the welcome, the unpaid reminder, or either of the coach emails. Use a real member&rsquo;s details or a made-up one. The links in it are live, so you can follow the whole thing through.</p>
+</section>
+
+<section id="import">
+  <h2>Member import</h2>
+  <p class="who">Tile: Member import &middot; needs <strong>Import</strong> &middot; Chris only</p>
+  <p>Loads a spreadsheet into the register. Rarely needed now the register is the source of truth, but here for a bulk update from Scott&rsquo;s sheet.</p>
+  <ol>
+    <li>Drop the file on and pick the tab</li>
+    <li>Check the column matching &mdash; it guesses, and it is usually right</li>
+    <li>Choose the season</li>
+    <li>It tells you how many will import, how many have an email but no name, and how many will be skipped</li>
+  </ol>
+  <p>A row needs <strong>either a name or an email address</strong>. Rows with neither are skipped &mdash; usually blank lines or totals. Anyone with an email but no name goes in marked <em>details needed</em> so they can fill the rest in themselves.</p>
+  <div class="box"><strong>Anyone already on the register for that season is skipped, not duplicated.</strong> So re-importing the same sheet is safe. Anyone recorded as deceased is never re-added, whatever the spreadsheet says.</div>
+</section>
+
 <section id="renewals">
   <h2>Renewals</h2>
+  <div class="box"><strong>The go-live email lives at the top of this screen.</strong> It is the one that tells every member their membership is now online. It is sent once, it asks twice before going, and it warns you if it has been sent before. Leave it alone unless you know you are meant to be sending it.</div>
   <p class="who">Tile: Renewals &middot; Chris and Scott</p>
   <p>Shows how many members are due to renew, how many have, and how many are left. There is a progress bar, and a count of members with no email address who will need reaching another way.</p>
 
@@ -141,6 +214,7 @@
 
 <section id="fixtures">
   <h2>Fixtures &amp; results</h2>
+  <div class="box"><strong>Entering a score takes two seconds.</strong> Find the game in the list, type the score in the box beside it &mdash; like <code>2-1</code> &mdash; and press Enter. Pressing <strong>Edit</strong> on a row opens the full details underneath that row, so you never lose your place.</div>
   <p class="who">Tile: Fixtures &amp; results</p>
   <p>The home page looks after itself &mdash; it finds the next game, counts down to kick-off, and rolls on to the following one automatically after the whistle.</p>
   <p><strong>The one thing it cannot know is the score.</strong> Put it in here after a game and the &ldquo;last time out&rdquo; line under the countdown updates itself.</p>
@@ -189,6 +263,7 @@
 
 <section id="emailing">
   <h2>Emailing members</h2>
+  <div class="box"><strong>Most pieces just go on the website.</strong> The composer asks <em>&ldquo;Email this out to members as well?&rdquo;</em> &mdash; leave it unticked unless members really should get it in their inbox. Four hundred emails about a match report is how people stop reading them.</div>
   <p class="who">Anyone with sending rights</p>
   <p>Once a post is published the email options appear underneath. There are no lists to keep up to date &mdash; you describe who you want and it works them out.</p>
   <ul>
@@ -234,6 +309,9 @@
   <p>Press <strong>Edit</strong> on any of them and the details open <strong>underneath that coach</strong>. Change whatever needs changing &mdash; the departure time and price are only suggestions &mdash; and press Save.</p>
   <div class="box good"><strong>Nothing is on the website until you say so.</strong> Each coach has a tick box: <strong>Not shown yet</strong> until you tick it, then <strong>On the website</strong> and people can book. Untick it and it comes straight back off.</div>
   <p>If you need one that is not in the list &mdash; a cup tie, or a second coach &mdash; press <strong>Set up a new coach</strong> at the bottom.</p>
+  <h3>Cancelling someone&rsquo;s seat</h3>
+  <p>Marking a booking cancelled now <strong>emails the passenger</strong> to tell them, and asks you why first &mdash; the reason goes in the email. If they had paid, it says we will be in touch about the refund. If there is no email address on the booking it warns you, so you know to ring them.</p>
+
   <h3>Who is on board</h3>
   <p>Every booking now carries a <strong>name and date of birth for each passenger</strong>. That is how the driver knows who is travelling, and how the rule works that anyone aged 15 or under must be with a responsible adult aged 18 or over &mdash; a booking without an adult is refused automatically. On the passenger list, anyone under 16 is shown with their age in red.</p>
 
@@ -272,6 +350,24 @@
   <p class="who">Tiles: Board figures, Membership dashboard</p>
   <p><strong>Board figures</strong> is the simple one: members this season by type, new against renewing, how many seasons on record, newsletter consent, and how many lapsed members are there to win back. No personal details on the page at all.</p>
   <p><strong>Membership dashboard</strong> is the detailed one: season history back to 2012/13, lapsed by season, joins by month, age profile, how people joined, top towns, and the exiles broken down by country and county.</p>
+</section>
+
+<section id="pulse">
+  <h2>How it&rsquo;s going</h2>
+  <p class="who">Tile: How it&rsquo;s going &middot; needs <strong>Figures</strong></p>
+  <p>Whether the site is actually being used, rather than just that it exists. Members signed in, how many have checked their details, coach seats and money taken, survey responses, articles published, emails sent and how many arrived.</p>
+  <p>It also flags the problems: addresses that bounce, members with no email at all, applications awaiting payment, and anyone who has asked for help.</p>
+  <div class="box">The two worth watching are <strong>signed in</strong> and <strong>details checked</strong>. They start near zero and should climb after members are emailed. If they do not move, people are not finding their way in.</div>
+</section>
+
+<section id="emails">
+  <h2>Trust email addresses</h2>
+  <p class="who">Tile: Trust email addresses &middot; everyone</p>
+  <p>Who has what, and where the shared addresses go. <strong>Tap any address to copy it.</strong></p>
+  <p>Everyone has two: a personal one that is yours, and a role one that belongs to the job. Both arrive in the same inbox.</p>
+  <div class="box"><strong>Reply from the role address when it is Trust business.</strong> There is a &ldquo;From&rdquo; dropdown when you write an email &mdash; pick the role one. That way anything on the website or a poster keeps working when someone else takes the job on, and members see a Trust address rather than a personal one.</div>
+  <p>The shared addresses &mdash; info@, matchday@, board@ and the rest &mdash; go to several people, and anyone on them can reply as the address rather than as themselves.</p>
+  <p>On your phone, download <strong>Zoho Mail</strong> and sign in. On a computer, go to <strong>mail.zoho.eu</strong>.</p>
 </section>
 
 <section id="decisions">
@@ -328,6 +424,17 @@
     <li><strong>Admin</strong> &mdash; officer access and the activity log</li>
   </ul>
   <p>Ticking a box takes effect immediately, and the change is recorded.</p>
+
+  <h3>Which switch opens which screen</h3>
+  <p>They are grouped by what a person can see or do, not one per screen &mdash; so some cover more than one:</p>
+  <ul>
+    <li><strong>Members</strong> &mdash; the register, the membership dashboard and the letters. This is the one that shows addresses, phone numbers and dates of birth, so it should stay with as few people as possible</li>
+    <li><strong>Renewals</strong> &mdash; the renewals screen. Separate from Members, because it can email hundreds of people at once</li>
+    <li><strong>Write</strong> &mdash; articles and fixtures</li>
+    <li><strong>Figures</strong> &mdash; board figures and How it&rsquo;s going. No personal details, so most officers can have it</li>
+    <li>Everything else opens one screen each</li>
+  </ul>
+  <p><strong>Decisions &amp; tasks</strong> and <strong>Trust email addresses</strong> are open to every officer and have no switch. <strong>Activity</strong> is admins only, deliberately &mdash; a log people can grant themselves access to is worth rather less.</p>
   <p>They sign in with their own email. Nothing to share, nothing to leak, and access can be changed or withdrawn in seconds.</p>
   <p><strong>Writing and approving are separate.</strong> Give someone <em>articles</em> and they can write; give them <em>publishing</em> as well and they can put things live. That is how anyone can contribute while Ruby still decides what goes out.</p>
 </section>
