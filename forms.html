@@ -56,6 +56,7 @@
     <button class="ghost" onclick="window.print()">Print this</button>
     <button class="ghost" onclick="checkPayments()" id="chkBtn">Check SumUp for payments</button>
     <button class="ghost" onclick="toggleInspect()">Look one up in SumUp</button>
+    <button class="ghost" onclick="recentPayments()">Recent SumUp payments</button>
     <span id="chkMsg" style="font-size:13.5px;font-weight:600"></span>
   </div>
   <div class="panel" id="inspectBox" style="display:none;border-left:5px solid var(--gold)">
@@ -95,6 +96,23 @@ function toggleInspect(){
   const b=$('inspectBox');
   b.style.display = b.style.display==='none' ? 'block' : 'none';
   if(b.style.display==='block') $('insRef').focus();
+}
+
+async function recentPayments(){
+  $('inspectBox').style.display='block';
+  const out=$('insOut'), v=$('insVerdict');
+  out.style.display='block'; out.textContent='Asking SumUp\u2026'; v.textContent='';
+  try{
+    const d=await (await fetch(EP+'/payments/recent',{headers:H()})).json();
+    if(!d.ok){ v.style.color='#C0392B'; v.textContent=d.error; out.textContent=JSON.stringify(d,null,2); return; }
+    out.textContent = d.payments.length
+      ? d.payments.map(p=>[p.when, (p.currency||'')+(p.amount||''), p.status, p.reference||'', p.product||''].join('   ')).join('\n')
+      : '(SumUp returned nothing)';
+    v.style.color = d.payments.length ? '#1E8E5A' : '#8A4B00';
+    v.textContent = d.payments.length
+      ? d.payments.length+' recent payments in SumUp. Compare the times with the list below.'
+      : 'SumUp reports no recent payments on this account \u2014 worth checking the key belongs to the right one.';
+  }catch(e){ v.style.color='#C0392B'; v.textContent='Could not reach the server.'; }
 }
 
 async function inspect(){
