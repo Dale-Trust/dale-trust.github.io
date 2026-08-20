@@ -55,6 +55,17 @@
   article .body h3{font-size:20px;text-transform:none;margin:22px 0 8px}
   article .body ul{margin:0 0 14px 22px}
   footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:20px}
+  .findbar{display:grid;grid-template-columns:1fr 190px 150px auto;gap:10px;margin-bottom:14px}
+  .findbar input,.findbar select{padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;
+    font:inherit;font-size:15px;color:var(--ink);background:#fff;width:100%}
+  .findbar input:focus,.findbar select:focus{border-color:var(--royal);outline:none}
+  .findbar .clr{background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:0 18px;
+    font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;color:var(--body);cursor:pointer}
+  .findbar .clr:hover{border-color:var(--royal);color:var(--royal)}
+  .found{font-size:14px;color:#7A8AA5;margin-bottom:16px}
+  .found b{color:var(--ink)}
+  mark{background:#FFF3C4;color:inherit;padding:0 2px;border-radius:2px}
+  @media(max-width:760px){.findbar{grid-template-columns:1fr 1fr}.findbar input{grid-column:1 / -1}}
 </style>
 </head>
 <body>
@@ -63,6 +74,15 @@
   <p id="heroSub">Everything from the Dale Trust — straight from the source.</p>
   <a class="back" href="index.html">&larr; Back to the Trust</a>
 </div></div>
+<div class="wrap" id="filters" style="display:none">
+  <div class="findbar">
+    <input id="q" placeholder="Search the news&hellip;" oninput="apply()" autocomplete="off">
+    <select id="cat" onchange="apply()"><option value="">Everything</option></select>
+    <select id="yr" onchange="apply()"><option value="">Any year</option></select>
+    <button class="clr" id="clr" onclick="clearAll()" style="display:none">Clear</button>
+  </div>
+  <p class="found" id="found"></p>
+</div>
 <div class="wrap" id="out"><p>Loading…</p></div>
 <footer>Dale Trust is the trading name of Rochdale Supporters Club Limited, a registered society (29690R).</footer>
 <script>
@@ -91,6 +111,72 @@ function md(t){
 const fmt=d=>new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 const slug=new URLSearchParams(location.search).get('p');
 
+let ALL=[];
+
+function hit(t,q){
+  if(!q) return esc(t||'');
+  const s=esc(t||''), i=s.toLowerCase().indexOf(q);
+  return i<0 ? s : s.slice(0,i)+'<mark>'+s.slice(i,i+q.length)+'</mark>'+s.slice(i+q.length);
+}
+
+let searchTimer=null, lastQuery='';
+
+function apply(){
+  const raw=(document.getElementById('q').value||'').trim();
+  // a search longer than two letters also looks inside the articles
+  if(raw.length>2 && raw.toLowerCase()!==lastQuery){
+    clearTimeout(searchTimer);
+    searchTimer=setTimeout(async()=>{
+      lastQuery=raw.toLowerCase();
+      try{
+        const d=await (await fetch(EP+'/posts?q='+encodeURIComponent(raw))).json();
+        if(d.posts){ ALL=d.posts; draw(); }
+      }catch(e){ draw(); }
+    },300);
+  } else if(!raw && lastQuery){
+    clearTimeout(searchTimer);
+    lastQuery='';
+    fetch(EP+'/posts').then(r=>r.json()).then(d=>{ if(d.posts){ ALL=d.posts; draw(); } }).catch(()=>draw());
+  }
+  draw();
+}
+
+function draw(){
+  const q=(document.getElementById('q').value||'').trim().toLowerCase();
+  const c=document.getElementById('cat').value;
+  const y=document.getElementById('yr').value;
+  document.getElementById('clr').style.display=(q||c||y)?'block':'none';
+
+  let list=ALL;
+  if(c) list=list.filter(p=>p.category===c);
+  if(y) list=list.filter(p=>(p.publish_at||'').slice(0,4)===y);
+  if(q) list=list.filter(p=>
+    (p.title||'').toLowerCase().includes(q) ||
+    (p.summary||'').toLowerCase().includes(q) ||
+    (p.body||'').toLowerCase().includes(q));
+
+  const f=document.getElementById('found');
+  f.innerHTML = (q||c||y)
+    ? '<b>'+list.length+'</b> '+(list.length===1?'story':'stories')+
+      (q?' mentioning \u201c'+esc(q)+'\u201d':'')+(c?' in '+esc(c):'')+(y?' from '+y:'')
+    : '<b>'+ALL.length+'</b> stories, newest first';
+
+  document.getElementById('out').innerHTML = list.length
+    ? list.map(p=>
+      '<div class="item"><span class="cat">'+esc(p.category)+'</span>'+
+      '<h2><a href="news.html?p='+encodeURIComponent(p.slug)+'">'+hit(p.title,q)+'</a></h2>'+
+      '<p class="meta">By '+esc(p.author)+' \u00b7 '+fmt(p.publish_at)+'</p>'+
+      (p.summary?'<p>'+hit(p.summary,q)+'</p>':'')+'</div>').join('')
+    : '<p>Nothing found. <a href="#" onclick="clearAll();return false;">Show everything</a></p>';
+}
+
+function clearAll(){
+  document.getElementById('q').value='';
+  document.getElementById('cat').value='';
+  document.getElementById('yr').value='';
+  apply();
+}
+
 (async()=>{
   try{
     if(slug){
@@ -106,12 +192,17 @@ const slug=new URLSearchParams(location.search).get('p');
         '<p style="margin-top:26px"><a href="news.html">&larr; All news &amp; newsletters</a></p></article>';
     } else {
       const {posts}=await (await fetch(EP+'/posts')).json();
-      out.innerHTML = posts.length ? posts.map(p=>
-        '<div class="item"><span class="cat">'+esc(p.category)+'</span>'+
-        '<h2><a href="news.html?p='+encodeURIComponent(p.slug)+'">'+esc(p.title)+'</a></h2>'+
-        '<p class="meta">By '+esc(p.author)+' \u00b7 '+fmt(p.publish_at)+'</p>'+
-        (p.summary?'<p>'+esc(p.summary)+'</p>':'')+'</div>').join('')
-        : '<p>No news posted yet — check back soon.</p>';
+      ALL = posts || [];
+      if(ALL.length){
+        document.getElementById('filters').style.display='block';
+        const cats=[...new Set(ALL.map(p=>p.category).filter(Boolean))].sort();
+        document.getElementById('cat').innerHTML='<option value="">Everything</option>'+
+          cats.map(c=>'<option>'+esc(c)+'</option>').join('');
+        const yrs=[...new Set(ALL.map(p=>(p.publish_at||'').slice(0,4)).filter(Boolean))].sort().reverse();
+        document.getElementById('yr').innerHTML='<option value="">Any year</option>'+
+          yrs.map(y=>'<option>'+y+'</option>').join('');
+      }
+      apply();
     }
   }catch(e){out.innerHTML='<p>Couldn\u2019t load the news just now. Please try again shortly.</p>';}
 })();
