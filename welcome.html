@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome to the Dale Trust</title>
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--badge:#002F7C;--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;color:var(--body);font-size:15.5px;line-height:1.65;background:var(--wash)}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink);line-height:1.15}
+  a{color:var(--royal)}
+  .hero{background:linear-gradient(120deg,var(--badge),#16305C 58%,#00417E);color:#fff;padding:52px 24px 44px;position:relative;overflow:hidden;text-align:center}
+  .hero::before{content:"";position:absolute;top:0;bottom:0;right:-12%;width:42%;background:var(--royal);transform:skewX(-14deg);opacity:.35}
+  .hero .in{position:relative;max-width:640px;margin:0 auto}
+  .hero img{width:94px;height:94px;border-radius:50%;background:#fff;display:block;margin:0 auto 18px;object-fit:contain}
+  .hero h1{color:#fff;font-size:clamp(30px,6vw,46px)}
+  .hero p{color:#C7D6EC;margin-top:10px;font-size:17px}
+  .no{display:inline-block;margin-top:22px;background:#fff;color:var(--badge);font-family:'Oswald';
+    font-size:clamp(22px,5vw,30px);letter-spacing:.06em;padding:14px 30px;border-radius:12px}
+  .no span{display:block;font-family:'Montserrat';font-size:11px;font-weight:700;letter-spacing:.16em;
+    text-transform:uppercase;color:#5A6880;margin-top:4px}
+  .wrap{max-width:640px;margin:0 auto;padding:34px 24px 60px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:16px}
+  .card h2{font-size:19px;margin-bottom:10px}
+  .btn{display:block;text-align:center;background:var(--royal);color:#fff;text-decoration:none;
+    font:600 16px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:16px 24px;border-radius:11px;margin-top:6px}
+  .btn:hover{background:var(--bright)}
+  .btn.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line);margin-top:10px}
+  ul{margin:10px 0 0 20px}
+  li{margin-bottom:8px}
+  .pend{background:#FFF9E8;border:1px solid #EAD198;border-left:5px solid var(--gold);border-radius:0 12px 12px 0;padding:18px 20px}
+  .pend b{color:var(--ink)}
+  footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:22px}
+</style>
+</head>
+<body>
+<div class="hero"><div class="in">
+  <img src="img/brand/dale-logo.png" alt="Dale Supporters Trust" onerror="this.style.display='none'">
+  <h1 id="h">Welcome to the Trust</h1>
+  <p id="sub">Payment received &mdash; you&rsquo;re in.</p>
+  <div id="numberBox"></div>
+</div></div>
+
+<div class="wrap" id="out"></div>
+
+<footer>Dale Trust is the trading name of Rochdale Supporters Club Limited, a registered society (29690R).</footer>
+<script>
+const p = new URLSearchParams(location.search);
+const no = p.get('no'), pending = p.get('pending');
+const $ = id => document.getElementById(id);
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+if (no) {
+  $('numberBox').innerHTML = '<div class="no">' + esc(no) + '<span>Your membership number</span></div>';
+  $('out').innerHTML =
+    '<div class="card"><h2>What happens now</h2>' +
+      '<p>Your welcome email is on its way &mdash; it has your membership number and a link to your welcome letter, ' +
+      'with a card you can print or save.</p>' +
+      '<a class="btn" href="members.html">See my membership</a>' +
+      '<a class="btn ghost" href="index.html">Have a look round the site</a>' +
+    '</div>' +
+    '<div class="card"><h2>What your membership gets you</h2><ul>' +
+      '<li>A real say in Rochdale AFC &mdash; the Trust owns 13.5% of the club and has a seat on its board</li>' +
+      '<li>Discounts with our Partners of the Trust &mdash; just show your card</li>' +
+      '<li>Coach travel to away games, booked and paid for online</li>' +
+      '<li>Player of the Month voting and Trust surveys</li>' +
+      '<li>Both prediction leagues, free to enter</li>' +
+    '</ul></div>';
+} else if (pending) {
+  $('h').textContent = 'Thanks \u2014 nearly done';
+  $('sub').textContent = 'We are just waiting for the payment to confirm.';
+  $('out').innerHTML =
+    '<div class="card pend"><b>Your payment has not come through to us yet.</b>' +
+      '<p style="margin-top:8px">If you have just paid, it usually lands within a minute or two &mdash; ' +
+      'refresh your membership page shortly and it should be there.</p>' +
+      '<p style="margin-top:10px">If the money has left your account but nothing arrives, ' +
+      'email <a href="mailto:membership@daletrust.uk">membership@daletrust.uk</a> with your reference ' +
+      '<b>' + esc(pending) + '</b> and we will sort it out. Nothing is lost.</p>' +
+      '<a class="btn" href="members.html" style="margin-top:14px">Check my membership</a>' +
+    '</div>';
+} else {
+  $('h').textContent = 'Dale Supporters Trust';
+  $('sub').textContent = '';
+  $('out').innerHTML = '<div class="card"><a class="btn" href="members.html">See my membership</a>' +
+    '<a class="btn ghost" href="index.html">Back to the site</a></div>';
+}
+</script>
+</body>
+</html>
