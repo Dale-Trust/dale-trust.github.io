@@ -204,7 +204,7 @@
 <!-- success -->
 <div class="wrap" id="success">
   <div class="card" id="successCard" style="border-top:5px solid var(--green)">
-    <h2 style="border-left-color:var(--green)" id="successH">Welcome to the Trust! 🎉</h2>
+    <h2 style="border-left-color:var(--green)" id="successH">Welcome to the Trust! &#127881;</h2>
     <p id="sumLine"></p>
 
     <div class="member-card">
@@ -395,7 +395,7 @@ async function pay(method){
         'Once you have paid, your membership number and welcome letter arrive by email, and your card is at ' +
         '<a href="members.html">daletrust.uk/members.html</a>.';
     } else {
-      $('successH').textContent = 'Welcome to the Trust! \ud83c\udf89';
+      $('successH').textContent = 'Welcome to the Trust! &#127881;';
       $('cardLabel').textContent = 'Dale Supporters Trust \u00B7 Member ' + (d.season||'');
       $('sumLine').innerHTML =
         '<span class="lead">' + type + ' membership confirmed \u2014 free for juniors.</span>' +
