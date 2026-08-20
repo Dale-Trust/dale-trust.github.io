@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What people have filled in | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--badge:#002F7C;--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:21px}.top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:1080px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:4px}
+  .lede{font-size:13.5px;color:#7A8AA5;margin:0 0 14px 14px}
+  .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  select,button{padding:10px 14px;border:1.5px solid var(--line);border-radius:9px;font:inherit;background:#fff;color:var(--ink)}
+  button{background:var(--royal);color:#fff;border:0;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+  button.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{background:var(--navy);color:#fff;text-align:left;padding:9px 10px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:nth-child(even) td{background:#FAFCFE}
+  td b{color:var(--ink)}
+  .when{white-space:nowrap;color:#7A8AA5;font-size:12.5px}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 9px;border-radius:100px}
+  .ok{background:#EAF7F0;color:#14653F}.wait{background:#FFF3E4;color:#8A4B00}.bad{background:#FBE9E7;color:#9B2B20}
+  .none{color:#7A8AA5;font-size:13.5px;padding:10px 4px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+  .kpi{background:#fff;border:1px solid var(--line);border-left:4px solid var(--royal);border-radius:12px;padding:14px 16px}
+  .kpi.wait{border-left-color:var(--gold)}
+  .kpi span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#7A8AA5;display:block}
+  .kpi b{font-family:'Oswald';font-size:27px;color:var(--ink)}
+  @media print{.back,.top,.bar,button{display:none!important}body{background:#fff}.panel{border:0;padding:0}}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>What people have filled in</h1><small>Everything submitted through the website, newest first &mdash; for going through together</small></div>
+<div class="wrap">
+  <div class="bar">
+    <select id="days" onchange="load()">
+      <option value="1">Today</option>
+      <option value="3">Last three days</option>
+      <option value="7" selected>Last week</option>
+      <option value="14">Last two weeks</option>
+      <option value="30">Last month</option>
+    </select>
+    <button onclick="load()">Refresh</button>
+    <button class="ghost" onclick="window.print()">Print this</button>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div id="out">Loading&hellip;</div>
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+const H=()=>({'Authorization':'Bearer '+session});
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const when=t=>{ if(!t) return ''; const d=new Date(String(t).replace(' ','T')+(String(t).includes('Z')?'':'Z'));
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); };
+
+function state(s, hasNo){
+  if(s==='pending') return '<span class="pill wait">not paid</span>';
+  if(s==='cancelled') return '<span class="pill bad">cancelled</span>';
+  if(!hasNo) return '<span class="pill wait">no number</span>';
+  return '<span class="pill ok">'+esc(s)+'</span>';
+}
+
+async function load(){
+  const d=await (await fetch(EP+'/activity/forms?days='+$('days').value,{headers:H()})).json();
+  if(!d.ok){$('out').textContent=d.error;return;}
+
+  const waiting=d.joins.filter(j=>!j.member_no && j.payment_status!=='cancelled').length;
+  $('kpis').innerHTML=
+    '<div class="kpi"><span>Joined or renewed</span><b>'+d.joins.length+'</b></div>'+
+    (waiting?'<div class="kpi wait"><span>Still unpaid</span><b>'+waiting+'</b></div>':'')+
+    '<div class="kpi"><span>Coach bookings</span><b>'+d.coach.length+'</b></div>'+
+    '<div class="kpi"><span>Survey responses</span><b>'+d.surveys.length+'</b></div>'+
+    (d.help.length?'<div class="kpi wait"><span>Asked for help</span><b>'+d.help.length+'</b></div>':'');
+
+  let html='';
+
+  html+='<div class="panel"><h2>Joined or renewed</h2>'+
+    '<p class="lede">Anyone who filled in the join form or renewed. <b>Anything marked not paid needs chasing.</b></p>';
+  html+= d.joins.length
+    ? '<div style="overflow-x:auto"><table><tr><th>When</th><th>Who</th><th>Type</th><th>Contact</th><th>Amount</th><th>State</th></tr>'+
+      d.joins.map(j=>'<tr><td class="when">'+when(j.at)+'</td>'+
+        '<td><b>'+esc(j.first_name+' '+j.last_name)+'</b><br><small style="color:#7A8AA5">'+esc(j.member_no||j.app_ref)+'</small></td>'+
+        '<td>'+esc(j.membership_type)+'<br><small style="color:#7A8AA5">'+esc(j.joined_via||'')+'</small></td>'+
+        '<td style="font-size:12.5px">'+esc(j.email||'\u2014')+(j.mobile?'<br>'+esc(j.mobile):'')+'</td>'+
+        '<td>£'+Number(j.amount_due||0).toFixed(2)+(Number(j.donation)>0?'<br><small style="color:#1E8E5A">+£'+Number(j.donation).toFixed(2)+'</small>':'')+'</td>'+
+        '<td>'+state(j.payment_status,j.member_no)+'</td></tr>').join('')+'</table></div>'
+    : '<p class="none">Nobody in this period.</p>';
+  html+='</div>';
+
+  html+='<div class="panel"><h2>Coach bookings</h2><p class="lede">Seats booked through the website.</p>';
+  html+= d.coach.length
+    ? '<div style="overflow-x:auto"><table><tr><th>When</th><th>Who</th><th>Game</th><th>Seats</th><th>Amount</th><th>State</th></tr>'+
+      d.coach.map(b=>'<tr><td class="when">'+when(b.at)+'</td>'+
+        '<td><b>'+esc(b.name)+'</b><br><small style="color:#7A8AA5">'+esc(b.booking_ref)+'</small></td>'+
+        '<td>'+esc(b.opponent||'\u2014')+'</td><td>'+b.seats+'</td>'+
+        '<td>£'+Number(b.amount||0).toFixed(2)+'</td>'+
+        '<td>'+state(b.payment_status,true)+'</td></tr>').join('')+'</table></div>'
+    : '<p class="none">No bookings in this period.</p>';
+  html+='</div>';
+
+  if(d.help.length){
+    html+='<div class="panel"><h2>Asked for help</h2><p class="lede">From the sign-in page. <b>These are people who could not get in.</b></p>'+
+      '<table><tr><th>When</th><th>Who</th><th>What they said</th></tr>'+
+      d.help.map(x=>'<tr><td class="when">'+when(x.at)+'</td><td>'+esc(x.who)+'</td><td>'+esc(x.detail||'')+'</td></tr>').join('')+
+      '</table></div>';
+  }
+
+  if(d.surveys.length){
+    html+='<div class="panel"><h2>Survey responses</h2>'+
+      '<table><tr><th>When</th><th>Who</th><th>Survey</th><th></th></tr>'+
+      d.surveys.map(s=>'<tr><td class="when">'+when(s.at)+'</td><td>'+esc(s.name||'\u2014')+'</td>'+
+        '<td>'+esc(s.title||'')+'</td><td>'+(s.is_member?'<span class="pill ok">member</span>':'')+'</td></tr>').join('')+
+      '</table></div>';
+  }
+
+  $('out').innerHTML=html;
+}
+load();
+</script>
+</body>
+</html>
