@@ -182,6 +182,7 @@
     <button class="ghost" onclick="document.getElementById('editor').style.display='none'">Close</button>
     <button class="ghost" onclick="printCard()">Print their card</button>
     <button class="green" id="rejoinBtn" style="display:none" onclick="rejoin()">Bring them back for this season</button>
+    <button class="green" id="activateBtn" style="display:none" onclick="activateThem()">Payment received &mdash; activate them</button>
     <button style="background:var(--red);margin-left:auto" onclick="deleteMember()">Delete this record</button>
   </div>
   <p class="msg" id="emsg"></p>
@@ -290,6 +291,8 @@ async function openMember(id){
   $('e_shareWrap').style.display=m.membership_type==='Exile'?'block':'none';
   if(m.membership_type==='Exile')$('e_share').value=m.exile_transport_share||'No';
   $('emsg').textContent=''; $('delBox').style.display='none';
+  const ab=$('activateBtn');
+  if(ab) ab.style.display = (!m.member_no && m.payment_status==='pending' && !m.deceased) ? 'inline-block' : 'none';
   const rb=$('rejoinBtn');
   if(rb){
     const lapsed = m.season && CURRENT_SEASON && m.season !== CURRENT_SEASON && !m.deceased;
@@ -318,6 +321,22 @@ let CURRENT_SEASON = null;
     if(d.ok) CURRENT_SEASON = d.season;
   }catch(e){}
 })();
+
+async function activateThem(){
+  if(!current) return;
+  const who = current.first_name+' '+current.last_name;
+  if(!confirm('Has '+who+'\u2019s payment definitely arrived?\n\n'+
+    'Check SumUp first. This gives them a membership number and sends their welcome email \u2014 it cannot be undone.')) return;
+  const ref = prompt('SumUp reference or a note, so we know where this came from:\n\n'+
+    'e.g. "SumUp 20 Aug 11:14" or "cheque received"', 'SumUp');
+  if(ref===null) return;
+  const d = await (await fetch(EP+'/members/activate',{method:'POST',headers:H(),
+    body:JSON.stringify({id:current.id, payment_ref:ref.trim()||null})})).json();
+  if(!d.ok){ alert(d.error); return; }
+  alert(who+' is now active.\n\nMembership number: '+d.member_no+
+    (d.welcomed ? '\nTheir welcome email has been sent.' : '\nNo welcome email \u2014 no email address on the record.'));
+  search();
+}
 
 async function rejoin(){
   if(!current) return;
