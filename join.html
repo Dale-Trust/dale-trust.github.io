@@ -96,6 +96,20 @@
   .wallets span{background:#000;color:#fff;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600}
   .err-msg{color:var(--red);font-size:13px;font-weight:600;margin-top:10px;display:none}
   footer{max-width:640px;margin:26px auto 0;padding:0 16px;font-size:12px;color:#7A8AA5;text-align:center}
+  /* the panel after the form is submitted */
+  #successCard h2{margin-bottom:14px}
+  #sumLine{font-size:16px;line-height:1.65;margin-bottom:18px}
+  #sumLine .lead{display:block;font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px}
+  #sumLine .sub{display:block;color:var(--body)}
+  #payArea{margin:20px 0 4px}
+  #payArea .paynow{display:block;width:100%;text-align:center;background:#1E8E5A;color:#fff;text-decoration:none;
+    font:600 18px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:18px 24px;border-radius:11px;
+    box-shadow:0 8px 22px rgba(30,142,90,.28)}
+  #payArea .paynow:hover{background:#17784B}
+  #payArea .paynote{font-size:13.5px;color:#7A8AA5;text-align:center;margin-top:10px;line-height:1.55}
+  .afterNote{margin-top:20px;padding-top:16px;border-top:1px solid var(--line);
+    font-size:14px;line-height:1.6;color:var(--body)}
+  .afterNote a{color:#0057A7}
 </style>
 </head>
 <body>
@@ -189,16 +203,22 @@
 
 <!-- success -->
 <div class="wrap" id="success">
-  <div class="card" style="border-top:5px solid var(--green)">
+  <div class="card" id="successCard" style="border-top:5px solid var(--green)">
     <h2 style="border-left-color:var(--green)" id="successH">Welcome to the Trust! 🎉</h2>
-    <p id="sumLine" style="font-size:15px"></p>
+    <p id="sumLine"></p>
+
     <div class="member-card">
       <small id="cardLabel">Dale Supporters Trust &middot; Member 2026/27</small>
       <div class="no" id="memNo">DT-2026-0000</div>
       <div style="margin-top:6px;font-size:14px" id="memName"></div>
-      
     </div>
-    <p style="margin-top:16px;font-size:14px">You can see your membership card any time at <a href="members.html" style="color:#0057A7">daletrust.uk/members.html</a>. A confirmation email is on its way with your membership number and everything your membership includes — Partners of the Trust offers, coach travel priority, and both competition leagues, free.</p>
+
+    <div id="payArea"></div>
+
+    <p class="afterNote" id="afterNote">You can see your membership card any time at
+      <a href="members.html">daletrust.uk/members.html</a>. A confirmation email is on its way with your
+      membership number and everything your membership includes &mdash; Partners of the Trust offers,
+      coach travel priority, and both competition leagues, free.</p>
   </div>
 </div>
 
@@ -343,31 +363,46 @@ async function pay(method){
       return;
     }
     if(!d.ok){e.style.display='block';e.textContent=d.error||'Something went wrong \u2014 please try again.';return;}
-    $('memNo').textContent=d.member_no;
-    $('memName').textContent=payload.first_name+' '+payload.last_name+' \u00B7 '+type;
+    // the reference until they have paid — a blank membership number looks broken
+    $('memNo').textContent = d.member_no || (d.app_ref || '');
+    $('memName').textContent = payload.first_name+' '+payload.last_name+' \u00B7 '+type;
     const amt = (typeof d.amount==='number') ? d.amount : ((type==='Junior'?0:7.5)+don);
+
     if(d.pay_url){
       const back = !!d.returning;
-      $('successH').textContent = back
-        ? 'Welcome back \u2014 one step left'
-        : 'Almost there \u2014 one step left';
+      $('successH').textContent = back ? 'Welcome back \u2014 one step left' : 'Almost there \u2014 one step left';
       $('cardLabel').textContent = back
-        ? 'Dale Supporters Trust \u00B7 Rejoining \u2014 activates on payment'
-        : 'Dale Supporters Trust \u00B7 Membership reserved \u2014 activates on payment';
-      const opener = back
-        ? `<b>You are rejoining the Trust for ${d.season||'this season'}</b>${d.lastSeason?` \u2014 you were last a member in ${d.lastSeason}`:''}. Good to have you back. `
-        : `<b>You are joining the Trust for ${d.season||'this season'}.</b> `;
-      $('sumLine').innerHTML = opener +
-        `Your ${type} membership is <b>reserved but not yet active</b>${don?`, with a \u00A3${don.toFixed(2)} donation \u2014 thank you`:''}. ` +
-        `<b>One step left:</b> tap below to pay \u00A3${amt.toFixed(2)} securely with SumUp \u2014 card, Apple Pay or Google Pay, no account needed. ` +
-        `Your membership activates the moment payment completes.`;
-      const btn=document.createElement('a');
-      btn.href=d.pay_url; btn.textContent='Pay \u00A3'+amt.toFixed(2)+' now \u2192';
-      btn.style.cssText='display:inline-block;margin-top:14px;background:#1E8E5A;color:#fff;text-decoration:none;font:600 17px Oswald;text-transform:uppercase;letter-spacing:.06em;padding:15px 30px;border-radius:10px';
-      document.querySelector('#success .card').appendChild(btn);
+        ? 'Dale Supporters Trust \u00B7 Rejoining \u2014 not active yet'
+        : 'Dale Supporters Trust \u00B7 Reserved \u2014 not active yet';
+
+      $('sumLine').innerHTML =
+        '<span class="lead">' + (back
+          ? 'You are rejoining the Trust for ' + (d.season||'this season') + '.'
+          : 'You are joining the Trust for ' + (d.season||'this season') + '.') + '</span>' +
+        '<span class="sub">' +
+          (back && d.lastSeason ? 'You were last a member in ' + d.lastSeason + ' \u2014 good to have you back. ' : '') +
+          'Your <b>' + type + '</b> membership is reserved' +
+          (don ? ', with a \u00A3' + don.toFixed(2) + ' donation \u2014 thank you' : '') +
+          ', but it is <b>not active until you have paid</b>.' +
+        '</span>';
+
+      $('payArea').innerHTML =
+        '<a class="paynow" href="' + d.pay_url + '">Pay \u00A3' + amt.toFixed(2) + ' now &rarr;</a>' +
+        '<p class="paynote">Card, Apple Pay or Google Pay \u2014 no account needed.<br>' +
+        'Your membership activates the moment payment completes.</p>';
+
+      $('afterNote').innerHTML =
+        'Once you have paid, your membership number and welcome letter arrive by email, and your card is at ' +
+        '<a href="members.html">daletrust.uk/members.html</a>.';
     } else {
-      $('sumLine').textContent=`${type} membership confirmed \u2014 free for juniors. Welcome to the Trust!`;
+      $('successH').textContent = 'Welcome to the Trust! \ud83c\udf89';
+      $('cardLabel').textContent = 'Dale Supporters Trust \u00B7 Member ' + (d.season||'');
+      $('sumLine').innerHTML =
+        '<span class="lead">' + type + ' membership confirmed \u2014 free for juniors.</span>' +
+        '<span class="sub">Welcome to the Trust. Everything below is yours from today.</span>';
+      $('payArea').innerHTML = '';
     }
+
     $('form').style.display='none';$('bar').style.display='none';
     $('success').style.display='block';window.scrollTo({top:0,behavior:'smooth'});
   }catch(err){
