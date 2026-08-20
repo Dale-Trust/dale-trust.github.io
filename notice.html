@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email members | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--badge:#002F7C;--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:21px}.top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:820px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
+  .panel h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:4px}
+  .lede{font-size:13.5px;color:#7A8AA5;margin:0 0 14px 14px}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:12px 0 5px}
+  input,select,textarea{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font:inherit;color:var(--ink);background:#fff}
+  textarea{min-height:230px;line-height:1.6}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media(max-width:700px){.g3{grid-template-columns:1fr}}
+  button{background:var(--royal);color:#fff;border:0;border-radius:10px;padding:13px 24px;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+  button.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line)}
+  button.go{background:var(--green)}
+  .count{background:#E8F1FC;border-left:4px solid var(--royal);border-radius:0 10px 10px 0;padding:14px 16px;margin-top:14px;font-size:14.5px}
+  .count b{font-family:'Oswald';font-size:24px;color:var(--ink)}
+  .warn{background:#FFF9E8;border:1px solid #EAD198;border-left:5px solid var(--gold);border-radius:0 10px 10px 0;padding:14px 16px;font-size:14px;margin-top:14px}
+  .hint{font-size:12.5px;color:#7A8AA5;margin-top:5px}
+  .msg{font-size:14px;font-weight:600;margin-top:12px}
+  .sent{border-bottom:1px solid var(--line);padding:11px 4px;font-size:13.5px}
+  .sent b{color:var(--ink)}
+  .sent small{display:block;color:#7A8AA5;font-size:12.5px;margin-top:2px}
+  .pv{background:var(--wash);border-radius:10px;padding:18px;font-size:14.5px;line-height:1.6;margin-top:12px}
+  .pv p{margin-bottom:12px}.pv ul{margin:0 0 12px 20px}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>Email members</h1><small>For things members should know that do not belong on the website</small></div>
+<div class="wrap">
+
+  <div class="panel">
+    <h2>What is this for</h2>
+    <p class="lede" style="margin-left:14px">Notices, not news.</p>
+    <p style="font-size:14.5px">An AGM notice, coach seats left with a deadline, something for exiles only, a members&rsquo; survey.
+      Anything that is genuinely news should be <a href="tools/compose.html">written as an article</a> instead &mdash; that way it lives on the website
+      and people can find it later.</p>
+    <div class="warn"><b>This is not published anywhere.</b> It goes to inboxes only, and there is no link back to the site.
+      A record of what was sent and to whom is kept below.</div>
+  </div>
+
+  <div class="panel">
+    <h2>The message</h2>
+    <label>Subject</label>
+    <input id="subject" placeholder="e.g. AGM — Thursday 18 September, 7.30pm">
+    <p class="hint">This is what they see in their inbox. Say the thing rather than teasing it.</p>
+
+    <label>What you want to say</label>
+    <textarea id="body" placeholder="Blank line between paragraphs. Start a line with - for a bullet. **bold** for emphasis.&#10;&#10;Their first name is added at the top automatically."></textarea>
+    <p class="hint">Their first name goes at the top for you. Keep it short &mdash; people read email on a phone, standing up.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Who gets it</h2>
+    <p class="lede" style="margin-left:14px">One email per address, so a household gets one rather than three.</p>
+    <div class="g3">
+      <div><label>Membership</label><select id="f_type" onchange="recount()">
+        <option value="">Everyone</option><option>Adult</option><option>Exile</option><option>Junior</option></select></div>
+      <div><label>Where</label><select id="f_area" onchange="recount()">
+        <option value="">Anywhere</option><option value="local">Rochdale and nearby</option>
+        <option value="uk">Rest of the UK</option><option value="overseas">Overseas</option></select></div>
+      <div><label>Newsletter</label><select id="f_news" onchange="recount()">
+        <option value="">Everyone</option><option value="1">Opted in only</option></select></div>
+    </div>
+    <div class="count" id="count">Counting&hellip;</div>
+  </div>
+
+  <div class="panel">
+    <h2>Check it before it goes</h2>
+    <button class="ghost" onclick="preview()">See how it will look</button>
+    <button class="ghost" onclick="sendTest()">Send me a test</button>
+    <div id="pv"></div>
+    <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:18px">
+      <button class="go" id="sendBtn" onclick="sendIt()">Send it</button>
+      <p class="hint" style="margin-top:8px">You will be asked twice. Emails cannot be unsent.</p>
+    </div>
+    <p class="msg" id="msg"></p>
+  </div>
+
+  <div class="panel">
+    <h2>Sent before</h2>
+    <div id="history">Loading&hellip;</div>
+  </div>
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+let lastCount=0, timer=null;
+
+function filters(){
+  const f={};
+  if($('f_type').value) f.type=$('f_type').value;
+  if($('f_area').value) f.area=$('f_area').value;
+  if($('f_news').value) f.newsletter=$('f_news').value;
+  return f;
+}
+
+function recount(){
+  clearTimeout(timer);
+  timer=setTimeout(async()=>{
+    $('count').innerHTML='Counting…';
+    try{
+      const d=await (await fetch(EP+'/audience/count',{method:'POST',headers:H(),body:JSON.stringify(filters())})).json();
+      if(!d.ok){$('count').textContent=d.error;return;}
+      lastCount=d.count;
+      $('count').innerHTML='<b>'+d.count+'</b> will get this<br><span style="color:#7A8AA5;font-size:13.5px">'+esc(d.description)+'</span>';
+    }catch(e){$('count').textContent='Could not count just now.';}
+  },250);
+}
+
+function asHtml(t){
+  return t.split(/\n{2,}/).map(p=>{
+    const s=p.trim(); if(!s) return '';
+    if(s.split('\n').every(l=>l.trim().startsWith('- ')))
+      return '<ul>'+s.split('\n').map(l=>'<li>'+esc(l.trim().slice(2))+'</li>').join('')+'</ul>';
+    return '<p>'+esc(s).replace(/\n/g,'<br>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')+'</p>';
+  }).join('');
+}
+
+function preview(){
+  const b=$('body').value.trim();
+  if(!b){ $('pv').innerHTML='<p class="hint">Write something first.</p>'; return; }
+  $('pv').innerHTML='<div class="pv"><p>Hi Chris,</p>'+asHtml(b)+
+    '<p style="color:#7A8AA5;font-size:13px;border-top:1px solid #DCE3EC;padding-top:12px">'+
+    'You are getting this because you are a Dale Trust member. This one is for members only and is not on the website.</p></div>';
+}
+
+async function sendTest(){
+  const to=prompt('Send a test to which email?');
+  if(!to) return;
+  await post({test_to:to.trim()}, 'Test sent to '+to.trim()+'.');
+}
+
+async function sendIt(){
+  if(!$('subject').value.trim()){ say('It needs a subject.', true); return; }
+  if(!$('body').value.trim()){ say('It needs something to say.', true); return; }
+  if(!confirm('Email '+lastCount+' member'+(lastCount===1?'':'s')+'?\n\n"'+$('subject').value.trim()+'"\n\nThis is not published anywhere — it goes straight to inboxes.')) return;
+  if(!confirm('Last check — '+lastCount+' emails, going now?')) return;
+  await post({}, null);
+}
+
+async function post(extra, okMsg){
+  const body=Object.assign({subject:$('subject').value.trim(), body:$('body').value.trim(), filters:filters()}, extra);
+  $('sendBtn').disabled=true; say('Sending…');
+  try{
+    const d=await (await fetch(EP+'/notices/send',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+    if(!d.ok){ say(d.error, true); }
+    else if(d.test){ say(okMsg||'Test sent.'); }
+    else { say('Sent to '+d.sent+' member'+(d.sent===1?'':'s')+'.'); $('subject').value=''; $('body').value=''; $('pv').innerHTML=''; loadHistory(); }
+  }catch(e){ say('Could not send just now.', true); }
+  $('sendBtn').disabled=false;
+}
+
+function say(t, bad){ const m=$('msg'); m.style.color=bad?'var(--red)':'var(--green)'; m.textContent=t; }
+
+async function loadHistory(){
+  try{
+    const d=await (await fetch(EP+'/notices',{headers:H()})).json();
+    if(!d.ok){$('history').textContent=d.error;return;}
+    $('history').innerHTML = d.notices.length
+      ? d.notices.map(n=>'<div class="sent"><b>'+esc(n.subject)+'</b>'+
+          '<small>'+n.recipients+' people · '+esc(n.audience_note||'')+' · '+
+          new Date(n.sent_at.replace(' ','T')+'Z').toLocaleString('en-GB')+' · '+esc(n.sent_by||'')+'</small></div>').join('')
+      : '<p class="hint">Nothing sent yet.</p>';
+  }catch(e){ $('history').textContent='Could not load.'; }
+}
+
+recount(); loadHistory();
+</script>
+</body>
+</html>
