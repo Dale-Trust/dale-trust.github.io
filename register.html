@@ -108,6 +108,12 @@
       <option value="free">Free (junior or honorary)</option><option value="pending">Not paid yet</option></select></div>
     <div><label>Method note</label><input id="a_method" placeholder="e.g. standing order, cheque"></div>
     <div><label>Donation (£)</label><input id="a_don" value="0"></div>
+    <div style="display:flex;align-items:flex-end;padding-bottom:2px">
+      <label style="display:flex;gap:9px;align-items:center;text-transform:none;letter-spacing:0;font-size:14.5px;font-weight:500;margin:0">
+        <input type="checkbox" id="a_welcome" checked style="width:auto;transform:scale(1.2)">
+        Send them a welcome email
+      </label>
+    </div>
   </div>
   <div class="g2">
     <div><label>Newsletter</label><select id="a_news"><option value="1">Yes</option><option value="0">No</option></select></div>
@@ -406,7 +412,8 @@ async function addMember(force){
     town:$('a_town').value.trim(),county:$('a_county').value.trim(),postcode:$('a_pc').value.trim(),
     payment_status:$('a_status').value,payment_method:$('a_method').value.trim(),
     donation:$('a_don').value,newsletter_optin:$('a_news').value==='1',
-    date_joined:$('a_date').value||null,comments:$('a_notes').value.trim(),force:!!force};
+    date_joined:$('a_date').value||null,comments:$('a_notes').value.trim(),force:!!force,
+    welcome: $('a_welcome') ? $('a_welcome').checked : true};
   if(!b.first_name||!b.last_name){$('amsg').innerHTML='<span style="color:var(--red)">First name and surname are needed.</span>';return;}
   const r=await fetch(EP+'/members/add',{method:'POST',headers:H(),body:JSON.stringify(b)});
   const d=await r.json();
@@ -416,7 +423,10 @@ async function addMember(force){
     return;
   }
   if(!d.ok){$('amsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return;}
-  $('amsg').innerHTML='<span style="color:var(--green)">Added — '+esc(d.member_no||d.app_ref)+'</span>';
+  $('amsg').innerHTML='<span style="color:var(--green)">Added \u2014 '+esc(d.member_no||d.app_ref)+
+    (d.welcomed ? '. Their welcome email is on its way.'
+                : (d.member_no ? '. <b>No welcome email sent</b> \u2014 no email address on the record.'
+                               : '. Not paid yet, so no membership number and no welcome email.'))+'</span>';
   ['a_first','a_last','a_email','a_mobile','a_ad1','a_ad2','a_town','a_county','a_pc','a_gender','a_dob','a_notes','a_method'].forEach(i=>$(i).value='');
   $('a_don').value='0';
   search();
