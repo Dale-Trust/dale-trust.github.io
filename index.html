@@ -541,7 +541,7 @@
       </div>
       <div class="stats">
         <div class="stat"><b>3,000+</b><span>Season tickets sold</span></div>
-        <div class="stat"><b id="efRaised">&pound;10,100+</b><span>Raised by shopping</span></div>
+        <div class="stat"><b id="statMembers">400+</b><span>Members in <span id="statCountries">12</span> countries</span></div>
         <div class="stat"><b>Every game</b><span>Trust coach travel</span></div>
       </div>
     </div>
@@ -1100,13 +1100,24 @@ loadHub();
   }
 })();
 
+// ---- membership, live from the register ----
+(async function(){
+  try{
+    const d = await (await fetch('https://join.daletrust.uk/members/public')).json();
+    if(!d.ok) return;
+    const m = document.getElementById('statMembers');
+    const c = document.getElementById('statCountries');
+    if(m && d.members) m.textContent = d.members.toLocaleString('en-GB');
+    if(c && d.countries) c.textContent = d.countries;
+  }catch(e){}
+})();
+
 // ---- easyfundraising: read the live total ----
 (async function(){
   try{
     const d = await (await fetch('https://join.daletrust.uk/easyfundraising')).json();
     if(!d.ok || !d.raised) return;
     const money = '\u00a3' + Math.floor(d.raised).toLocaleString('en-GB');
-    const a = document.getElementById('efRaised'); if(a) a.textContent = money + '+';
     const b = document.getElementById('efBig');    if(b) b.textContent = money;
     if(d.supporters){
       const c = document.getElementById('efPeople');

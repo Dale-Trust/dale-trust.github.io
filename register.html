@@ -181,6 +181,7 @@
     <button class="green" onclick="saveMember()">Save changes</button>
     <button class="ghost" onclick="document.getElementById('editor').style.display='none'">Close</button>
     <button class="ghost" onclick="printCard()">Print their card</button>
+    <button class="green" id="rejoinBtn" style="display:none" onclick="rejoin()">Bring them back for this season</button>
     <button style="background:var(--red);margin-left:auto" onclick="deleteMember()">Delete this record</button>
   </div>
   <p class="msg" id="emsg"></p>
@@ -289,6 +290,12 @@ async function openMember(id){
   $('e_shareWrap').style.display=m.membership_type==='Exile'?'block':'none';
   if(m.membership_type==='Exile')$('e_share').value=m.exile_transport_share||'No';
   $('emsg').textContent=''; $('delBox').style.display='none';
+  const rb=$('rejoinBtn');
+  if(rb){
+    const lapsed = m.season && CURRENT_SEASON && m.season !== CURRENT_SEASON && !m.deceased;
+    rb.style.display = lapsed ? 'inline-block' : 'none';
+    rb.textContent = 'Bring them back for '+(CURRENT_SEASON||'this season');
+  }
   $('l_reason').value=''; $('l_note').value=''; $('l_dnc').checked=!!m.do_not_contact;
   $('decWarn').style.display='none';
   $('lmsg').innerHTML = m.deceased
@@ -302,6 +309,33 @@ function decCheck(){
   const dec=$('l_reason').value==='Deceased';
   $('decWarn').style.display=dec?'block':'none';
   if(dec) $('l_dnc').checked=true;
+}
+
+let CURRENT_SEASON = null;
+(async function(){
+  try{
+    const d = await (await fetch(EP+'/members/public')).json();
+    if(d.ok) CURRENT_SEASON = d.season;
+  }catch(e){}
+})();
+
+async function rejoin(){
+  if(!current) return;
+  const who = current.first_name+' '+current.last_name;
+  const how = prompt('Bring '+who+' back for '+CURRENT_SEASON+'.\n\n'+
+    'How have they paid?\n\n  desk  \u2014 Trust Desk or cash\n  paid  \u2014 cheque or bank transfer\n'+
+    '  free  \u2014 junior or honorary\n  pending \u2014 not paid yet','desk');
+  if(how===null) return;
+  const email = prompt('Email address for their welcome:', current.email||'') ;
+  if(email===null) return;
+  const d = await (await fetch(EP+'/members/rejoin',{method:'POST',headers:H(),
+    body:JSON.stringify({id:current.id, payment_status:how.trim()||'desk', email:email.trim()})})).json();
+  if(!d.ok){ alert(d.error); return; }
+  alert(who+' is back for '+CURRENT_SEASON+'.\n\n'+
+    (d.member_no ? 'Membership number: '+d.member_no : 'No number yet \u2014 not marked as paid')+
+    (d.welcomed ? '\nTheir welcome email is on its way.' : '\nNo welcome email sent.')+
+    '\n\nTheir old record from '+d.from+' has been left exactly as it was.');
+  search();
 }
 
 async function recordLeft(){
