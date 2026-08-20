@@ -55,8 +55,22 @@
     <button onclick="load()">Refresh</button>
     <button class="ghost" onclick="window.print()">Print this</button>
     <button class="ghost" onclick="checkPayments()" id="chkBtn">Check SumUp for payments</button>
+    <button class="ghost" onclick="toggleInspect()">Look one up in SumUp</button>
     <span id="chkMsg" style="font-size:13.5px;font-weight:600"></span>
   </div>
+  <div class="panel" id="inspectBox" style="display:none;border-left:5px solid var(--gold)">
+    <h2>Look a payment up in SumUp</h2>
+    <p class="lede">For when someone says they have paid but the site does not agree. This asks SumUp directly.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <input id="insRef" placeholder="REF-2436 or CT-1003" style="flex:1;min-width:200px;padding:10px 14px;border:1.5px solid var(--line);border-radius:9px;font:inherit"
+        onkeydown="if(event.key==='Enter')inspect()">
+      <button onclick="inspect()">Ask SumUp</button>
+    </div>
+    <pre id="insOut" style="display:none;margin-top:14px;background:#0E1F3D;color:#C7D6EC;padding:16px;border-radius:10px;
+      font:12.5px ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-word;max-height:420px;overflow:auto"></pre>
+    <p id="insVerdict" style="margin-top:12px;font-size:14.5px;font-weight:600"></p>
+  </div>
+
   <div class="kpis" id="kpis"></div>
   <div id="out">Loading&hellip;</div>
 </div>
@@ -75,6 +89,48 @@ function state(s, hasNo){
   if(s==='cancelled') return '<span class="pill bad">cancelled</span>';
   if(!hasNo) return '<span class="pill wait">no number</span>';
   return '<span class="pill ok">'+esc(s)+'</span>';
+}
+
+function toggleInspect(){
+  const b=$('inspectBox');
+  b.style.display = b.style.display==='none' ? 'block' : 'none';
+  if(b.style.display==='block') $('insRef').focus();
+}
+
+async function inspect(){
+  const ref=$('insRef').value.trim();
+  if(!ref){ $('insRef').focus(); return; }
+  const out=$('insOut'), v=$('insVerdict');
+  out.style.display='block'; out.textContent='Asking SumUp\u2026'; v.textContent='';
+  try{
+    const d=await (await fetch(EP+'/payments/inspect?ref='+encodeURIComponent(ref),{headers:H()})).json();
+    out.textContent=JSON.stringify(d,null,2);
+    if(!d.ok){ v.style.color='#C0392B'; v.textContent=d.error||'Could not look that up.'; return; }
+
+    const acct = d.sumupAccount || {};
+    const byRef = (d.byReference && d.byReference.body) || null;
+    const list = Array.isArray(byRef) ? byRef : (byRef ? [byRef] : []);
+    const paid = list.find(c => c && c.status==='PAID');
+
+    if(acct.httpStatus && acct.httpStatus!==200){
+      v.style.color='#C0392B';
+      v.textContent='The SumUp key is not working \u2014 that is the problem, not the payment.';
+    } else if(paid){
+      v.style.color='#1E8E5A';
+      v.textContent='SumUp says this WAS paid. Press \u201cCheck SumUp for payments\u201d and it will be sorted.';
+    } else if(list.length){
+      v.style.color='#8A4B00';
+      v.textContent='SumUp knows this reference but does not show it as paid \u2014 status: '+
+        list.map(c=>c && c.status).join(', ')+'.';
+    } else {
+      v.style.color='#C0392B';
+      v.textContent='SumUp has no record of that reference at all. Worth checking the account '+
+        (acct.name ? '(the key belongs to \u201c'+acct.name+'\u201d)' : '')+'.';
+    }
+  }catch(e){
+    out.textContent='Could not reach the server.';
+    v.style.color='#C0392B'; v.textContent='Could not reach the server.';
+  }
 }
 
 async function checkPayments(){
