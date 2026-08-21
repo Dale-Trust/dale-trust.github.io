@@ -12,6 +12,7 @@ Disallow: /import.html
 Disallow: /dashboard.html
 Disallow: /board.html
 Disallow: /pulse.html
+Disallow: /visitors.html
 Disallow: /forms.html
 Disallow: /surveys.html
 Disallow: /coach.html

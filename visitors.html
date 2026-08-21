@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Who's visiting | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--badge:#002F7C;--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:21px}.top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:1000px;margin:0 auto;padding:18px}
+  .bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+  .bar button{background:#fff;border:1.5px solid var(--line);border-radius:9px;padding:9px 16px;
+    font:600 12.5px 'Oswald';text-transform:uppercase;letter-spacing:.05em;color:var(--body);cursor:pointer}
+  .bar button.on{background:var(--royal);color:#fff;border-color:var(--royal)}
+  .hero{background:linear-gradient(120deg,var(--badge),#16305C 60%,#00417E);color:#fff;border-radius:14px;
+    padding:22px 24px;margin-bottom:16px;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:0;bottom:0;right:-14%;width:44%;background:var(--royal);transform:skewX(-14deg);opacity:.35}
+  .hero .in{position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:20px}
+  .hero .big span{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#8FC1FF;display:block;margin-bottom:2px}
+  .hero .big b{font-family:'Oswald';font-size:40px;color:#fff;line-height:1;display:block}
+  .hero .big em{font-style:normal;font-size:13px;color:#C7D6EC;display:block;margin-top:3px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .card h2{font-size:15px;margin-bottom:12px;border-left:4px solid var(--royal);padding-left:10px}
+  .row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13.5px}
+  .row .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+  .row .track{width:44%;background:var(--wash);border-radius:6px;height:20px;position:relative;flex:none}
+  .row .track i{display:block;height:100%;background:var(--royal);border-radius:6px}
+  .row .n{width:52px;text-align:right;font-weight:700;color:var(--ink);flex:none}
+  .days{display:flex;align-items:flex-end;gap:4px;height:170px;margin-top:6px}
+  .days .d{flex:1;background:var(--royal);border-radius:4px 4px 0 0;min-height:2px;position:relative}
+  .days .d:hover{background:var(--bright)}
+  .days .d span{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:10.5px;color:#7A8AA5;white-space:nowrap}
+  .days .d b{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink)}
+  .daywrap{padding:22px 0 26px}
+  .msg{padding:26px;text-align:center;color:#7A8AA5}
+  .note{font-size:12.5px;color:#7A8AA5;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>Who&rsquo;s visiting</h1><small>Live from Cloudflare &mdash; no cookies, nobody followed around</small></div>
+<div class="wrap">
+  <div class="bar">
+    <button data-d="1">Today</button>
+    <button data-d="7" class="on">Last week</button>
+    <button data-d="30">Last month</button>
+    <button data-d="90">Last three months</button>
+  </div>
+  <div id="out"><p class="msg">Loading&hellip;</p></div>
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+const H=()=>({'Authorization':'Bearer '+session});
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const num=n=>Number(n||0).toLocaleString('en-GB');
+
+function bars(rows, labelKey, title, empty){
+  if(!rows||!rows.length) return '<div class="card"><h2>'+title+'</h2><p style="color:#7A8AA5;font-size:13.5px">'+empty+'</p></div>';
+  const max=Math.max(...rows.map(r=>r.views));
+  return '<div class="card"><h2>'+title+'</h2>'+rows.map(r=>{
+    let l=r[labelKey]||'\u2014';
+    if(labelKey==='requestPath'&&l==='/') l='/ (home page)';
+    if(labelKey==='refererHost'&&(!l||l==='')) l='typed it in, or a bookmark';
+    return '<div class="row"><span class="lbl" title="'+esc(l)+'">'+esc(l)+'</span>'+
+      '<span class="track"><i style="width:'+Math.max(3,Math.round(r.views/max*100))+'%"></i></span>'+
+      '<span class="n">'+num(r.views)+'</span></div>';
+  }).join('')+'</div>';
+}
+
+async function load(days){
+  $('out').innerHTML='<p class="msg">Asking Cloudflare&hellip;</p>';
+  try{
+    const d=await (await fetch(EP+'/analytics?days='+days,{headers:H()})).json();
+    if(!d.ok){
+      $('out').innerHTML='<div class="card"><h2>Could not load</h2><p style="font-size:13.5px">'+esc(d.error)+'</p>'+
+        '<p class="note">If this says the token is missing, it needs adding to the Worker in Cloudflare as <b>CF_ANALYTICS_TOKEN</b>.</p></div>';
+      return;
+    }
+    const perDay = d.days>1 ? Math.round(d.visits/d.days) : d.visits;
+    let html='<div class="hero"><div class="in">'+
+      '<div class="big"><span>People</span><b>'+num(d.visits)+'</b><em>'+(d.days===1?'today':'in the last '+d.days+' days')+'</em></div>'+
+      '<div class="big"><span>Pages read</span><b>'+num(d.views)+'</b><em>'+(d.visits?(d.views/d.visits).toFixed(1):'0')+' each</em></div>'+
+      '<div class="big"><span>A day, on average</span><b>'+num(perDay)+'</b></div>'+
+      '</div></div>';
+
+    if(d.byDay&&d.byDay.length>1){
+      const max=Math.max(...d.byDay.map(x=>x.visits||0));
+      html+='<div class="card" style="margin-bottom:16px"><h2>Day by day</h2><div class="daywrap"><div class="days">'+
+        d.byDay.map(x=>{
+          const v=x.visits||0;
+          const dt=new Date(x.date+'T12:00:00');
+          return '<div class="d" style="height:'+Math.max(2,Math.round(v/Math.max(1,max)*100))+'%" title="'+v+' on '+x.date+'">'+
+            (v?'<b>'+v+'</b>':'')+
+            '<span>'+dt.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</span></div>';
+        }).join('')+'</div></div></div>';
+    }
+
+    html+='<div class="grid">'+
+      bars(d.pages,'requestPath','Most read pages','Nothing yet.')+
+      bars(d.referers,'refererHost','Where they came from','Nothing yet.')+
+      bars(d.countries,'countryName','Countries','Nothing yet.')+
+      bars(d.devices,'deviceType','Phone or computer','Nothing yet.')+
+    '</div>';
+    html+='<p class="note">Cloudflare counts a visit without cookies and without following anyone between sites, so these are honest numbers rather than precise ones.</p>';
+    $('out').innerHTML=html;
+  }catch(e){ $('out').innerHTML='<p class="msg">Could not load just now.</p>'; }
+}
+
+document.querySelectorAll('.bar button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.bar button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); load(b.dataset.d);
+});
+load(7);
+</script>
+</body>
+</html>
