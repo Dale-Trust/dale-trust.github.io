@@ -86,6 +86,13 @@
       <option value="scheduled">Scheduled</option><option value="archived">Archived</option></select></div>
     <div><label>Publish date &amp; time</label><input type="datetime-local" id="eWhen"></div>
   </div>
+  <label>Picture at the top <small style="text-transform:none;font-weight:400">(optional)</small></label>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <input type="file" id="eImgFile" accept="image/*" onchange="uploadImage(this)" style="flex:1;min-width:180px">
+    <button class="ghost" type="button" onclick="clearImage()" id="eImgClear" style="display:none">Remove it</button>
+  </div>
+  <div id="eImgPreview" style="margin-top:10px"></div>
+
   <label>The words</label><textarea id="eBody"></textarea>
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
     <button class="ok" onclick="save()">Save changes</button>
@@ -205,6 +212,8 @@ async function edit(id){
   current=d.post;
   $('eTitle').value=current.title;
   $('eBody').value=current.body;
+  headerImage = current.image || null;
+  showImage();
   $('eStatus').value=current.status;
   const sel=$('eCat'); if(![...sel.options].some(o=>o.value===current.category)) sel.add(new Option(current.category,current.category));
   sel.value=current.category;
@@ -217,11 +226,44 @@ async function edit(id){
 
 function closeEditor(){$('editor').style.display='none';current=null;}
 
+let headerImage=null;
+
+function showImage(){
+  const box=$('eImgPreview'), btn=$('eImgClear');
+  if(headerImage){
+    box.innerHTML='<img src="'+headerImage+'" alt="" style="max-width:100%;max-height:200px;border-radius:10px;display:block">';
+    btn.style.display='inline-block';
+  } else {
+    box.innerHTML='<p style="font-size:13px;color:#7A8AA5">No picture. The article will show without one.</p>';
+    btn.style.display='none';
+  }
+}
+
+function clearImage(){
+  if(!confirm('Take the picture off this article?')) return;
+  headerImage=null; $('eImgFile').value=''; showImage();
+}
+
+async function uploadImage(input){
+  const f=input.files && input.files[0];
+  if(!f) return;
+  if(f.size > 5*1024*1024){ alert('That picture is over 5MB. Something smaller, please.'); input.value=''; return; }
+  $('eImgPreview').innerHTML='<p style="font-size:13px;color:#7A8AA5">Uploading\u2026</p>';
+  try{
+    const fd=new FormData(); fd.append('file', f);
+    const d=await (await fetch(EP+'/image/upload',{method:'POST',
+      headers:{'Authorization':'Bearer '+session}, body:fd})).json();
+    if(!d.ok){ $('eImgPreview').innerHTML='<p style="font-size:13px;color:var(--red)">'+(d.error||'Could not upload that.')+'</p>'; return; }
+    headerImage=d.url; showImage();
+  }catch(e){ $('eImgPreview').innerHTML='<p style="font-size:13px;color:var(--red)">Could not upload that.</p>'; }
+}
+
 async function save(){
   if(!current)return;
   const body={id:current.id, slug:current.slug, title:$('eTitle').value.trim(),
     category:$('eCat').value, body:$('eBody').value, status:$('eStatus').value,
-    publish_at: $('eWhen').value ? new Date($('eWhen').value).toISOString() : current.publish_at};
+    publish_at: $('eWhen').value ? new Date($('eWhen').value).toISOString() : current.publish_at,
+    image: headerImage};
   if(!body.title||!body.body){$('eMsg').innerHTML='<span style="color:var(--red)">Title and words are both needed.</span>';return;}
   const d=await (await fetch(EP+'/posts/save',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
   $('eMsg').innerHTML=d.ok?'<span style="color:var(--green)">Saved. The website updates immediately.</span>'
