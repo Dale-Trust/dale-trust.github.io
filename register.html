@@ -178,6 +178,7 @@
       <option value="paid">Paid</option><option value="desk">Desk / cash</option><option value="free">Free</option>
       <option value="pending">Not paid yet</option><option value="cancelled">Cancelled</option></select></div>
     <div><label>Method</label><input id="e_method"></div>
+    <div><label>Subscription (£)</label><input id="e_amount"></div>
   </div>
   <div class="g3">
     <div><label>Newsletter</label><select id="e_news"><option value="1">Yes</option><option value="0">No</option></select></div>
@@ -306,6 +307,7 @@ async function openMember(id){
   $('e_pc').value=m.postcode||''; $('e_country').value=m.country||'';
   $('e_status').value=m.payment_status||'desk'; $('e_method').value=m.payment_method||'';
   $('e_news').value=m.newsletter_optin?'1':'0'; $('e_don').value=m.donation||0;
+  $('e_amount').value = (m.amount_due === null || m.amount_due === undefined) ? '' : m.amount_due;
   $('e_comments').value=m.comments||'';
   $('e_shareWrap').style.display=m.membership_type==='Exile'?'block':'none';
   if(m.membership_type==='Exile')$('e_share').value=m.exile_transport_share||'No';
@@ -472,6 +474,7 @@ async function saveMember(){
     county:$('e_county').value.trim(),postcode:$('e_pc').value.trim(),country:$('e_country').value.trim(),
     payment_status:$('e_status').value,payment_method:$('e_method').value.trim(),
     newsletter_optin:$('e_news').value==='1',donation:$('e_don').value,
+    amount_due:$('e_amount').value,
     exile_transport_share:$('e_share').value,comments:$('e_comments').value.trim()};
   const d=await (await fetch(EP+'/members/save',{method:'POST',headers:H(),body:JSON.stringify(b)})).json();
   $('emsg').innerHTML=d.ok?'<span style="color:var(--green)">Saved.</span>':'<span style="color:var(--red)">'+esc(d.error)+'</span>';
