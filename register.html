@@ -181,6 +181,7 @@
     <button class="green" onclick="saveMember()">Save changes</button>
     <button class="ghost" onclick="document.getElementById('editor').style.display='none'">Close</button>
     <button class="ghost" onclick="printCard()">Print their card</button>
+    <button class="ghost" id="welcomeBtn" onclick="resendWelcome()">Send their welcome email</button>
     <button class="green" id="rejoinBtn" style="display:none" onclick="rejoin()">Bring them back for this season</button>
     <button class="green" id="activateBtn" style="display:none" onclick="activateThem()">Payment received &mdash; activate them</button>
     <button style="background:var(--red);margin-left:auto" onclick="deleteMember()">Delete this record</button>
@@ -291,6 +292,9 @@ async function openMember(id){
   $('e_shareWrap').style.display=m.membership_type==='Exile'?'block':'none';
   if(m.membership_type==='Exile')$('e_share').value=m.exile_transport_share||'No';
   $('emsg').textContent=''; $('delBox').style.display='none';
+  const wb=$('welcomeBtn');
+  if(wb) wb.style.display = (m.member_no && !m.deceased && m.email && m.email!=='none@daletrust.uk')
+    ? 'inline-block' : 'none';
   const ab=$('activateBtn');
   if(ab) ab.style.display = (!m.member_no && m.payment_status==='pending' && !m.deceased) ? 'inline-block' : 'none';
   const rb=$('rejoinBtn');
@@ -321,6 +325,22 @@ let CURRENT_SEASON = null;
     if(d.ok) CURRENT_SEASON = d.season;
   }catch(e){}
 })();
+
+async function resendWelcome(){
+  if(!current) return;
+  const who = current.first_name+' '+current.last_name;
+  const to = prompt('Send '+who+' their welcome email.\n\n'+
+    'It has their membership number and a link to their welcome letter and card.\n\n'+
+    'Send it to:', current.email || '');
+  if(to===null) return;
+  if(!to.trim()){ alert('It needs an email address.'); return; }
+  const d = await (await fetch(EP+'/members/welcome',{method:'POST',headers:H(),
+    body:JSON.stringify({id:current.id, email:to.trim()})})).json();
+  if(!d.ok){ alert(d.error); return; }
+  alert('Sent to '+d.sentTo+'.\n\n'+
+    'It has '+who+'\u2019s membership number and a link to their welcome letter.');
+  search();
+}
 
 async function activateThem(){
   if(!current) return;
