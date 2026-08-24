@@ -76,6 +76,8 @@
     background:var(--wash);border:1px solid var(--line);border-radius:8px;padding:5px 14px}
   .numtag.none{color:#8A4B00;background:#FFF9E8;border-color:#EAD198;font-size:16px}
   .numsub{font-size:13px;color:#7A8AA5}
+  .totalbox{padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--wash);
+    font-family:'Oswald';font-size:18px;color:var(--ink);letter-spacing:.03em}
 </style>
 </head>
 <body>
@@ -178,11 +180,12 @@
       <option value="paid">Paid</option><option value="desk">Desk / cash</option><option value="free">Free</option>
       <option value="pending">Not paid yet</option><option value="cancelled">Cancelled</option></select></div>
     <div><label>Method</label><input id="e_method"></div>
-    <div><label>Subscription (£)</label><input id="e_amount"></div>
+    <div><label>Subscription (£)</label><input id="e_amount" oninput="showTotal()"></div>
   </div>
   <div class="g3">
     <div><label>Newsletter</label><select id="e_news"><option value="1">Yes</option><option value="0">No</option></select></div>
-    <div><label>Donation (£)</label><input id="e_don"></div>
+    <div><label>Donation (£)</label><input id="e_don" oninput="showTotal()"></div>
+    <div><label>Total paid</label><div id="e_total" class="totalbox">&pound;0.00</div></div>
     <div id="e_shareWrap" style="display:none"><label>Exile transport share</label><select id="e_share"><option>Yes</option><option>No</option></select></div>
   </div>
   <label>Notes</label><input id="e_comments">
@@ -307,7 +310,10 @@ async function openMember(id){
   $('e_pc').value=m.postcode||''; $('e_country').value=m.country||'';
   $('e_status').value=m.payment_status||'desk'; $('e_method').value=m.payment_method||'';
   $('e_news').value=m.newsletter_optin?'1':'0'; $('e_don').value=m.donation||0;
-  $('e_amount').value = (m.amount_due === null || m.amount_due === undefined) ? '' : m.amount_due;
+  // what is stored is the total charged, donation included — show the two parts separately
+  const _paid = Number(m.amount_due) || 0, _don = Number(m.donation) || 0;
+  $('e_amount').value = (Math.max(0, _paid - _don)).toFixed(2);
+  showTotal();
   $('e_comments').value=m.comments||'';
   $('e_shareWrap').style.display=m.membership_type==='Exile'?'block':'none';
   if(m.membership_type==='Exile')$('e_share').value=m.exile_transport_share||'No';
@@ -474,7 +480,7 @@ async function saveMember(){
     county:$('e_county').value.trim(),postcode:$('e_pc').value.trim(),country:$('e_country').value.trim(),
     payment_status:$('e_status').value,payment_method:$('e_method').value.trim(),
     newsletter_optin:$('e_news').value==='1',donation:$('e_don').value,
-    amount_due:$('e_amount').value,
+    amount_due: (Number($('e_amount').value||0) + Number($('e_don').value||0)).toFixed(2),
     exile_transport_share:$('e_share').value,comments:$('e_comments').value.trim()};
   const d=await (await fetch(EP+'/members/save',{method:'POST',headers:H(),body:JSON.stringify(b)})).json();
   $('emsg').innerHTML=d.ok?'<span style="color:var(--green)">Saved.</span>':'<span style="color:var(--red)">'+esc(d.error)+'</span>';
@@ -508,6 +514,13 @@ function clearAdder(){
   $('a_don').value='0'; $('a_amount').value='7.50'; $('a_amount').value='7.50'; $('amsg').textContent=''; $('a_first').focus();
 }
 
+function showTotal(){
+  const t=$('e_total'); if(!t) return;
+  const a=Number($('e_amount').value||0), d=Number($('e_don').value||0);
+  t.textContent='\u00a3'+(a+d).toFixed(2);
+  t.style.color = d>0 ? 'var(--green)' : 'var(--ink)';
+}
+
 function amountForType(){
   const t=$('a_type').value, s=$('a_status').value;
   const el=$('a_amount');
@@ -524,7 +537,8 @@ async function addMember(force){
     address1:$('a_ad1').value.trim(),address2:$('a_ad2').value.trim(),
     town:$('a_town').value.trim(),county:$('a_county').value.trim(),postcode:$('a_pc').value.trim(),
     payment_status:$('a_status').value,payment_method:$('a_method').value.trim(),
-    donation:$('a_don').value, amount_due:$('a_amount').value,
+    donation:$('a_don').value,
+    amount_due: (Number($('a_amount').value||0) + Number($('a_don').value||0)).toFixed(2),
     newsletter_optin:$('a_news').value==='1',
     date_joined:$('a_date').value||null,comments:$('a_notes').value.trim(),force:!!force,
     welcome: $('a_welcome') ? $('a_welcome').checked : true};
