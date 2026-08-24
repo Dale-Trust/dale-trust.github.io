@@ -37,6 +37,17 @@
   .copied{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;
     padding:10px 20px;border-radius:100px;font-weight:600;font-size:13.5px;display:none;z-index:9}
   @media(max-width:700px){ th:nth-child(2),td:nth-child(2){display:none} }
+  .panel h3.sub{font-family:'Oswald';text-transform:uppercase;font-size:14px;color:var(--ink);
+    margin:18px 0 6px;letter-spacing:.03em}
+  .panel h3.sub:first-of-type{margin-top:6px}
+  .panel p{font-size:14.5px;margin-bottom:8px}
+  .panel p.small{font-size:13.5px;color:#7A8AA5}
+  .steps{background:var(--wash);border-radius:10px;padding:14px 18px;margin:12px 0}
+  .steps b{font-family:'Oswald';text-transform:uppercase;font-size:13.5px;color:var(--ink);letter-spacing:.04em}
+  .steps ol{margin:8px 0 0 18px;padding:0}
+  .steps li{margin-bottom:6px;font-size:14px;line-height:1.5}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--badge);
+    background:#fff;padding:1px 6px;border-radius:4px;border:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -61,11 +72,59 @@
   </div>
 
   <div class="panel">
-    <h2>Getting it on your phone</h2>
-    <p class="lede">Nothing to set up beyond signing in.</p>
-    <p style="font-size:14.5px;margin-bottom:8px"><b>On your phone</b> &mdash; download <b>Zoho Mail</b> from the App Store or Play Store and sign in.</p>
-    <p style="font-size:14.5px"><b>On a computer</b> &mdash; go to <b>mail.zoho.eu</b> and sign in there. Nothing to install.</p>
-    <div class="note">Getting it into your normal Mail app or Outlook is coming &mdash; for now this gets you going.</div>
+    <h2>Getting your email on your phone</h2>
+    <p class="lede">Two ways. The first takes a minute; the second puts it in the app you already use.</p>
+
+    <h3 class="sub">The quick way &mdash; the Zoho app</h3>
+    <p>Download <b>Zoho Mail</b> from the App Store or Play Store and sign in with your Trust address and password. That is it.</p>
+    <p class="small">On a computer, go to <b>mail.zoho.eu</b> and sign in there. Nothing to install.</p>
+
+    <h3 class="sub">The better way &mdash; your own Mail app</h3>
+    <p>Your Trust email then sits alongside everything else, and you are not opening another app to check it.</p>
+
+    <div class="steps">
+      <b>iPhone or iPad</b>
+      <ol>
+        <li>Settings &rarr; Apps &rarr; <b>Mail</b> &rarr; Mail Accounts &rarr; <b>Add Account</b> &rarr; <b>Other</b> &rarr; Add Mail Account</li>
+        <li>Put in your name, your Trust address and your password, then Next</li>
+        <li>Choose <b>IMAP</b> at the top</li>
+        <li><b>Incoming</b> &mdash; Host <span class="mono">imap.zoho.eu</span>, username your full email address, and your password</li>
+        <li><b>Outgoing</b> &mdash; Host <span class="mono">smtp.zoho.eu</span>, same username and password</li>
+        <li>Save</li>
+      </ol>
+    </div>
+
+    <div class="steps">
+      <b>Android</b>
+      <ol>
+        <li>Open <b>Gmail</b> &rarr; tap your picture, top right &rarr; <b>Add another account</b> &rarr; <b>Other</b></li>
+        <li>Put your Trust address in, tap Next, then choose <b>Personal (IMAP)</b></li>
+        <li>Password, then Next</li>
+        <li><b>Incoming</b> server <span class="mono">imap.zoho.eu</span>, <b>Outgoing</b> <span class="mono">smtp.zoho.eu</span></li>
+        <li>Finish</li>
+      </ol>
+    </div>
+
+    <div class="steps">
+      <b>Outlook, on a computer</b>
+      <ol>
+        <li>File &rarr; <b>Add Account</b></li>
+        <li>Put your Trust address in and choose <b>Advanced options</b> &rarr; <b>Let me set up my account manually</b></li>
+        <li>Choose <b>IMAP</b></li>
+        <li><b>Incoming</b> <span class="mono">imap.zoho.eu</span>, port <b>993</b>, SSL</li>
+        <li><b>Outgoing</b> <span class="mono">smtp.zoho.eu</span>, port <b>465</b>, SSL</li>
+        <li>Password, then Connect</li>
+      </ol>
+    </div>
+
+    <div class="note"><b>If it will not connect</b>, it is almost always one of two things. Check the server is
+      <span class="mono">.eu</span> and not <span class="mono">.com</span> &mdash; the Trust is on the European servers.
+      And your username is your <b>whole email address</b>, not just the bit before the @.</div>
+
+    <div class="note" style="border-left-color:var(--gold);background:#FFF9E8">
+      <b>Once it is set up, send yourself a test.</b> Then reply to it choosing your <b>role address</b> from the
+      &ldquo;From&rdquo; dropdown, so you know where to find it when it matters.
+    </div>
   </div>
 </div>
 <div class="copied" id="copied">Copied</div>
