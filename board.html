@@ -39,6 +39,24 @@
   .stamp{font-size:12.5px;color:#7A8AA5;margin:14px 2px}
   #msg{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;text-align:center;max-width:480px;margin:40px auto}
   #dash{display:none}
+  .lede{font-size:13.5px;color:#7A8AA5;margin:-4px 0 12px}
+  .ctable{width:100%;border-collapse:collapse;font-size:13.5px}
+  .ctable th{background:var(--navy);color:#fff;text-align:left;padding:9px 10px;font-size:11px;
+    letter-spacing:.05em;text-transform:uppercase;font-weight:700}
+  .ctable td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .ctable tr:nth-child(even) td{background:#FAFCFE}
+  .ctable td b{color:var(--ink)}
+  .fill{background:var(--wash);border-radius:100px;height:18px;position:relative;min-width:90px;overflow:hidden}
+  .fill i{display:block;height:100%;background:var(--royal);border-radius:100px}
+  .fill span{position:absolute;inset:0;text-align:center;font-size:11px;font-weight:700;line-height:18px;color:var(--ink)}
+  .fill.full i{background:var(--green)}
+  .mfilters{display:grid;grid-template-columns:1fr 150px 150px;gap:10px;margin-bottom:12px}
+  @media(max-width:700px){.mfilters{grid-template-columns:1fr}}
+  .mfilters input,.mfilters select{padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font:inherit;background:#fff;width:100%}
+  .found{font-size:13px;color:#7A8AA5;margin-bottom:10px}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    padding:2px 9px;border-radius:100px;background:var(--wash);color:#5A6880}
+  .pill.wait{background:#FFF3E4;color:#8A4B00}
 </style>
 </head>
 <body>
@@ -62,6 +80,27 @@
       <div class="card"><h2>How they joined</h2><canvas id="cVia"></canvas></div>
       <div class="card"><h2>Newsletter consent</h2><canvas id="cNews"></canvas></div>
     </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>Coach travel</h2>
+      <p class="lede">Every trip, updating as seats are booked.</p>
+      <div id="coachTable"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>The membership list</h2>
+      <p class="lede">For looking up a member. Nothing here can be changed, and personal contact details are not shown.</p>
+      <div class="mfilters">
+        <input id="mq" placeholder="Name, membership number or town&hellip;" oninput="findMembers()">
+        <select id="mseason" onchange="findMembers()"></select>
+        <select id="mtype" onchange="findMembers()">
+          <option value="">Every type</option><option>Adult</option><option>Exile</option><option>Junior</option>
+        </select>
+      </div>
+      <p class="found" id="mfound"></p>
+      <div id="memberTable"></div>
+    </div>
+
     <p class="stamp" id="stamp"></p>
   </div>
 </div>
@@ -81,6 +120,7 @@ function whenCharts(cb, tries){
   let session=null;
   try{session=localStorage.getItem('dt_session');}catch(e){}
   if(!session){ say('Please sign in to view the figures.',true); return; }
+  window._sess = session;
 
   try{
     await new Promise(res => whenCharts(res));
@@ -172,9 +212,76 @@ function whenCharts(cb, tries){
       datasets:[{data:[pick(d.newsletter,'1'),pick(d.newsletter,'0')],
         backgroundColor:[GREEN,GREY],borderWidth:0}]},options:DO});
 
+    drawCoaches(d.coaches||[]);
+    findMembers();
     $('stamp').textContent='Live from the Trust\u2019s membership database \u00b7 generated '+new Date(d.generated).toLocaleString('en-GB')+' \u00b7 no personal details appear on this page';
   }catch(e){ say('Could not load the figures just now.'); }
 })();
+
+const H = () => ({'Authorization':'Bearer ' + (window._sess || '')});
+
+// ---- coach travel ----
+function drawCoaches(list){
+  const box=document.getElementById('coachTable');
+  if(!list.length){ box.innerHTML='<p style="color:#7A8AA5;font-size:13.5px">No coaches set up yet.</p>'; return; }
+  const money=n=>'\u00a3'+Number(n||0).toFixed(2);
+  const when=s=>s?new Date(s+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}):'';
+  let totSold=0, totSeats=0, totTaken=0, totOwed=0;
+  const rows=list.map(t=>{
+    totSold+=t.sold; totSeats+=t.seats; totTaken+=Number(t.taken||0); totOwed+=Number(t.owed||0);
+    const pct=t.seats?Math.round(t.sold/t.seats*100):0;
+    return '<tr><td><b>'+esc(t.opponent)+'</b>'+
+      (t.status!=='open'?' <span class="pill">'+esc(t.status)+'</span>':'')+
+      '<small style="display:block;color:#7A8AA5">'+when(t.match_date)+
+      (t.depart_time?' \u00b7 leaves '+esc(t.depart_time):'')+'</small></td>'+
+      '<td><b>'+t.sold+'</b> of '+t.seats+'</td>'+
+      '<td><b>'+t.spare+'</b></td>'+
+      '<td><div class="fill'+(pct>=100?' full':'')+'"><i style="width:'+Math.min(100,pct)+'%"></i>'+
+        '<span>'+pct+'%</span></div></td>'+
+      '<td>'+money(t.taken)+(Number(t.owed)>0?'<small style="display:block;color:#8A4B00">'+money(t.owed)+' due</small>':'')+'</td></tr>';
+  }).join('');
+  box.innerHTML='<div style="overflow-x:auto"><table class="ctable">'+
+    '<tr><th>Game</th><th>Seats sold</th><th>Spare</th><th>How full</th><th>Taken</th></tr>'+rows+
+    '<tr style="background:var(--wash)"><td><b>All coaches</b></td>'+
+    '<td><b>'+totSold+'</b> of '+totSeats+'</td><td><b>'+(totSeats-totSold)+'</b></td>'+
+    '<td><div class="fill"><i style="width:'+(totSeats?Math.min(100,Math.round(totSold/totSeats*100)):0)+'%"></i>'+
+      '<span>'+(totSeats?Math.round(totSold/totSeats*100):0)+'%</span></div></td>'+
+    '<td><b>'+money(totTaken)+'</b>'+(totOwed>0?'<small style="display:block;color:#8A4B00">'+money(totOwed)+' due</small>':'')+'</td></tr>'+
+    '</table></div>';
+}
+
+// ---- the membership list, to look at only ----
+let mTimer=null, mSeasonsDone=false;
+function findMembers(){
+  clearTimeout(mTimer);
+  mTimer=setTimeout(async()=>{
+    const q=document.getElementById('mq').value.trim();
+    const s=document.getElementById('mseason').value;
+    const t=document.getElementById('mtype').value;
+    const box=document.getElementById('memberTable');
+    try{
+      const r=await fetch(EP+'/members/browse?q='+encodeURIComponent(q)+
+        '&season='+encodeURIComponent(s)+'&type='+encodeURIComponent(t),{headers:H()});
+      const d=await r.json();
+      if(!d.ok){ box.innerHTML='<p style="color:#7A8AA5;font-size:13.5px">'+esc(d.error)+'</p>'; return; }
+      if(!mSeasonsDone && d.seasons){
+        document.getElementById('mseason').innerHTML=d.seasons.map(x=>'<option'+(x===s?' selected':'')+'>'+esc(x)+'</option>').join('');
+        mSeasonsDone=true;
+      }
+      document.getElementById('mfound').innerHTML='<b>'+d.count+'</b> '+(d.count===1?'member':'members')+
+        (d.count>=600?' (showing the first 600 \u2014 narrow it down)':'');
+      box.innerHTML = d.members.length
+        ? '<div style="overflow-x:auto"><table class="ctable">'+
+          '<tr><th>Name</th><th>Number</th><th>Type</th><th>Where</th></tr>'+
+          d.members.map(m=>'<tr><td><b>'+esc((m.first_name+' '+m.last_name).trim())+'</b></td>'+
+            '<td>'+(m.member_no?esc(m.member_no):'<span class="pill wait">not paid yet</span>')+'</td>'+
+            '<td>'+esc(m.membership_type||'')+'</td>'+
+            '<td>'+esc(m.town||'')+(m.country?', '+esc(m.country):'')+'</td></tr>').join('')+
+          '</table></div>'
+        : '<p style="color:#7A8AA5;font-size:13.5px">Nobody found.</p>';
+    }catch(e){ box.innerHTML='<p style="color:#7A8AA5;font-size:13.5px">Could not load.</p>'; }
+  },250);
+}
 </script>
 </body>
 </html>
