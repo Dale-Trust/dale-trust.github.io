@@ -296,7 +296,14 @@ async function openMember(id){
   if(wb) wb.style.display = (m.member_no && !m.deceased && m.email && m.email!=='none@daletrust.uk')
     ? 'inline-block' : 'none';
   const ab=$('activateBtn');
-  if(ab) ab.style.display = (!m.member_no && m.payment_status==='pending' && !m.deceased) ? 'inline-block' : 'none';
+  // anyone without a membership number needs activating, whatever the payment says —
+  // a record marked paid with no number is exactly the case that needs sorting
+  if(ab){
+    ab.style.display = (!m.member_no && m.payment_status!=='cancelled' && !m.deceased) ? 'inline-block' : 'none';
+    ab.textContent = m.payment_status==='paid'
+      ? 'Give them a membership number'
+      : 'Payment received \u2014 activate them';
+  }
   const rb=$('rejoinBtn');
   if(rb){
     const lapsed = m.season && CURRENT_SEASON && m.season !== CURRENT_SEASON && !m.deceased;
