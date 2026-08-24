@@ -57,6 +57,9 @@
   .pill{display:inline-block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
     padding:2px 9px;border-radius:100px;background:var(--wash);color:#5A6880}
   .pill.wait{background:#FFF3E4;color:#8A4B00}
+  .morebtn{background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:11px 22px;
+    font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.05em;color:var(--body);cursor:pointer}
+  .morebtn:hover{border-color:var(--royal);color:var(--royal)}
 </style>
 </head>
 <body>
@@ -251,37 +254,57 @@ function drawCoaches(list){
 }
 
 // ---- the membership list, to look at only ----
-let mTimer=null, mSeasonsDone=false;
-function findMembers(){
+let mTimer=null, mSeasonsDone=false, mOffset=0, mRows=[];
+
+function findMembers(reset){
+  if(reset!==false) mOffset=0;
   clearTimeout(mTimer);
-  mTimer=setTimeout(async()=>{
-    const q=document.getElementById('mq').value.trim();
-    const s=document.getElementById('mseason').value;
-    const t=document.getElementById('mtype').value;
-    const box=document.getElementById('memberTable');
-    try{
-      const r=await fetch(EP+'/members/browse?q='+encodeURIComponent(q)+
-        '&season='+encodeURIComponent(s)+'&type='+encodeURIComponent(t),{headers:H()});
-      const d=await r.json();
-      if(!d.ok){ box.innerHTML='<p style="color:#7A8AA5;font-size:13.5px">'+esc(d.error)+'</p>'; return; }
-      if(!mSeasonsDone && d.seasons){
-        document.getElementById('mseason').innerHTML=d.seasons.map(x=>'<option'+(x===s?' selected':'')+'>'+esc(x)+'</option>').join('');
-        mSeasonsDone=true;
-      }
-      document.getElementById('mfound').innerHTML='<b>'+d.count+'</b> '+(d.count===1?'member':'members')+
-        (d.count>=600?' (showing the first 600 \u2014 narrow it down)':'');
-      box.innerHTML = d.members.length
-        ? '<div style="overflow-x:auto"><table class="ctable">'+
-          '<tr><th>Name</th><th>Number</th><th>Type</th><th>Where</th></tr>'+
-          d.members.map(m=>'<tr><td><b>'+esc((m.first_name+' '+m.last_name).trim())+'</b></td>'+
-            '<td>'+(m.member_no?esc(m.member_no):'<span class="pill wait">not paid yet</span>')+'</td>'+
-            '<td>'+esc(m.membership_type||'')+'</td>'+
-            '<td>'+esc(m.town||'')+(m.country?', '+esc(m.country):'')+'</td></tr>').join('')+
-          '</table></div>'
-        : '<p style="color:#7A8AA5;font-size:13.5px">Nobody found.</p>';
-    }catch(e){ box.innerHTML='<p style="color:#7A8AA5;font-size:13.5px">Could not load.</p>'; }
-  },250);
+  mTimer=setTimeout(loadMembers, 250);
 }
+
+async function loadMembers(){
+  const q=document.getElementById('mq').value.trim();
+  const s=document.getElementById('mseason').value;
+  const t=document.getElementById('mtype').value;
+  const box=document.getElementById('memberTable');
+  if(mOffset===0) box.innerHTML='<p style="color:#7A8AA5;font-size:13.5px">Loading&hellip;</p>';
+  try{
+    const r=await fetch(EP+'/members/browse?q='+encodeURIComponent(q)+
+      '&season='+encodeURIComponent(s)+'&type='+encodeURIComponent(t)+
+      '&offset='+mOffset+'&limit=50',{headers:H()});
+    const d=await r.json();
+    if(!d.ok){ box.innerHTML='<p style="color:#7A8AA5;font-size:13.5px">'+esc(d.error||'Could not load.')+'</p>'; return; }
+
+    if(!mSeasonsDone && d.seasons && d.seasons.length){
+      document.getElementById('mseason').innerHTML=
+        d.seasons.map(x=>'<option'+(x===d.season?' selected':'')+'>'+esc(x)+'</option>').join('');
+      mSeasonsDone=true;
+    }
+
+    mRows = mOffset===0 ? d.members : mRows.concat(d.members);
+    const from = mRows.length ? 1 : 0;
+    document.getElementById('mfound').innerHTML =
+      '<b>'+d.total+'</b> '+(d.total===1?'member':'members')+
+      (d.total>mRows.length ? ' \u00b7 showing '+from+'\u2013'+mRows.length : '');
+
+    box.innerHTML = mRows.length
+      ? '<div style="overflow-x:auto"><table class="ctable">'+
+        '<tr><th>Name</th><th>Number</th><th>Type</th><th>Where</th></tr>'+
+        mRows.map(m=>'<tr><td><b>'+esc((m.first_name+' '+m.last_name).trim())+'</b></td>'+
+          '<td>'+(m.member_no?esc(m.member_no):'<span class="pill wait">not paid yet</span>')+'</td>'+
+          '<td>'+esc(m.membership_type||'')+'</td>'+
+          '<td>'+esc(m.town||'')+(m.country?', '+esc(m.country):'')+'</td></tr>').join('')+
+        '</table></div>'+
+        (mRows.length < d.total
+          ? '<div style="text-align:center;margin-top:14px"><button class="morebtn" onclick="moreMembers()">Show 50 more</button></div>'
+          : (d.total>50?'<p style="text-align:center;color:#7A8AA5;font-size:13px;margin-top:12px">That is all '+d.total+'.</p>':''))
+      : '<p style="color:#7A8AA5;font-size:13.5px">Nobody found.</p>';
+  }catch(e){
+    box.innerHTML='<p style="color:#7A8AA5;font-size:13.5px">Could not load just now.</p>';
+  }
+}
+
+function moreMembers(){ mOffset += 50; loadMembers(); }
 </script>
 </body>
 </html>
