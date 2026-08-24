@@ -70,6 +70,12 @@
     #oneoff{display:block!important}
     @page{size:A4;margin:0}
   }
+  /* the membership number, where it can be seen */
+  .numbar{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .numtag{font-family:'Oswald';font-size:22px;letter-spacing:.04em;color:var(--badge);
+    background:var(--wash);border:1px solid var(--line);border-radius:8px;padding:5px 14px}
+  .numtag.none{color:#8A4B00;background:#FFF9E8;border-color:#EAD198;font-size:16px}
+  .numsub{font-size:13px;color:#7A8AA5}
 </style>
 </head>
 <body>
@@ -142,6 +148,7 @@
 <!-- EDIT -->
 <div class="panel" id="editor">
   <h2 id="eTitle">Member record</h2>
+  <div id="numberBar" class="numbar"></div>
   <p class="hist" id="eHist"></p>
   <div class="g3">
     <div><label>First name</label><input id="e_first"></div>
@@ -274,7 +281,17 @@ async function openMember(id){
   if(!d.ok){alert(d.error);return;}
   current=d.member;
   const m=current;
-  $('eTitle').textContent=m.first_name+' '+m.last_name+' — '+(m.member_no||m.app_ref);
+  $('eTitle').textContent=m.first_name+' '+m.last_name;
+  const nb=$('numberBar');
+  if(nb){
+    nb.innerHTML = m.member_no
+      ? '<span class="numtag">'+esc(m.member_no)+'</span>'+
+        '<span class="numsub">'+esc(m.membership_type||'')+' \u00b7 '+esc(m.season||'')+
+        (m.activated_at?' \u00b7 member since '+new Date(m.activated_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'')+
+        '</span>'
+      : '<span class="numtag none">No membership number yet</span>'+
+        '<span class="numsub">'+esc(m.app_ref||'')+' \u00b7 '+esc(m.payment_status||'')+'</span>';
+  }
   $('eHist').innerHTML = m.season+' · joined '+(m.joined_via||'—')+
     (m.details_confirmed_at?' · details confirmed '+new Date(m.details_confirmed_at.replace(' ','T')+'Z').toLocaleDateString('en-GB'):' · details never confirmed')+
     (d.other.length?'<br>Other seasons: '+d.other.map(o=>'<a onclick="openMember('+o.id+')">'+o.season+'</a>').join(', '):'');
@@ -336,6 +353,10 @@ let CURRENT_SEASON = null;
 async function resendWelcome(){
   if(!current) return;
   const who = current.first_name+' '+current.last_name;
+  const recent = current.activated_at &&
+    (Date.now() - new Date(current.activated_at).getTime()) < 3600000;
+  if(recent && !confirm(who+' was given a membership number less than an hour ago, '+
+     'and a welcome email went out then.\n\nSend another one?')) return;
   const to = prompt('Send '+who+' their welcome email.\n\n'+
     'It has their membership number and a link to their welcome letter and card.\n\n'+
     'Send it to:', current.email || '');
