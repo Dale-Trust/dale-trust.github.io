@@ -90,7 +90,7 @@
   <div class="g3">
     <div><label>First name</label><input id="a_first"></div>
     <div><label>Surname</label><input id="a_last"></div>
-    <div><label>Membership</label><select id="a_type"><option>Adult</option><option>Exile</option><option>Junior</option></select></div>
+    <div><label>Membership</label><select id="a_type" onchange="amountForType()"><option>Adult</option><option>Exile</option><option>Junior</option></select></div>
   </div>
   <div class="g3">
     <div><label>Season</label><select id="a_season"></select></div>
@@ -109,10 +109,11 @@
     <div><label>Postcode</label><input id="a_pc"></div>
   </div>
   <div class="g3">
-    <div><label>How did they pay?</label><select id="a_status">
+    <div><label>How did they pay?</label><select id="a_status" onchange="amountForType()">
       <option value="desk">Trust Desk / cash</option><option value="paid">Cheque or bank transfer</option>
       <option value="free">Free (junior or honorary)</option><option value="pending">Not paid yet</option></select></div>
     <div><label>Method note</label><input id="a_method" placeholder="e.g. standing order, cheque"></div>
+    <div><label>Subscription (£)</label><input id="a_amount" value="7.50"></div>
     <div><label>Donation (£)</label><input id="a_don" value="0"></div>
     <div style="display:flex;align-items:flex-end;padding-bottom:2px">
       <label style="display:flex;gap:9px;align-items:center;text-transform:none;letter-spacing:0;font-size:14.5px;font-weight:500;margin:0">
@@ -501,7 +502,15 @@ async function reallyDelete(){
 
 function clearAdder(){
   ['a_first','a_last','a_email','a_mobile','a_ad1','a_ad2','a_town','a_county','a_pc','a_gender','a_dob','a_notes','a_method'].forEach(i=>$(i).value='');
-  $('a_don').value='0'; $('amsg').textContent=''; $('a_first').focus();
+  $('a_don').value='0'; $('a_amount').value='7.50'; $('a_amount').value='7.50'; $('amsg').textContent=''; $('a_first').focus();
+}
+
+function amountForType(){
+  const t=$('a_type').value, s=$('a_status').value;
+  const el=$('a_amount');
+  if(!el) return;
+  if(t==='Junior' || s==='free'){ el.value='0.00'; return; }
+  el.value = t==='Exile' ? '7.50' : '7.50';
 }
 
 async function addMember(force){
@@ -512,7 +521,8 @@ async function addMember(force){
     address1:$('a_ad1').value.trim(),address2:$('a_ad2').value.trim(),
     town:$('a_town').value.trim(),county:$('a_county').value.trim(),postcode:$('a_pc').value.trim(),
     payment_status:$('a_status').value,payment_method:$('a_method').value.trim(),
-    donation:$('a_don').value,newsletter_optin:$('a_news').value==='1',
+    donation:$('a_don').value, amount_due:$('a_amount').value,
+    newsletter_optin:$('a_news').value==='1',
     date_joined:$('a_date').value||null,comments:$('a_notes').value.trim(),force:!!force,
     welcome: $('a_welcome') ? $('a_welcome').checked : true};
   if(!b.first_name||!b.last_name){$('amsg').innerHTML='<span style="color:var(--red)">First name and surname are needed.</span>';return;}
