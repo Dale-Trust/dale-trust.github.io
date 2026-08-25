@@ -57,6 +57,8 @@
   .policy li{margin-bottom:5px}
   footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:22px}
   .memberhint{background:#E8F1FC;border-radius:10px;padding:12px 16px;font-size:14px;margin-bottom:18px}
+  .cap{min-height:0}
+  .cap:empty{display:none}
 </style>
 </head>
 <body>
@@ -134,6 +136,7 @@ async function load(){
           '<div><label>How many seats?</label><select id="s'+t.id+'" onchange="paxFields('+t.id+')">'+
             [1,2,3,4,5,6].filter(n=>n<=t.remaining).map(n=>'<option>'+n+'</option>').join('')+'</select></div></div>'+
           '<div id="pax'+t.id+'"></div>'+
+          (member ? '' : '<div class="cap" id="cap'+t.id+'" style="margin-top:14px"></div>')+
           '<div style="margin-top:14px"><button class="green" onclick="book('+t.id+')">Book and pay &rarr;</button></div>'+
           '<p class="msg" id="m'+t.id+'"></p>'+
         '</div></div>';
@@ -176,7 +179,10 @@ async function book(id){
   msg.textContent='One moment…';
   try{
     const d=await (await fetch(EP+'/coach/book',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({trip_id:id,name,mobile,email,seats,passengers,member_no:member&&member.record?member.record.member_no:null})})).json();
+      body:JSON.stringify({trip_id:id,name,mobile,email,seats,passengers,
+        member_no:member&&member.record?member.record.member_no:null,
+        turnstile_token:(window.turnstile&&window._capIds&&window._capIds[id]!==undefined)
+          ? turnstile.getResponse(window._capIds[id]) : ''})})).json();
     if(!d.ok){msg.innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return;}
     if(d.pay_url){
       msg.innerHTML='<span style="color:var(--green)">Almost there</span> — one step left. Taking you to payment…';
@@ -186,6 +192,36 @@ async function book(id){
     }
   }catch(e){msg.innerHTML='<span style="color:var(--red)">Could not book just now — please try again.</span>';}
 }
+
+// Anyone not signed in has to pass a human check before booking.
+// The key comes from the Worker, so it is never lost when this file is replaced.
+window._capIds = {};
+(async function(){
+  if (typeof member !== 'undefined' && member) return;   // members are already known to us
+  let key='';
+  try{
+    const cfg = await (await fetch(EP + '/config')).json();
+    key = (cfg && cfg.turnstile_site_key) || '';
+  }catch(e){}
+  if(!key) return;
+  const s=document.createElement('script');
+  s.src='https://challenges.cloudflare.com/turnstile/v0/api.js?onload=_capsReady';
+  s.async=true; document.head.appendChild(s);
+  window._capsReady=function(){
+    document.querySelectorAll('[id^="cap"]').forEach(box=>{
+      const id=box.id.replace('cap','');
+      if(window._capIds[id]!==undefined) return;
+      window._capIds[id]=turnstile.render('#'+box.id,{sitekey:key,theme:'light'});
+    });
+  };
+  // forms are drawn after the trips load, so try again when they appear
+  const watch=setInterval(()=>{
+    if(!window.turnstile) return;
+    const pending=[...document.querySelectorAll('[id^="cap"]')].filter(b=>window._capIds[b.id.replace('cap','')]===undefined);
+    if(pending.length) window._capsReady();
+  },600);
+  setTimeout(()=>clearInterval(watch),30000);
+})();
 </script>
 </body>
 </html>

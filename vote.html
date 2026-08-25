@@ -52,6 +52,7 @@
   .winner{background:#EAF7F0;border:1px solid #B7E0CB;border-left:5px solid var(--green);border-radius:0 12px 12px 0;padding:16px 18px;margin-bottom:16px}
   .winner b{font-family:'Oswald';font-size:24px;text-transform:uppercase;color:var(--ink);display:block}
   footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:22px}
+  .cap:empty{display:none}
 </style>
 </head>
 <body>
@@ -188,6 +189,9 @@ function render(){
         '<a href="members.html">Sign in</a> and you can enter.</p></div>';
   }
 
+  if(!member && !survey.members_only){
+    html+='<div class="cap" id="cap" style="margin:14px 0"></div>';
+  }
   html+=(survey.members_only&&!member) ? '' : '<button onclick="submit()">Send my answers</button>';
   html+='<p class="msg" id="vmsg"></p></div>';
   $('out').innerHTML=html;
@@ -216,6 +220,9 @@ async function submit(){
     }
   }
   const body={survey_id:survey.id, answers};
+  if(!member && window.turnstile && window._capId!==undefined){
+    body.turnstile_token = turnstile.getResponse(window._capId);
+  }
   const oi=$('optIn'); if(oi && oi.checked) body.opted_in=true;
   if(votingAs) body.member_id=votingAs;
   if(!member){
@@ -242,6 +249,24 @@ async function submit(){
     (d.verified?'have been counted as a verified member.':'have been recorded.')+'</p>'+
     '<p style="margin-top:12px"><a href="vote.html?r='+encodeURIComponent(survey.slug)+'">See the results</a> &middot; <a href="vote.html">What else is open</a> &middot; <a href="index.html">Back to the Trust</a></p></div>';
 }
+
+// Guests pass a human check before voting; members are already known to us.
+(async function(){
+  let key='';
+  try{ const cfg=await (await fetch(EP+'/config')).json(); key=(cfg&&cfg.turnstile_site_key)||''; }catch(e){}
+  if(!key) return;
+  const s=document.createElement('script');
+  s.src='https://challenges.cloudflare.com/turnstile/v0/api.js?onload=_capReady';
+  s.async=true; document.head.appendChild(s);
+  window._capReady=function(){
+    const box=document.getElementById('cap');
+    if(box && window._capId===undefined) window._capId=turnstile.render('#cap',{sitekey:key,theme:'light'});
+  };
+  const watch=setInterval(()=>{
+    if(window.turnstile && document.getElementById('cap') && window._capId===undefined) window._capReady();
+  },600);
+  setTimeout(()=>clearInterval(watch),30000);
+})();
 </script>
 </body>
 </html>
