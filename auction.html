@@ -152,33 +152,34 @@ function draw(){
 
   html+='<div class="'+(closed?'card':'bidnow')+'">';
   html+='<div class="lead"><div>'+
-    (A.top ? '<div class="amt">'+money(A.top.amount)+'</div><div class="who">leading bid, from '+esc(A.top.name)+'</div>'
+    (A.top ? '<div class="amt">'+money(A.top.amount)+'</div><div class="who">'+
+             (A.top.mine ? 'leading bid \u2014 that is yours' : 'leading bid')+'</div>'
            : '<div class="none">No bids yet</div><div class="who">Opening bid '+money(a.start_bid)+'</div>')+
     '</div><div style="text-align:right"><div class="who">'+A.bidCount+' bid'+(A.bidCount===1?'':'s')+
     ' from '+A.bidders+' '+(A.bidders===1?'person':'people')+'</div></div></div>';
 
   if(closed){
-    if(a.winner_name){
-      html+='<div class="won"><b style="font-family:Oswald;text-transform:uppercase;font-size:19px;color:var(--ink);display:block">Won by '+
-        esc(a.winner_name)+'</b><p style="margin-top:6px">at '+money(a.winner_amount)+'. Thank you to everyone who bid.</p></div>';
+    if(a.winner_amount){
+      html+='<div class="won"><b style="font-family:Oswald;text-transform:uppercase;font-size:19px;color:var(--ink);display:block">Sold for '+
+        money(a.winner_amount)+'</b><p style="margin-top:6px">The winner has been emailed. Thank you to everyone who bid.</p></div>';
     } else {
       html+='<p>This auction has closed.</p>';
     }
   } else if(!ME){
     html+='<p style="margin-bottom:4px">To bid we need to know who you are. Put your name and email in and we will send you a link — no password.</p>'+
-      '<label>Your name</label><input id="bname" placeholder="As it should appear against your bid" autocomplete="name">'+
+      '<label>Your name</label><input id="bname" placeholder="So we know who you are if you win" autocomplete="name">'+
       '<label>Your email</label><input id="bemail" type="email" placeholder="you@example.com" autocomplete="email">'+
       '<button class="btn blue" onclick="signin()">Send me a link to bid</button>'+
       '<p class="hint">Open to everyone, member or not.</p>';
   } else {
-    const mine = A.top && ME && A.top.name===ME.name;
+    const mine = A.top && A.top.mine;
     html+= mine
       ? '<div class="note" style="border-left-color:var(--green);background:#EAF7F0"><b>You are the highest bidder.</b> '+
         'We will email you if somebody goes above you.</div>'
       : '<label>Your bid</label><input id="amt" type="number" inputmode="decimal" step="0.01" value="'+
         Number(A.nextBid).toFixed(2)+'" min="'+A.nextBid+'">'+
         '<button class="btn" onclick="bid()">Bid '+money(A.nextBid)+' or more</button>'+
-        '<p class="hint">Bidding as '+esc(ME.name)+'. Bids cannot be withdrawn.</p>';
+        '<p class="hint">Bidding as '+esc(ME.name)+' \u2014 your name is not shown to anyone else. Bids cannot be withdrawn.</p>';
   }
   html+='<p class="msg" id="msg"></p></div>';
 
@@ -198,9 +199,10 @@ function draw(){
 
   if(A.bids.length){
     html+='<div class="card"><h2 style="font-size:18px;margin-bottom:6px">Every bid</h2><div class="bids">'+
-      A.bids.map(b=>'<div class="bid"><span>'+esc(b.name)+
+      A.bids.map(b=>'<div class="bid"><span>'+(b.mine?'<b style="color:var(--royal)">Your bid</b>':'A bidder')+
         '<small>'+new Date(b.at.replace(' ','T')+'Z').toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+
-        '</small></span><span class="amt">'+money(b.amount)+'</span></div>').join('')+'</div></div>';
+        '</small></span><span class="amt">'+money(b.amount)+'</span></div>').join('')+
+      '</div><p class="hint" style="margin-top:10px">Bidding is anonymous \u2014 every bid is shown, but not who made it.</p></div>';
   }
 
   $('out').innerHTML=html;
