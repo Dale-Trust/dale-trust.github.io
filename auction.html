@@ -199,7 +199,10 @@ async function load(){
 function draw(){
   const a=A.auction, closed=a.status!=='live' || !left(a.closes_at||'');
   let html='';
-  if(WON) html+=deliveryPanel();
+  // only worth showing when the winner still has something to do
+  const needs = WON && !WON.sent && (!WON.given || !WON.paid);
+  const sameItem = WON && A && WON.title === A.auction.title;
+  if(needs && sameItem) html+=deliveryPanel();
 
   if(a.images && a.images.length){
     html+='<div class="shots">'+a.images.map(u=>
@@ -269,6 +272,15 @@ function draw(){
       '</div><p class="hint" style="margin-top:10px">Bidding is anonymous \u2014 every bid is shown, but not who made it.</p></div>';
   }
 
+  if(needs && !sameItem){
+    html+='<div class="card" style="border-left:5px solid var(--gold);background:#FFFDF7">'+
+      '<h2 style="font-size:18px">One thing outstanding</h2>'+
+      '<p style="margin-top:6px">You won <b>'+esc(WON.title)+'</b> at '+money(WON.amount)+'. '+
+      (!WON.paid ? 'Your payment has not come through yet \u2014 check your email for the payment link.'
+                 : 'We just need to know where to send it.')+'</p>'+
+      (WON.paid && !WON.given ? addrForm() : '')+
+      '</div>';
+  }
   $('out').innerHTML=html;
 }
 
