@@ -474,6 +474,22 @@
   .extended{display:inline-block;background:var(--gold,#E8B84B);color:#3a2c00;font-size:10.5px;font-weight:800;
     letter-spacing:.07em;text-transform:uppercase;padding:2px 9px;border-radius:100px;margin-right:7px;
     vertical-align:1px}
+  /* shirt auction, shown only when one is running */
+  .auc{background:var(--navy);padding:26px 0}
+  .auc .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  .aucBox{display:grid;grid-template-columns:150px 1fr;gap:22px;align-items:center;text-decoration:none;
+    background:linear-gradient(120deg,#002F7C,#16305C 60%,#00417E);border-radius:16px;padding:22px 24px;
+    border:1px solid rgba(143,193,255,.25)}
+  .aucBox:hover{border-color:rgba(143,193,255,.6)}
+  .aucPic{width:150px;height:150px;border-radius:12px;background:#fff center/cover no-repeat;display:block}
+  .aucTxt{display:block;color:#fff}
+  .aucKick{display:block;font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8FC1FF}
+  .aucTxt b{display:block;font-family:'Oswald';text-transform:uppercase;font-size:clamp(20px,3.4vw,30px);
+    line-height:1.12;margin:6px 0 8px}
+  .aucBid{display:block;font-size:15px;color:#C7D6EC}
+  .aucBid strong{color:#fff;font-family:'Oswald';font-size:22px;letter-spacing:.02em}
+  .aucGo{display:inline-block;margin-top:12px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.07em;color:#8FC1FF}
+  @media(max-width:640px){.aucBox{grid-template-columns:1fr;text-align:center}.aucPic{width:100%;height:190px;margin:0 auto}}
 </style>
 </head>
 <body>
@@ -840,6 +856,20 @@
   </div>
 </div>
 
+<section class="auc" id="aucStrip" style="display:none">
+  <div class="wrap">
+    <a class="aucBox" href="auction.html">
+      <span class="aucPic" id="aucPic"></span>
+      <span class="aucTxt">
+        <span class="aucKick">Shirts in Fans Hands &middot; bidding now</span>
+        <b id="aucTitle"></b>
+        <span class="aucBid" id="aucBid"></span>
+        <span class="aucGo">Have a look &rarr;</span>
+      </span>
+    </a>
+  </div>
+</section>
+
 <section class="ef" id="easyfundraising">
   <div class="wrap">
     <div class="ef-grid">
@@ -1102,6 +1132,30 @@ loadHub();
   } catch (e) {
     grid.innerHTML = '<p style="grid-column:1/-1;color:#7A8AA5">Latest stories are on <a href="news.html">the news page</a>.</p>';
   }
+})();
+
+// ---- a shirt auction, if one is running ----
+(async function(){
+  try{
+    const d = await (await fetch('https://join.daletrust.uk/auction')).json();
+    if(!d.ok || !d.auction || d.auction.status !== 'live') return;
+    const a = d.auction;
+    if(a.closes_at && new Date(a.closes_at.replace(' ','T')+'Z') <= new Date()) return;
+
+    document.getElementById('aucTitle').textContent = a.title;
+    if(a.images && a.images[0]) document.getElementById('aucPic').style.backgroundImage = "url('"+a.images[0]+"')";
+
+    const money = n => '\u00a3' + Number(n||0).toFixed(2);
+    const ms = a.closes_at ? new Date(a.closes_at.replace(' ','T')+'Z') - new Date() : 0;
+    const hrs = Math.floor(ms/3600000), mins = Math.floor(ms%3600000/60000);
+    const left = ms > 86400000 ? Math.floor(ms/86400000)+' days left'
+               : hrs > 0 ? hrs+'h '+mins+'m left' : mins+' minutes left';
+    document.getElementById('aucBid').innerHTML = (d.top
+      ? 'Bidding at <strong>'+money(d.top.amount)+'</strong>'
+      : 'Opening bid <strong>'+money(a.start_bid)+'</strong>') + ' \u00b7 ' + left;
+
+    document.getElementById('aucStrip').style.display='block';
+  }catch(e){}
 })();
 
 // ---- membership, live from the register ----
