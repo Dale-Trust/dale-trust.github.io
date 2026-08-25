@@ -37,6 +37,14 @@
   .sent small{display:block;color:#7A8AA5;font-size:12.5px;margin-top:2px}
   .pv{background:var(--wash);border-radius:10px;padding:18px;font-size:14.5px;line-height:1.6;margin-top:12px}
   .pv p{margin-bottom:12px}.pv ul{margin:0 0 12px 20px}
+  .ticks{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+  .tick{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--line);
+    border-radius:100px;padding:9px 16px;cursor:pointer;margin:0;font-size:14px;text-transform:none;
+    letter-spacing:0;font-weight:500;color:var(--body)}
+  .tick input{width:auto;margin:0}
+  .tick:has(input:checked){border-color:var(--royal);background:#E8F1FC;color:var(--ink);font-weight:600}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:700px){.g2{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -79,14 +87,18 @@
   <div class="panel">
     <h2>Who gets it</h2>
     <p class="lede" style="margin-left:14px">One email per address, so a household gets one rather than three.</p>
-    <div class="g3">
-      <div><label>Membership</label><select id="f_type" onchange="recount()">
-        <option value="">Everyone</option><option>Adult</option><option>Exile</option><option>Junior</option></select></div>
+    <label>Membership &mdash; tick as many as you like, or none for everyone</label>
+    <div class="ticks">
+      <label class="tick"><input type="checkbox" value="Adult" onchange="recount()"><span>Adults</span></label>
+      <label class="tick"><input type="checkbox" value="Exile" onchange="recount()"><span>Exiles</span></label>
+      <label class="tick"><input type="checkbox" value="Junior" onchange="recount()"><span>Juniors</span></label>
+    </div>
+    <div class="g2">
       <div><label>Where</label><select id="f_area" onchange="recount()">
         <option value="">Anywhere</option><option value="local">Rochdale and nearby</option>
         <option value="uk">Rest of the UK</option><option value="overseas">Overseas</option></select></div>
       <div><label>Newsletter</label><select id="f_news" onchange="recount()">
-        <option value="">Everyone</option><option value="1">Opted in only</option></select></div>
+        <option value="">Everyone</option><option value="in">Opted in only</option></select></div>
     </div>
     <div class="count" id="count">Counting&hellip;</div>
   </div>
@@ -97,10 +109,29 @@
     <button class="ghost" onclick="sendTest()">Send me a test</button>
     <div id="pv"></div>
     <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:18px">
-      <button class="go" id="sendBtn" onclick="sendIt()">Send it</button>
+      <label>When should it go?</label>
+      <div class="g2">
+        <select id="whenMode" onchange="whenChanged()">
+          <option value="now">Now</option>
+          <option value="later">At a time I choose</option>
+        </select>
+        <input type="datetime-local" id="sendAt" style="display:none">
+      </div>
+      <p class="hint" id="whenHint">Nobody thanks you for an email at half past ten at night.</p>
+
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="go" id="sendBtn" onclick="sendIt()">Send it</button>
+        <button class="ghost" onclick="saveDraft()">Save for later</button>
+        <button class="ghost" id="scrapBtn" style="display:none" onclick="scrapIt()">Throw it away</button>
+      </div>
       <p class="hint" style="margin-top:8px" id="sendHint">You will be asked twice. Emails cannot be unsent.</p>
     </div>
     <p class="msg" id="msg"></p>
+  </div>
+
+  <div class="panel" id="savedPanel" style="display:none">
+    <h2>Saved and waiting to go</h2>
+    <div id="savedList"></div>
   </div>
 
   <div class="panel">
@@ -115,12 +146,13 @@ let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
 if(!session) location.href='admin.html';
 const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
-let lastCount=0, timer=null, canSend=false, queue=[];
+let lastCount=0, timer=null, canSend=false, queue=[], editingId=null;
 
 function filters(){
   const f={};
-  if($('f_type').value) f.type=$('f_type').value;
-  if($('f_area').value) f.area=$('f_area').value;
+  const types=[...document.querySelectorAll('.ticks input:checked')].map(i=>i.value);
+  if(types.length) f.types=types;
+  if($('f_area').value) f.place=$('f_area').value;
   if($('f_news').value) f.newsletter=$('f_news').value;
   return f;
 }
@@ -155,6 +187,72 @@ function preview(){
     'You are getting this because you are a Dale Trust member. This one is for members only and is not on the website.</p></div>';
 }
 
+function whenChanged(){
+  const later=$('whenMode').value==='later';
+  $('sendAt').style.display = later ? 'block' : 'none';
+  $('sendBtn').textContent = later ? 'Set it going' : (canSend ? 'Send it' : 'Send it for checking');
+  $('whenHint').textContent = later
+    ? 'It will go at that time, whether you are about or not.'
+    : 'Nobody thanks you for an email at half past ten at night.';
+  if(later && !$('sendAt').value){
+    const d=new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0);
+    $('sendAt').value=new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  }
+}
+
+function collect(){
+  return { id: editingId, subject:$('subject').value.trim(), body:$('body').value.trim(), filters:filters(),
+    send_at: $('whenMode').value==='later' && $('sendAt').value
+      ? new Date($('sendAt').value).toISOString().slice(0,19).replace('T',' ') : null };
+}
+
+async function saveDraft(){
+  if(!$('subject').value.trim()){ say('It needs a subject.', true); return; }
+  const body=collect();
+  const later = !!body.send_at;
+  if(later && new Date($('sendAt').value) <= new Date()){ say('That time has already been and gone.', true); return; }
+  const d=await (await fetch(EP+'/notices/save',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+  if(!d.ok){ say(d.error, true); return; }
+  editingId=d.id;
+  say(later
+    ? 'Set to go at '+new Date($('sendAt').value).toLocaleString('en-GB')+'.'
+    : 'Saved. It is in the list below whenever you want it.');
+  loadHistory();
+}
+
+async function scrapIt(){
+  if(!editingId) return;
+  if(!confirm('Throw this away?')) return;
+  const d=await (await fetch(EP+'/notices/scrap',{method:'POST',headers:H(),body:JSON.stringify({id:editingId})})).json();
+  if(d.ok){ clearForm(); say('Thrown away.'); loadHistory(); }
+}
+
+function clearForm(){
+  editingId=null; $('subject').value=''; $('body').value=''; $('pv').innerHTML='';
+  document.querySelectorAll('.ticks input').forEach(i=>i.checked=false);
+  $('f_area').value=''; $('f_news').value=''; $('whenMode').value='now'; $('sendAt').value='';
+  $('scrapBtn').style.display='none'; whenChanged(); recount();
+}
+
+async function openSaved(id){
+  const d=await (await fetch(EP+'/notices/one?id='+id,{headers:H()})).json();
+  if(!d.ok){ say(d.error, true); return; }
+  const n=d.notice;
+  editingId=n.id; $('subject').value=n.subject||''; $('body').value=n.body||'';
+  document.querySelectorAll('.ticks input').forEach(i=>
+    i.checked = Array.isArray(n.filters.types) && n.filters.types.includes(i.value));
+  $('f_area').value=n.filters.place||n.filters.area||'';
+  $('f_news').value=n.filters.newsletter||'';
+  if(n.send_at){
+    $('whenMode').value='later';
+    const dt=new Date(n.send_at.replace(' ','T')+'Z');
+    $('sendAt').value=new Date(dt-dt.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  } else $('whenMode').value='now';
+  $('scrapBtn').style.display='inline-block';
+  whenChanged(); recount(); preview();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
 async function sendTest(){
   const to=prompt('Send a test to which email?');
   if(!to) return;
@@ -164,6 +262,15 @@ async function sendTest(){
 async function sendIt(){
   if(!$('subject').value.trim()){ say('It needs a subject.', true); return; }
   if(!$('body').value.trim()){ say('It needs something to say.', true); return; }
+  if($('whenMode').value==='later'){
+    if(!$('sendAt').value){ say('Choose a time, or set it to go now.', true); return; }
+    if(new Date($('sendAt').value) <= new Date()){ say('That time has already been and gone.', true); return; }
+    if(!confirm('Send to '+lastCount+' member'+(lastCount===1?'':'s')+' at '+
+      new Date($('sendAt').value).toLocaleString('en-GB')+'?\n\nIt will go whether you are about or not.')) return;
+    await saveDraft();
+    clearForm();
+    return;
+  }
   if(canSend){
     if(!confirm('Email '+lastCount+' member'+(lastCount===1?'':'s')+'?\n\n"'+$('subject').value.trim()+'"\n\nThis is not published anywhere — it goes straight to inboxes.')) return;
     if(!confirm('Last check — '+lastCount+' emails, going now?')) return;
@@ -237,6 +344,24 @@ async function loadHistory(){
         '</small></div>').join('');
     } else $('minePanel').style.display='none';
 
+    const saved=d.saved||[];
+    if(saved.length){
+      $('savedPanel').style.display='block';
+      $('savedList').innerHTML=saved.map(s=>{
+        const when=s.send_at?new Date(s.send_at.replace(' ','T')+'Z'):null;
+        return '<div class="sent"><b>'+esc(s.subject)+'</b>'+
+          (s.status==='scheduled'
+            ? '<span style="display:inline-block;background:#E8F1FC;color:#0057A7;font-size:10.5px;font-weight:700;'+
+              'text-transform:uppercase;letter-spacing:.05em;padding:2px 9px;border-radius:100px;margin-left:8px">'+
+              'goes '+(when?when.toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')+'</span>'
+            : '<span style="display:inline-block;background:var(--wash);color:#5A6880;font-size:10.5px;font-weight:700;'+
+              'text-transform:uppercase;letter-spacing:.05em;padding:2px 9px;border-radius:100px;margin-left:8px">draft</span>')+
+          '<small>'+esc(s.audience_note||'')+' \u00b7 '+esc(s.created_by||'')+'</small>'+
+          '<button class="ghost" style="margin-top:8px;padding:8px 16px" onclick="openSaved('+s.id+')">Open it</button>'+
+          '</div>';
+      }).join('');
+    } else $('savedPanel').style.display='none';
+
     $('history').innerHTML = (d.sent||[]).length
       ? d.sent.map(n=>'<div class="sent"><b>'+esc(n.subject)+'</b>'+
           '<small>'+n.recipients+' people · '+esc(n.audience_note||'')+' · '+
@@ -246,7 +371,7 @@ async function loadHistory(){
   }catch(e){ $('history').textContent='Could not load.'; }
 }
 
-recount(); loadHistory();
+recount(); loadHistory(); whenChanged();
 </script>
 </body>
 </html>
