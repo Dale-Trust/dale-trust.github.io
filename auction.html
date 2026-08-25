@@ -190,8 +190,9 @@ function draw(){
 
   html+='<div class="card"><h2 style="font-size:18px;margin-bottom:6px">How it works</h2>'+
     '<div class="note">Bids go up in steps of '+money(a.increment)+'. '+
-    'If a bid lands in the last '+a.extend_minutes+' minutes, the clock extends by '+a.extend_minutes+
-    ' minutes — so nothing is won by bidding in the final seconds.</div>'+
+    '<b>There will always be at least '+a.extend_minutes+' minutes left after the last bid.</b> '+
+    'If somebody bids inside the final '+a.extend_minutes+' minutes, the clock resets to '+a.extend_minutes+
+    ' minutes from that bid — so nothing is won in the closing seconds, and everyone gets a chance to answer.</div>'+
     '<div class="note gold" style="margin-top:10px">The winner is emailed a payment link and has <b>48 hours</b> to pay. '+
     'After that it passes to the next highest bidder.</div>'+
     (a.charity_note?'<div class="note" style="margin-top:10px">'+esc(a.charity_note)+'</div>':'')+
