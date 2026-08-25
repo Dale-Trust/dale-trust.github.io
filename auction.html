@@ -78,7 +78,7 @@ const EP='https://join.daletrust.uk';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 const money=n=>'\u00a3'+Number(n||0).toFixed(2);
-let A=null, ME=null, TICK=null, SESSION=null;
+let A=null, ME=null, TICK=null, SESSION=null, WON=null, KNOWN=null;
 try{ SESSION=localStorage.getItem('dt_bidder'); }catch(e){}
 
 // arriving from the email link
@@ -119,6 +119,67 @@ function startClock(){
   },1000);
 }
 
+async function checkWon(){
+  try{
+    const d=await (await fetch(EP+'/auction/delivery',{headers:H()})).json();
+    WON = (d.ok && !d.nothing) ? d.auction : null;
+    KNOWN = d.known || null;
+  }catch(e){ WON=null; }
+}
+
+function deliveryPanel(){
+  const w=WON;
+  if(w.sent) return '<div class="card" style="border-left:5px solid var(--green)">'+
+    '<h2 style="font-size:19px">'+esc(w.title)+' is on its way</h2>'+
+    '<p style="margin-top:6px">Posted to you. Thank you again.</p></div>';
+
+  if(w.given) return '<div class="card" style="border-left:5px solid var(--green)">'+
+    '<h2 style="font-size:19px">You won '+esc(w.title)+'</h2>'+
+    '<p style="margin-top:6px">'+(w.paid?'Paid, and we have your address:':'We have your address:')+'</p>'+
+    '<p style="background:var(--wash);padding:12px 16px;border-radius:9px;margin-top:10px;white-space:pre-line">'+
+      esc(w.name)+'\n'+esc(w.address)+'\n'+esc(w.postcode)+'</p>'+
+    (w.paid?'':'<div class="note gold" style="margin-top:12px"><b>Your payment has not come through yet.</b> '+
+      'Check the email we sent you for the payment link.</div>')+
+    '<button class="btn blue" style="margin-top:12px" onclick="showAddr()">Change the address</button>'+
+    '<div id="addrBox"></div></div>';
+
+  return '<div class="card" style="border-left:5px solid var(--gold);background:#FFFDF7">'+
+    '<h2 style="font-size:20px">You won '+esc(w.title)+'</h2>'+
+    '<p style="margin-top:6px">At <b>'+money(w.amount)+'</b>. '+
+    (w.paid?'Thank you \u2014 your payment has come through.':'Check your email for the payment link.')+'</p>'+
+    '<p style="margin-top:10px"><b>Where shall we send it?</b></p>'+
+    addrForm()+'</div>';
+}
+
+function addrForm(){
+  const k=KNOWN||{}, w=WON||{};
+  return '<div id="addrBox">'+
+    '<label>Name</label><input id="dn" value="'+esc(w.name||k.name||(ME?ME.name:''))+'">'+
+    '<label>Address</label><textarea id="da" style="width:100%;padding:14px 16px;border:1.5px solid var(--line);'+
+      'border-radius:10px;min-height:96px;font:inherit;color:var(--ink)">'+esc(w.address||k.address||'')+'</textarea>'+
+    '<label>Postcode</label><input id="dp" value="'+esc(w.postcode||k.postcode||'')+'">'+
+    '<label>Phone (optional)</label><input id="dt" value="'+esc(w.phone||k.phone||'')+'">'+
+    '<label>Anything else (optional)</label><input id="dnote" placeholder="e.g. leave with a neighbour" value="'+esc(w.notes||'')+'">'+
+    '<button class="btn" onclick="saveAddr()">Save my address</button>'+
+    (k.name?'<p class="hint">Filled in from your membership \u2014 change anything that is not right.</p>':'')+
+    '<p class="msg" id="dmsg"></p></div>';
+}
+
+function showAddr(){ document.getElementById('addrBox').innerHTML=addrForm(); }
+
+async function saveAddr(){
+  const body={ name:$('dn').value.trim(), address:$('da').value.trim(),
+    postcode:$('dp').value.trim(), phone:$('dt').value.trim(), notes:$('dnote').value.trim() };
+  const m=$('dmsg');
+  if(!body.name||!body.address||!body.postcode){ m.style.color='var(--red)';
+    m.textContent='We need a name, an address and a postcode.'; return; }
+  m.style.color='var(--body)'; m.textContent='Saving\u2026';
+  const d=await (await fetch(EP+'/auction/delivery',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+  if(!d.ok){ m.style.color='var(--red)'; m.textContent=d.error; return; }
+  m.style.color='var(--green)'; m.textContent='Thank you \u2014 we have got that.';
+  await checkWon(); draw();
+}
+
 async function load(){
   try{
     const d=await (await fetch(EP+'/auction',{headers:H()})).json();
@@ -127,6 +188,7 @@ async function load(){
       '<a href="news.html">the news</a> — the next one will be announced there.</p></div>';
       $('title').textContent='Shirts in Fans Hands'; return; }
     A=d; ME=d.me;
+    if(ME) await checkWon();
     $('title').textContent=A.auction.title;
     $('subtitle').textContent=A.auction.subtitle||'';
     document.title=A.auction.title+' | Dale Supporters Trust';
@@ -137,6 +199,7 @@ async function load(){
 function draw(){
   const a=A.auction, closed=a.status!=='live' || !left(a.closes_at||'');
   let html='';
+  if(WON) html+=deliveryPanel();
 
   if(a.images && a.images.length){
     html+='<div class="shots">'+a.images.map(u=>

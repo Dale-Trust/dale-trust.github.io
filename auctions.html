@@ -152,12 +152,18 @@ async function load(){
       (a.topBid?' \u00b7 highest '+money(a.topBid):'')+
       (closes?' \u00b7 '+(over?'closed ':'closes ')+closes.toLocaleString('en-GB'):'')+
       (a.winner_name?' \u00b7 won by '+esc(a.winner_name)+' at '+money(a.winner_amount):'')+
-      (a.paid_at?' \u00b7 PAID':'')+'</small>'+
+      (a.paid_at?' \u00b7 PAID':'')+(a.sent_at?' \u00b7 POSTED':'')+'</small>'+
+      (a.deliver_given_at?'<div style="background:var(--wash);border-radius:8px;padding:10px 14px;margin-top:8px;'+
+        'font-size:13.5px;white-space:pre-line">'+esc(a.deliver_name)+'\n'+esc(a.deliver_address)+'\n'+
+        esc(a.deliver_postcode)+(a.deliver_phone?'\n'+esc(a.deliver_phone):'')+
+        (a.deliver_notes?'\n\n'+esc(a.deliver_notes):'')+'</div>':
+        (a.winner_email?'<div style="font-size:13px;color:#8A4B00;margin-top:6px">No address given yet</div>':''))+
       '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">'+
         '<button class="ghost" style="margin:0" onclick="edit('+a.id+')">Open</button>'+
         (a.status==='live'?'<button class="red" style="margin:0" onclick="closeNow('+a.id+')">Close it now</button>':'')+
         (a.winner_email&&!a.paid_at?'<button class="green" style="margin:0" onclick="markPaid('+a.id+')">Mark as paid</button>':'')+
         (a.winner_email&&!a.paid_at?'<button class="ghost" style="margin:0" onclick="passOn('+a.id+')">They did not pay</button>':'')+
+        (a.paid_at&&a.deliver_given_at&&!a.sent_at?'<button class="green" style="margin:0" onclick="markSent('+a.id+')">Posted</button>':'')+
       '</div></div>';
   }).join('') : '<p style="color:#7A8AA5">Nothing set up yet.</p>';
 }
@@ -194,6 +200,15 @@ async function passOn(id){
   const d=await (await fetch(EP+'/auctions/passon',{method:'POST',headers:H(),body:JSON.stringify({id})})).json();
   if(!d.ok){ alert(d.error); return; }
   alert(d.nobody ? 'Nobody else bid.' : 'Passed to '+d.winner.name+' at '+money(d.winner.amount)+'.');
+  load();
+}
+
+async function markSent(id){
+  const note=prompt('Marking as posted. Anything to tell them?\n\ne.g. sent first class today','');
+  if(note===null) return;
+  const d=await (await fetch(EP+'/auctions/sent',{method:'POST',headers:H(),body:JSON.stringify({id,note})})).json();
+  if(!d.ok){ alert(d.error); return; }
+  alert('Marked as posted, and they have been told.');
   load();
 }
 
