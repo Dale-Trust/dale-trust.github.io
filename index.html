@@ -476,25 +476,30 @@
     vertical-align:1px}
   /* shirt auction, full width, shown only when one is running */
   .auc{background:linear-gradient(115deg,#002F7C,#16305C 55%,#00417E);border-bottom:3px solid var(--royal)}
-  .aucBox{display:grid;grid-template-columns:112px 1fr auto;gap:22px;align-items:center;
-    text-decoration:none;padding:18px 26px;max-width:1240px;margin:0 auto}
+  .aucHead{max-width:1240px;margin:0 auto;padding:20px 26px 0;color:#fff}
+  .aucHead h2{font-family:'Oswald';text-transform:uppercase;color:#fff;font-size:clamp(20px,3vw,27px);letter-spacing:.02em}
+  .aucHead p{color:#C7D6EC;font-size:14.5px;line-height:1.55;margin-top:5px;max-width:660px}
+  .aucBox{display:grid;grid-template-columns:88px 1fr auto;gap:18px;align-items:center;
+    text-decoration:none;padding:14px 26px 20px;max-width:1240px;margin:0 auto}
   .aucBox:hover .aucGoBig{background:#fff;color:var(--badge)}
-  .aucPic{width:112px;height:112px;border-radius:11px;background:#fff center/cover no-repeat;display:block;
-    box-shadow:0 6px 18px rgba(0,0,0,.3)}
+  .aucPic{width:88px;height:88px;border-radius:10px;background:#fff center/cover no-repeat;display:block;
+    box-shadow:0 5px 14px rgba(0,0,0,.3)}
   .aucTxt{display:block;color:#fff;min-width:0}
   .aucKick{display:block;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#8FC1FF}
-  .aucTxt b{display:block;font-family:'Oswald';text-transform:uppercase;font-size:clamp(19px,2.8vw,28px);
-    line-height:1.12;margin:5px 0 6px}
-  .aucBid{display:block;font-size:14.5px;color:#C7D6EC}
-  .aucBid strong{color:#fff;font-family:'Oswald';font-size:21px;letter-spacing:.02em}
+  .aucTxt b{display:block;font-family:'Oswald';text-transform:uppercase;font-size:clamp(17px,2.2vw,22px);
+    line-height:1.15;margin:3px 0 4px}
+  .aucBid{display:block;font-size:14px;color:#C7D6EC}
+  .aucBid strong{color:#fff;font-family:'Oswald';font-size:19px;letter-spacing:.02em}
   .aucGo{display:none}
   .aucGoBig{display:inline-block;border:2px solid #8FC1FF;color:#fff;border-radius:100px;
-    padding:13px 26px;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;
+    padding:11px 24px;font:600 13.5px 'Oswald';text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;
     transition:background .15s,color .15s}
   @media(max-width:760px){
-    .aucBox{grid-template-columns:88px 1fr;gap:16px;padding:16px 20px}
-    .aucPic{width:88px;height:88px}
-    .aucGoBig{grid-column:1/-1;text-align:center;padding:12px}
+    .aucHead{padding:18px 20px 0}
+    .aucHead p{font-size:13.5px}
+    .aucBox{grid-template-columns:72px 1fr;gap:14px;padding:12px 20px 18px}
+    .aucPic{width:72px;height:72px}
+    .aucGoBig{grid-column:1/-1;text-align:center;padding:11px;margin-top:4px}
   }
 </style>
 </head>
@@ -556,16 +561,19 @@
 </div>
 
 <section class="auc" id="aucStrip" style="display:none">
-    <a class="aucBox" href="auction.html">
-      <span class="aucPic" id="aucPic"></span>
-      <span class="aucTxt">
-        <span class="aucKick">Shirts in Fans Hands &middot; bidding now</span>
-        <b id="aucTitle"></b>
-        <span class="aucBid" id="aucBid"></span>
-        <span class="aucGo">Have a look &rarr;</span>
-      </span>
-      <span class="aucGoBig">Bid now &rarr;</span>
-    </a>
+  <div class="aucHead">
+    <h2>Shirts in Fans Hands</h2>
+    <p>Signed matchworn shirts, up for auction. Most of what they raise goes to our chosen charity, and the rest keeps the Trust going. Open to everyone.</p>
+  </div>
+  <a class="aucBox" href="auction.html">
+    <span class="aucPic" id="aucPic"></span>
+    <span class="aucTxt">
+      <span class="aucKick">Bidding now</span>
+      <b id="aucTitle"></b>
+      <span class="aucBid" id="aucBid"></span>
+    </span>
+    <span class="aucGoBig">Bid now &rarr;</span>
+  </a>
 </section>
 
 <div class="hero" id="matchday">
