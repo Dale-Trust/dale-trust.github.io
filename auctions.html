@@ -201,7 +201,11 @@ async function markPaid(id){
   const note=prompt('Mark as paid. Anything to note?\n\ne.g. SumUp 2 Sept, or paid by transfer','');
   if(note===null) return;
   const d=await (await fetch(EP+'/auctions/paid',{method:'POST',headers:H(),body:JSON.stringify({id,note})})).json();
-  if(d.ok) load();
+  if(d.ok){
+    alert('Marked as paid.' + (d.thanked ? '\n\n' + d.thanked + ' bidder' + (d.thanked===1?'':'s') +
+      ' have been thanked and told there will be another.' : ''));
+    load();
+  }
 }
 
 load();
