@@ -18,6 +18,7 @@ Disallow: /surveys.html
 Disallow: /coach.html
 Disallow: /fixtures.html
 Disallow: /posts.html
+Disallow: /auctions.html
 Disallow: /graphics.html
 Disallow: /awayteams.html
 Disallow: /activity.html

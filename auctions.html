@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auctions | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--badge:#002F7C;--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:21px}.top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:920px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
+  .panel h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:10px}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:12px 0 5px}
+  input,select,textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
+  textarea{min-height:120px;line-height:1.55}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media(max-width:700px){.g2,.g3{grid-template-columns:1fr}}
+  button{background:var(--royal);color:#fff;border:0;border-radius:9px;padding:12px 20px;
+    font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer;margin-top:12px}
+  button.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line)}
+  button.green{background:var(--green)}button.red{background:var(--red)}
+  .row{border-bottom:1px solid var(--line);padding:14px 4px}
+  .row b{color:var(--ink);font-size:15px}
+  .row small{display:block;color:#7A8AA5;font-size:12.5px;margin-top:2px}
+  .tag{display:inline-block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+    padding:3px 10px;border-radius:100px;background:var(--wash);color:#5A6880;margin-left:6px}
+  .tag.live{background:#EAF7F0;color:#14653F}.tag.draft{background:#FFF3E4;color:#8A4B00}
+  .msg{font-size:14px;font-weight:600;margin-top:10px}
+  .warn{background:#FFF9E8;border:1px solid #EAD198;border-left:5px solid var(--gold);border-radius:0 10px 10px 0;padding:14px 16px;font-size:13.5px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>Auctions</h1><small>Shirts in Fans Hands &mdash; set one up, watch the bids, settle it</small></div>
+<div class="wrap">
+  <div class="panel">
+    <h2>Set one up</h2>
+    <input type="hidden" id="a_id">
+    <label>What is it</label>
+    <input id="a_title" placeholder="e.g. Ethan Brierley signed matchworn shirt">
+    <label>One line underneath</label>
+    <input id="a_sub" placeholder="e.g. 2022/23 season · size M · signed on the number">
+    <label>The description</label>
+    <textarea id="a_desc" placeholder="Blank line between paragraphs."></textarea>
+    <label>Photographs &mdash; one web address per line</label>
+    <textarea id="a_imgs" style="min-height:80px" placeholder="https://daletrust.uk/img/shirts/10048.jpg"></textarea>
+
+    <div class="g3">
+      <div><label>Opening bid (£)</label><input id="a_start" value="20"></div>
+      <div><label>Steps of (£)</label><input id="a_inc" value="5"></div>
+      <div><label>Reserve (£, optional)</label><input id="a_res" placeholder="none"></div>
+    </div>
+    <div class="g3">
+      <div><label>Opens</label><input id="a_open" type="datetime-local"></div>
+      <div><label>Closes</label><input id="a_close" type="datetime-local"></div>
+      <div><label>Extend by (minutes)</label><input id="a_ext" value="5"></div>
+    </div>
+    <label>Where the money goes</label>
+    <input id="a_note" placeholder="e.g. 70% to DS Allstars, 30% to the Trust">
+    <label>State</label>
+    <select id="a_status">
+      <option value="draft">Draft &mdash; nobody can see it</option>
+      <option value="live">Live &mdash; open for bidding</option>
+      <option value="closed">Closed</option>
+    </select>
+    <button onclick="save()">Save</button>
+    <button class="ghost" onclick="blank()">Start a new one</button>
+    <p class="msg" id="msg"></p>
+    <div class="warn"><b>Before a real shirt goes on:</b> set it live with a short closing time, bid on it yourself from another
+      email, check the outbid email arrives, let it close, and check the winner gets a payment link. Then delete it and start again.</div>
+  </div>
+
+  <div class="panel">
+    <h2>All of them</h2>
+    <div id="list">Loading&hellip;</div>
+  </div>
+
+  <div class="panel" id="bidsPanel" style="display:none">
+    <h2 id="bidsTitle">Bids</h2>
+    <div id="bids"></div>
+  </div>
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const money=n=>'\u00a3'+Number(n||0).toFixed(2);
+let ALL=[];
+
+const toLocal=s=>{ if(!s) return ''; const d=new Date(s.replace(' ','T')+'Z');
+  return isNaN(d)?'':new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,16); };
+const toUtc=v=>v?new Date(v).toISOString().slice(0,19).replace('T',' '):null;
+
+function blank(){
+  ['a_id','a_title','a_sub','a_desc','a_imgs','a_res','a_note','a_open','a_close'].forEach(i=>$(i).value='');
+  $('a_start').value='20'; $('a_inc').value='5'; $('a_ext').value='5'; $('a_status').value='draft';
+  $('msg').textContent=''; $('bidsPanel').style.display='none'; $('a_title').focus();
+}
+
+function edit(id){
+  const a=ALL.find(x=>x.id===id); if(!a) return;
+  $('a_id').value=a.id; $('a_title').value=a.title||''; $('a_sub').value=a.subtitle||'';
+  $('a_desc').value=a.description||'';
+  try{ $('a_imgs').value=(JSON.parse(a.images||'[]')).join('\n'); }catch(e){ $('a_imgs').value=''; }
+  $('a_start').value=a.start_bid; $('a_inc').value=a.increment; $('a_res').value=a.reserve||'';
+  $('a_ext').value=a.extend_minutes; $('a_note').value=a.charity_note||'';
+  $('a_open').value=toLocal(a.opens_at); $('a_close').value=toLocal(a.closes_at);
+  $('a_status').value=a.status;
+  window.scrollTo({top:0,behavior:'smooth'});
+  showBids(id, a.title);
+}
+
+async function save(){
+  if(!$('a_title').value.trim()){ say('It needs a name.',true); return; }
+  const body={ id:$('a_id').value||null, title:$('a_title').value.trim(), subtitle:$('a_sub').value.trim(),
+    description:$('a_desc').value.trim(),
+    images:$('a_imgs').value.split('\n').map(s=>s.trim()).filter(Boolean),
+    start_bid:$('a_start').value, increment:$('a_inc').value, reserve:$('a_res').value||null,
+    extend_minutes:$('a_ext').value, charity_note:$('a_note').value.trim(),
+    opens_at:toUtc($('a_open').value), closes_at:toUtc($('a_close').value), status:$('a_status').value };
+  if(body.status==='live' && !body.closes_at){ say('A live auction needs a closing time.',true); return; }
+  const d=await (await fetch(EP+'/auctions/save',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
+  if(!d.ok){ say(d.error,true); return; }
+  $('a_id').value=d.id; say('Saved.'); load();
+}
+
+function say(t,bad){ const m=$('msg'); m.style.color=bad?'var(--red)':'var(--green)'; m.textContent=t; }
+
+async function load(){
+  const d=await (await fetch(EP+'/auctions/admin',{headers:H()})).json();
+  if(!d.ok){ $('list').textContent=d.error; return; }
+  ALL=d.auctions;
+  $('list').innerHTML = ALL.length ? ALL.map(a=>{
+    const closes=a.closes_at?new Date(a.closes_at.replace(' ','T')+'Z'):null;
+    const over=closes && closes<=new Date();
+    return '<div class="row"><b>'+esc(a.title)+'</b>'+
+      '<span class="tag '+esc(a.status)+'">'+esc(a.status)+'</span>'+
+      '<small>'+(a.bids||0)+' bid'+(a.bids===1?'':'s')+' from '+(a.people||0)+
+      ' '+((a.people===1)?'person':'people')+
+      (a.topBid?' \u00b7 highest '+money(a.topBid):'')+
+      (closes?' \u00b7 '+(over?'closed ':'closes ')+closes.toLocaleString('en-GB'):'')+
+      (a.winner_name?' \u00b7 won by '+esc(a.winner_name)+' at '+money(a.winner_amount):'')+
+      (a.paid_at?' \u00b7 PAID':'')+'</small>'+
+      '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">'+
+        '<button class="ghost" style="margin:0" onclick="edit('+a.id+')">Open</button>'+
+        (a.status==='live'?'<button class="red" style="margin:0" onclick="closeNow('+a.id+')">Close it now</button>':'')+
+        (a.winner_email&&!a.paid_at?'<button class="green" style="margin:0" onclick="markPaid('+a.id+')">Mark as paid</button>':'')+
+        (a.winner_email&&!a.paid_at?'<button class="ghost" style="margin:0" onclick="passOn('+a.id+')">They did not pay</button>':'')+
+      '</div></div>';
+  }).join('') : '<p style="color:#7A8AA5">Nothing set up yet.</p>';
+}
+
+async function showBids(id,title){
+  const d=await (await fetch(EP+'/auctions/bids?id='+id,{headers:H()})).json();
+  if(!d.ok) return;
+  $('bidsPanel').style.display='block';
+  $('bidsTitle').textContent='Bids \u2014 '+title;
+  $('bids').innerHTML = d.bids.length
+    ? d.bids.map(b=>'<div class="row" style="padding:10px 4px'+(b.withdrawn?';opacity:.45':'')+'">'+
+      '<b>'+money(b.amount)+'</b> \u2014 '+esc(b.name)+
+      (b.withdrawn?' <span class="tag">set aside</span>':'')+
+      '<small>'+esc(b.email)+(b.member_no?' \u00b7 '+esc(b.member_no):' \u00b7 not a member')+
+      ' \u00b7 '+new Date(b.at.replace(' ','T')+'Z').toLocaleString('en-GB')+'</small></div>').join('')
+    : '<p style="color:#7A8AA5">No bids yet.</p>';
+}
+
+async function closeNow(id){
+  const a=ALL.find(x=>x.id===id)||{};
+  if(!confirm('Close "'+a.title+'" now?\n\nThe highest bidder is told they have won and sent a payment link. This cannot be undone.')) return;
+  const d=await (await fetch(EP+'/auctions/close',{method:'POST',headers:H(),body:JSON.stringify({id})})).json();
+  if(!d.ok){ alert(d.error); return; }
+  alert(d.nobody ? 'Closed. Nobody bid.'
+    : d.reserveNotMet ? 'Closed. The reserve was not met.'
+    : 'Closed. '+d.winner.name+' has won at '+money(d.winner.amount)+' and has been sent a payment link.');
+  load();
+}
+
+async function passOn(id){
+  const a=ALL.find(x=>x.id===id)||{};
+  if(!confirm(a.winner_name+' has not paid.\n\nPass it to the next highest bidder?\n\nEvery bid from '+
+    a.winner_name+' is set aside and the next person is told they have won.')) return;
+  const d=await (await fetch(EP+'/auctions/passon',{method:'POST',headers:H(),body:JSON.stringify({id})})).json();
+  if(!d.ok){ alert(d.error); return; }
+  alert(d.nobody ? 'Nobody else bid.' : 'Passed to '+d.winner.name+' at '+money(d.winner.amount)+'.');
+  load();
+}
+
+async function markPaid(id){
+  const note=prompt('Mark as paid. Anything to note?\n\ne.g. SumUp 2 Sept, or paid by transfer','');
+  if(note===null) return;
+  const d=await (await fetch(EP+'/auctions/paid',{method:'POST',headers:H(),body:JSON.stringify({id,note})})).json();
+  if(d.ok) load();
+}
+
+load();
+</script>
+</body>
+</html>

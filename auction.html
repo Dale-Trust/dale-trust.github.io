@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shirts in Fans Hands | Dale Supporters Trust</title>
+<meta name="description" content="Bid on signed matchworn Rochdale AFC shirts. Raising money for DS Allstars and the Dale Trust.">
+<meta property="og:title" content="Shirts in Fans Hands — Dale Supporters Trust">
+<meta property="og:description" content="Bid on signed matchworn Rochdale AFC shirts.">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--badge:#002F7C;--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;color:var(--body);font-size:15.5px;line-height:1.6;background:var(--wash)}
+  h1,h2,h3{font-family:'Oswald';text-transform:uppercase;color:var(--ink);line-height:1.15}
+  a{color:var(--royal)}
+  .nav{background:var(--navy);padding:12px 20px}
+  .nav a{color:#8FC1FF;text-decoration:none;font-weight:600;font-size:13.5px}
+  .hero{background:linear-gradient(120deg,var(--badge),#16305C 58%,#00417E);color:#fff;padding:34px 22px 30px;text-align:center;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:0;bottom:0;right:-12%;width:42%;background:var(--royal);transform:skewX(-14deg);opacity:.35}
+  .hero .in{position:relative;max-width:760px;margin:0 auto}
+  .hero .kick{font-size:12px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#8FC1FF}
+  .hero h1{color:#fff;font-size:clamp(28px,6vw,44px);margin-top:8px}
+  .hero p{color:#C7D6EC;margin-top:8px;font-size:16px}
+  .wrap{max-width:760px;margin:0 auto;padding:20px 18px 60px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px}
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+  .shots img{width:100%;border-radius:10px;display:block;cursor:zoom-in;background:var(--wash)}
+  .clock{background:var(--navy);color:#fff;border-radius:14px;padding:20px;text-align:center;margin-bottom:16px}
+  .clock b{display:block;font-family:'Oswald';font-size:clamp(30px,8vw,46px);letter-spacing:.03em}
+  .clock span{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8FC1FF}
+  .clock.soon{background:#7A1F16}
+  .clock.over{background:#3A4356}
+  .bidnow{background:#fff;border:2px solid var(--royal);border-radius:14px;padding:22px;margin-bottom:16px}
+  .lead{display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  .lead .amt{font-family:'Oswald';font-size:clamp(30px,7vw,42px);color:var(--badge);line-height:1}
+  .lead .who{font-size:14px;color:var(--body)}
+  .lead .none{font-family:'Oswald';font-size:26px;color:#7A8AA5}
+  input,button{font:inherit}
+  input{width:100%;padding:14px 16px;border:1.5px solid var(--line);border-radius:10px;color:var(--ink);background:#fff}
+  input:focus{border-color:var(--royal);outline:none}
+  label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);margin:12px 0 5px}
+  .btn{display:block;width:100%;background:var(--green);color:#fff;border:0;border-radius:11px;padding:17px;
+    font:600 17px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer;margin-top:14px}
+  .btn:hover{background:#17784B}
+  .btn:disabled{background:#B8C6DA;cursor:not-allowed}
+  .btn.blue{background:var(--royal)}.btn.blue:hover{background:var(--bright)}
+  .hint{font-size:13px;color:#7A8AA5;margin-top:8px}
+  .bids{margin-top:4px}
+  .bid{display:flex;justify-content:space-between;align-items:center;padding:11px 2px;border-bottom:1px solid var(--line);font-size:14.5px}
+  .bid:first-child{background:#EAF7F0;border-radius:8px;padding-left:12px;padding-right:12px;font-weight:600}
+  .bid .amt{font-family:'Oswald';font-size:19px;color:var(--ink)}
+  .bid small{display:block;color:#7A8AA5;font-size:12px;font-weight:400}
+  .note{background:var(--wash);border-left:4px solid var(--royal);border-radius:0 10px 10px 0;padding:14px 16px;font-size:14px;margin-top:14px}
+  .note.gold{border-left-color:var(--gold);background:#FFF9E8}
+  .msg{margin-top:12px;font-size:14.5px;font-weight:600}
+  .won{background:#EAF7F0;border:1px solid #B7E0CB;border-left:5px solid var(--green);border-radius:0 14px 14px 0;padding:20px}
+  footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:22px}
+  .lb{position:fixed;inset:0;background:rgba(4,12,30,.92);display:none;align-items:center;justify-content:center;padding:20px;z-index:99}
+  .lb img{max-width:100%;max-height:92vh;border-radius:10px}
+</style>
+</head>
+<body>
+<div class="nav"><a href="index.html">&larr; Dale Supporters Trust</a></div>
+<div class="hero"><div class="in">
+  <p class="kick">Shirts in Fans Hands</p>
+  <h1 id="title">Loading&hellip;</h1>
+  <p id="subtitle"></p>
+</div></div>
+
+<div class="wrap" id="out"><div class="card">Loading&hellip;</div></div>
+<div class="lb" id="lb" onclick="this.style.display='none'"><img id="lbimg" alt=""></div>
+
+<footer>Dale Trust is the trading name of Rochdale Supporters Club Limited, a registered society (29690R).</footer>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const money=n=>'\u00a3'+Number(n||0).toFixed(2);
+let A=null, ME=null, TICK=null, SESSION=null;
+try{ SESSION=localStorage.getItem('dt_bidder'); }catch(e){}
+
+// arriving from the email link
+(function(){
+  const m=location.hash.match(/in=([A-Za-z0-9_\-]+)/);
+  if(!m) return;
+  history.replaceState(null,'',location.pathname);
+  fetch(EP+'/auction/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({token:m[1]})}).then(r=>r.json()).then(d=>{
+      if(d.ok){ SESSION=d.session; try{localStorage.setItem('dt_bidder',d.session);}catch(e){} }
+      load();
+    }).catch(load);
+})();
+
+function H(){ return SESSION ? {'Content-Type':'application/json','Authorization':'Bearer '+SESSION}
+                             : {'Content-Type':'application/json'}; }
+
+function left(toIso){
+  const ms=new Date(toIso.replace(' ','T')+'Z')-new Date();
+  if(ms<=0) return null;
+  const s=Math.floor(ms/1000), d=Math.floor(s/86400), hh=Math.floor(s%86400/3600),
+        mm=Math.floor(s%3600/60), ss=s%60;
+  if(d>0) return d+'d '+hh+'h '+mm+'m';
+  if(hh>0) return hh+'h '+mm+'m '+String(ss).padStart(2,'0')+'s';
+  return mm+'m '+String(ss).padStart(2,'0')+'s';
+}
+
+function startClock(){
+  clearInterval(TICK);
+  TICK=setInterval(()=>{
+    if(!A||!A.auction.closes_at) return;
+    const el=$('clock'); if(!el) return;
+    const t=left(A.auction.closes_at);
+    if(!t){ clearInterval(TICK); load(); return; }
+    el.querySelector('b').textContent=t;
+    const ms=new Date(A.auction.closes_at.replace(' ','T')+'Z')-new Date();
+    el.className='clock'+(ms<15*60000?' soon':'');
+  },1000);
+}
+
+async function load(){
+  try{
+    const d=await (await fetch(EP+'/auction',{headers:H()})).json();
+    if(!d.ok){ $('out').innerHTML='<div class="card"><h2>Nothing up for auction</h2>'+
+      '<p style="margin-top:8px">There is no shirt up for bidding just now. Keep an eye on '+
+      '<a href="news.html">the news</a> — the next one will be announced there.</p></div>';
+      $('title').textContent='Shirts in Fans Hands'; return; }
+    A=d; ME=d.me;
+    $('title').textContent=A.auction.title;
+    $('subtitle').textContent=A.auction.subtitle||'';
+    document.title=A.auction.title+' | Dale Supporters Trust';
+    draw(); startClock();
+  }catch(e){ $('out').innerHTML='<div class="card">Could not load just now. Please try again shortly.</div>'; }
+}
+
+function draw(){
+  const a=A.auction, closed=a.status!=='live' || !left(a.closes_at||'');
+  let html='';
+
+  if(a.images && a.images.length){
+    html+='<div class="shots">'+a.images.map(u=>
+      '<img src="'+esc(u)+'" alt="" onclick="zoom(this.src)">').join('')+'</div>';
+  }
+
+  if(!closed){
+    html+='<div class="clock" id="clock"><span>Bidding closes in</span><b>'+(left(a.closes_at)||'\u2014')+'</b></div>';
+  } else {
+    html+='<div class="clock over"><span>Bidding has closed</span><b>'+
+      (A.top?money(A.top.amount):'No bids')+'</b></div>';
+  }
+
+  html+='<div class="'+(closed?'card':'bidnow')+'">';
+  html+='<div class="lead"><div>'+
+    (A.top ? '<div class="amt">'+money(A.top.amount)+'</div><div class="who">leading bid, from '+esc(A.top.name)+'</div>'
+           : '<div class="none">No bids yet</div><div class="who">Opening bid '+money(a.start_bid)+'</div>')+
+    '</div><div style="text-align:right"><div class="who">'+A.bidCount+' bid'+(A.bidCount===1?'':'s')+
+    ' from '+A.bidders+' '+(A.bidders===1?'person':'people')+'</div></div></div>';
+
+  if(closed){
+    if(a.winner_name){
+      html+='<div class="won"><b style="font-family:Oswald;text-transform:uppercase;font-size:19px;color:var(--ink);display:block">Won by '+
+        esc(a.winner_name)+'</b><p style="margin-top:6px">at '+money(a.winner_amount)+'. Thank you to everyone who bid.</p></div>';
+    } else {
+      html+='<p>This auction has closed.</p>';
+    }
+  } else if(!ME){
+    html+='<p style="margin-bottom:4px">To bid we need to know who you are. Put your name and email in and we will send you a link — no password.</p>'+
+      '<label>Your name</label><input id="bname" placeholder="As it should appear against your bid" autocomplete="name">'+
+      '<label>Your email</label><input id="bemail" type="email" placeholder="you@example.com" autocomplete="email">'+
+      '<button class="btn blue" onclick="signin()">Send me a link to bid</button>'+
+      '<p class="hint">Open to everyone, member or not.</p>';
+  } else {
+    const mine = A.top && ME && A.top.name===ME.name;
+    html+= mine
+      ? '<div class="note" style="border-left-color:var(--green);background:#EAF7F0"><b>You are the highest bidder.</b> '+
+        'We will email you if somebody goes above you.</div>'
+      : '<label>Your bid</label><input id="amt" type="number" inputmode="decimal" step="0.01" value="'+
+        Number(A.nextBid).toFixed(2)+'" min="'+A.nextBid+'">'+
+        '<button class="btn" onclick="bid()">Bid '+money(A.nextBid)+' or more</button>'+
+        '<p class="hint">Bidding as '+esc(ME.name)+'. Bids cannot be withdrawn.</p>';
+  }
+  html+='<p class="msg" id="msg"></p></div>';
+
+  if(a.description){
+    html+='<div class="card"><h2 style="font-size:18px;margin-bottom:10px">About this shirt</h2>'+
+      a.description.split(/\n{2,}/).map(p=>'<p style="margin-bottom:10px">'+esc(p)+'</p>').join('')+'</div>';
+  }
+
+  html+='<div class="card"><h2 style="font-size:18px;margin-bottom:6px">How it works</h2>'+
+    '<div class="note">Bids go up in steps of '+money(a.increment)+'. '+
+    'If a bid lands in the last '+a.extend_minutes+' minutes, the clock extends by '+a.extend_minutes+
+    ' minutes — so nothing is won by bidding in the final seconds.</div>'+
+    '<div class="note gold" style="margin-top:10px">The winner is emailed a payment link and has <b>48 hours</b> to pay. '+
+    'After that it passes to the next highest bidder.</div>'+
+    (a.charity_note?'<div class="note" style="margin-top:10px">'+esc(a.charity_note)+'</div>':'')+
+    '</div>';
+
+  if(A.bids.length){
+    html+='<div class="card"><h2 style="font-size:18px;margin-bottom:6px">Every bid</h2><div class="bids">'+
+      A.bids.map(b=>'<div class="bid"><span>'+esc(b.name)+
+        '<small>'+new Date(b.at.replace(' ','T')+'Z').toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+
+        '</small></span><span class="amt">'+money(b.amount)+'</span></div>').join('')+'</div></div>';
+  }
+
+  $('out').innerHTML=html;
+}
+
+function zoom(src){ $('lbimg').src=src; $('lb').style.display='flex'; }
+function say(t,bad){ const m=$('msg'); if(!m) return; m.style.color=bad?'var(--red)':'var(--green)'; m.textContent=t; }
+
+async function signin(){
+  const name=$('bname').value.trim(), email=$('bemail').value.trim();
+  if(!name){ say('We need a name to show against your bid.',true); return; }
+  if(!email){ say('We need your email so we can send you the link.',true); return; }
+  say('Sending\u2026');
+  const d=await (await fetch(EP+'/auction/signin',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name,email})})).json();
+  say(d.ok ? 'Check your email — the link is on its way. It works for two hours.' : (d.error||'Could not send.'), !d.ok);
+}
+
+async function bid(){
+  const amount=Number($('amt').value);
+  if(!(amount>=A.nextBid)){ say('The next bid has to be at least '+money(A.nextBid)+'.',true); return; }
+  if(!confirm('Bid '+money(amount)+' on '+A.auction.title+'?\n\nBids cannot be withdrawn.')) return;
+  say('Placing your bid\u2026');
+  const d=await (await fetch(EP+'/auction/bid',{method:'POST',headers:H(),
+    body:JSON.stringify({slug:A.auction.slug, amount})})).json();
+  if(!d.ok){ say(d.error||'Could not place that bid.',true); load(); return; }
+  say(d.extended ? 'Bid placed — and the clock has been extended.' : 'Bid placed. You are the highest bidder.');
+  setTimeout(load,700);
+}
+
+if(!location.hash.includes('in=')) load();
+setInterval(()=>{ if(A && A.auction.status==='live') load(); }, 20000);
+</script>
+</body>
+</html>

@@ -175,6 +175,7 @@ function show(){
   if(me.can_articles) tile('fixtures.html','Fixtures &amp; results','Put the score in \u2014 the home page updates itself');
   if(me.can_posts) tile('tools/compose.html','Post composer', me.can_publish ? 'Write, publish and email it out' : 'Write something — it goes for checking before it appears');
   if(me.can_articles) tile('posts.html','Manage articles','Find, edit, approve or archive anything on the site');
+  if(me.can_articles) tile('auctions.html','Auctions','Shirts in Fans Hands \u2014 set one up, watch the bids, settle it');
   if(me.can_articles || me.can_send) tile('notice.html','Email members','For things members should know that do not belong on the website');
   if(me.can_articles) checkQueue();
   if(me.can_surveys) tile('surveys.html','Surveys &amp; voting','Player of the Month, consultations and results');
