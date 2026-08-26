@@ -110,6 +110,12 @@
       <label>Which seasons did they last belong to?</label>
       <div class="ticks" id="seasonTicks"></div>
       <p class="hint">Anyone who has already rejoined for this season is left out automatically.</p>
+      <label class="tick" style="margin-top:10px">
+        <input type="checkbox" id="f_skiphh" checked onchange="recount()">
+        <span>Leave out households where somebody is still a member</span>
+      </label>
+      <p class="hint">A parent who let their own membership go but still pays for their child does not want
+        a &ldquo;we have missed you&rdquo; email. Usually worth leaving ticked.</p>
     </div>
 
     <label>Membership &mdash; tick as many as you like, or none for everyone</label>
@@ -215,6 +221,7 @@ function filters(){
     f.who='lapsed';
     const ss=[...document.querySelectorAll('#seasonTicks input:checked')].map(i=>i.value);
     if(ss.length) f.seasons=ss;
+    if($('f_skiphh') && $('f_skiphh').checked) f.skipHouseholds=true;
   }
   if($('f_area').value) f.place=$('f_area').value;
   if($('f_news').value) f.newsletter=$('f_news').value;
@@ -411,6 +418,7 @@ async function openSaved(id){
   $('f_who').value = n.filters.who==='lapsed' ? 'lapsed' : 'current';
   whoChanged();
   if(n.filters.who==='lapsed'){
+    if($('f_skiphh')) $('f_skiphh').checked = n.filters.skipHouseholds !== false;
     await loadSeasons();
     document.querySelectorAll('#seasonTicks input').forEach(i=>
       i.checked = Array.isArray(n.filters.seasons) && n.filters.seasons.includes(i.value));
