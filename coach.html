@@ -49,6 +49,11 @@
   .msg{font-size:13.5px;font-weight:600;margin-top:10px}
   .tot{background:var(--wash);border-radius:9px;padding:12px 14px;margin-top:10px;font-size:14px}
   @media print{.back,.top,.noprint{display:none}.panel{border:0;padding:0}body{background:#fff}}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:700px){.g2{grid-template-columns:1fr}}
+  #editPanel label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--ink);margin:10px 0 4px}
+  #editPanel input{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit}
 </style>
 </head>
 <body>
@@ -240,9 +245,80 @@ function drawBookings(){
       '<td>'+esc(b.mobile||'—')+'</td><td>'+b.seats+'</td>'+
       '<td><span class="pill '+b.payment_status+'">'+b.payment_status+'</span></td>'+
       '<td class="noprint"><small>'+esc(b.booking_ref)+'</small></td>'+
-      '<td class="noprint">'+(b.payment_status==='pending'?'<button class="green sm" onclick="mark('+b.id+',&quot;cash&quot;)">Mark paid</button> ':'')+
+      '<td class="noprint"><button class="ghost sm" onclick="editBooking('+b.id+')">Change</button> '+
+      (b.payment_status==='pending'?'<button class="green sm" onclick="mark('+b.id+',&quot;cash&quot;)">Mark paid</button> ':'')+
       (b.payment_status!=='pending'&&b.payment_status!=='cancelled'&&b.email?'<button class="ghost sm" onclick="resend('+b.id+')">Send confirmation</button> ':'')+
       (b.payment_status!=='cancelled'?'<button class="ghost sm" onclick="mark('+b.id+',&quot;cancelled&quot;)">Cancel</button>':'')+'</td></tr>').join('')+'</table>';
+}
+
+function editBooking(id){
+  const b=(bookings||[]).find(x=>x.id===id); if(!b) return;
+  let pax=[];
+  try{ pax=JSON.parse(b.passengers||'[]'); }catch(e){}
+  if(!pax.length) pax=[{name:b.name,dob:''}];
+
+  const row=(p,i)=>'<div class="g2" style="margin-bottom:8px">'+
+    '<div><label>Passenger '+(i+1)+'</label><input class="pxn" value="'+esc(p.name||'')+'"></div>'+
+    '<div><label>Date of birth</label><input class="pxd" type="date" value="'+esc(p.dob||'')+'"></div></div>';
+
+  const html='<div class="panel" id="editPanel" style="border-left:5px solid var(--royal)">'+
+    '<h2>Change this booking</h2>'+
+    '<p style="font-size:13.5px;color:#7A8AA5;margin-bottom:12px">'+esc(b.booking_ref)+
+      ' &middot; '+esc(b.name)+'</p>'+
+    '<div class="g2">'+
+      '<div><label>Who booked</label><input id="e_name" value="'+esc(b.name||'')+'"></div>'+
+      '<div><label>Mobile</label><input id="e_mobile" value="'+esc(b.mobile||'')+'"></div>'+
+    '</div>'+
+    '<label>Email</label><input id="e_email" value="'+esc(b.email||'')+'">'+
+    '<label style="margin-top:14px">Who is travelling</label>'+
+    '<div id="paxRows">'+pax.map(row).join('')+'</div>'+
+    '<button class="ghost sm" onclick="addPax()">Add another passenger</button> '+
+    '<button class="ghost sm" onclick="removePax()">Remove the last one</button>'+
+    '<div class="g2" style="margin-top:14px">'+
+      '<div><label>Amount (£)</label><input id="e_amount" value="'+Number(b.amount||0).toFixed(2)+'"></div>'+
+      '<div><label>Notes</label><input id="e_notes" value="'+esc(b.notes||'')+'"></div>'+
+    '</div>'+
+    '<p style="font-size:13px;color:#7A8AA5;margin-top:8px">Seats follow the number of passengers. '+
+      'Leave the amount alone and it will work itself out from the fare.</p>'+
+    '<div style="margin-top:14px">'+
+      '<button class="green" onclick="saveBooking('+id+')">Save the change</button> '+
+      '<button class="ghost" onclick="closeEdit()">Cancel</button>'+
+    '</div><p class="msg" id="e_msg"></p></div>';
+
+  closeEdit();
+  const holder=document.createElement('div');
+  holder.id='editHolder'; holder.innerHTML=html;
+  document.querySelector('.wrap').prepend(holder);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function closeEdit(){ const e=document.getElementById('editHolder'); if(e) e.remove(); }
+
+function addPax(){
+  const n=document.querySelectorAll('#paxRows .pxn').length;
+  document.getElementById('paxRows').insertAdjacentHTML('beforeend',
+    '<div class="g2" style="margin-bottom:8px">'+
+    '<div><label>Passenger '+(n+1)+'</label><input class="pxn" value=""></div>'+
+    '<div><label>Date of birth</label><input class="pxd" type="date" value=""></div></div>');
+}
+function removePax(){
+  const rows=document.querySelectorAll('#paxRows > div');
+  if(rows.length>1) rows[rows.length-1].remove();
+}
+
+async function saveBooking(id){
+  const names=[...document.querySelectorAll('#paxRows .pxn')].map(i=>i.value.trim());
+  const dobs=[...document.querySelectorAll('#paxRows .pxd')].map(i=>i.value);
+  const passengers=names.map((n,i)=>({name:n,dob:dobs[i]||''})).filter(p=>p.name);
+  const m=document.getElementById('e_msg');
+  if(!passengers.length){ m.style.color='var(--red)'; m.textContent='It needs at least one passenger.'; return; }
+  m.style.color='var(--body)'; m.textContent='Saving\u2026';
+  const d=await (await fetch(EP+'/coach/edit',{method:'POST',headers:H(),body:JSON.stringify({
+    id, name:document.getElementById('e_name').value, email:document.getElementById('e_email').value,
+    mobile:document.getElementById('e_mobile').value, amount:document.getElementById('e_amount').value,
+    notes:document.getElementById('e_notes').value, passengers })})).json();
+  if(!d.ok){ m.style.color='var(--red)'; m.textContent=d.error; return; }
+  closeEdit(); load();
 }
 
 async function resend(id){
