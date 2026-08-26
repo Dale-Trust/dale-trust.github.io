@@ -58,8 +58,16 @@
     <button class="ghost" onclick="toggleInspect()">Look one up in SumUp</button>
     <button class="ghost" onclick="recentPayments()">Recent SumUp payments</button>
     <button class="ghost" onclick="whoStopped()">Who has unsubscribed</button>
+    <button class="ghost" onclick="checkDomains()">Check the lapsed addresses</button>
     <span id="chkMsg" style="font-size:13.5px;font-weight:600"></span>
   </div>
+  <div class="panel" id="domBox" style="display:none;border-left:5px solid var(--royal)">
+    <h2>Which addresses would bounce</h2>
+    <p class="lede">Checks whether each email domain still takes mail. It cannot tell whether a particular
+      person still has their address, so treat this as a floor rather than a forecast.</p>
+    <div id="domOut"></div>
+  </div>
+
   <div class="panel" id="stopBox" style="display:none;border-left:5px solid var(--red)">
     <h2>Asked us to stop</h2>
     <p class="lede">People who have unsubscribed. They are left out of everything automatically.</p>
@@ -156,6 +164,31 @@ async function inspect(){
     out.textContent='Could not reach the server.';
     v.style.color='#C0392B'; v.textContent='Could not reach the server.';
   }
+}
+
+async function checkDomains(){
+  const box=$('domBox'); box.style.display='block';
+  $('domOut').innerHTML='<p style="color:#7A8AA5">Looking up every domain\u2026 this takes a moment.</p>';
+  try{
+    const d=await (await fetch(EP+'/email/domaincheck?who=lapsed',{headers:H()})).json();
+    if(!d.ok){ $('domOut').textContent=d.error; return; }
+    let html='<div class="kpis">'+
+      '<div class="kpi"><span>Addresses</span><b>'+d.addresses+'</b></div>'+
+      '<div class="kpi"><span>Domains</span><b>'+d.domains+'</b></div>'+
+      '<div class="kpi'+(d.wouldFail?' wait':'')+'"><span>Certain to bounce</span><b>'+d.wouldFail+'</b></div>'+
+      '<div class="kpi"><span>That is</span><b>'+d.percent+'%</b></div>'+
+      '</div>';
+    if(d.bad.length || d.odd.length){
+      html+='<table class="ctable" style="width:100%;margin-top:6px"><tr><th>Domain</th><th>Addresses</th><th>Why</th></tr>'+
+        d.bad.concat(d.odd).map(b=>'<tr><td><b>'+esc(b.domain)+'</b></td><td>'+b.n+'</td><td>'+esc(b.why||'')+'</td></tr>').join('')+
+        '</table>';
+    } else {
+      html+='<p style="color:var(--green);font-weight:600">Every domain still takes mail.</p>';
+    }
+    html+='<p class="note" style="margin-top:14px;font-size:13px;color:#7A8AA5;border-top:1px solid var(--line);padding-top:12px">'+
+      esc(d.note)+'</p>';
+    $('domOut').innerHTML=html;
+  }catch(e){ $('domOut').textContent='Could not check just now.'; }
 }
 
 async function whoStopped(){
