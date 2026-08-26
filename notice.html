@@ -396,6 +396,10 @@ async function post(extra, okMsg){
     const d=await (await fetch(EP+'/notices/send',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
     if(!d.ok){ say(d.error, true); }
     else if(d.test){ say(okMsg||'Test sent.'); }
+    else if(d.carryingOn){
+      say('Sent to '+d.sent+' so far. The rest go out by themselves — '+d.remaining+' still to come.');
+      loadHistory();
+    }
     else { say('Sent to '+d.sent+' member'+(d.sent===1?'':'s')+'.'); $('subject').value=''; $('body').value=''; $('pv').innerHTML=''; loadHistory(); }
   }catch(e){ say('Could not send just now.', true); }
   $('sendBtn').disabled=false;
