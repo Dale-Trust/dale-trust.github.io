@@ -87,8 +87,19 @@
   <div class="panel">
     <h2>Who gets it</h2>
     <p class="lede" style="margin-left:14px">One email per address, so a household gets one rather than three.</p>
+    <label>Who</label>
+    <select id="f_who" onchange="whoChanged()">
+      <option value="current">Members for this season</option>
+      <option value="lapsed">Lapsed members &mdash; people who have not come back</option>
+    </select>
+    <div id="lapsedSeasons" style="display:none;margin-top:10px">
+      <label>Which seasons did they last belong to?</label>
+      <div class="ticks" id="seasonTicks"></div>
+      <p class="hint">Anyone who has already rejoined for this season is left out automatically.</p>
+    </div>
+
     <label>Membership &mdash; tick as many as you like, or none for everyone</label>
-    <div class="ticks">
+    <div class="ticks" id="typeTicks">
       <label class="tick"><input type="checkbox" value="Adult" onchange="recount()"><span>Adults</span></label>
       <label class="tick"><input type="checkbox" value="Exile" onchange="recount()"><span>Exiles</span></label>
       <label class="tick"><input type="checkbox" value="Junior" onchange="recount()"><span>Juniors</span></label>
@@ -150,11 +161,32 @@ let lastCount=0, timer=null, canSend=false, queue=[], editingId=null;
 
 function filters(){
   const f={};
-  const types=[...document.querySelectorAll('.ticks input:checked')].map(i=>i.value);
+  const types=[...document.querySelectorAll('#typeTicks input:checked')].map(i=>i.value);
   if(types.length) f.types=types;
+  if($('f_who').value==='lapsed'){
+    f.who='lapsed';
+    const ss=[...document.querySelectorAll('#seasonTicks input:checked')].map(i=>i.value);
+    if(ss.length) f.seasons=ss;
+  }
   if($('f_area').value) f.place=$('f_area').value;
   if($('f_news').value) f.newsletter=$('f_news').value;
   return f;
+}
+
+function whoChanged(){
+  const lapsed=$('f_who').value==='lapsed';
+  $('lapsedSeasons').style.display = lapsed ? 'block' : 'none';
+  if(lapsed && !$('seasonTicks').innerHTML) loadSeasons();
+  recount();
+}
+
+async function loadSeasons(){
+  try{
+    const d=await (await fetch(EP+'/members/browse?limit=10',{headers:H()})).json();
+    const past=(d.seasons||[]).filter(s=>s!=='2026/27').slice(0,6);
+    $('seasonTicks').innerHTML=past.map(s=>
+      '<label class="tick"><input type="checkbox" value="'+esc(s)+'" onchange="recount()"><span>'+esc(s)+'</span></label>').join('');
+  }catch(e){ $('seasonTicks').innerHTML='<p class="hint">Could not load the seasons.</p>'; }
 }
 
 function recount(){
@@ -229,7 +261,8 @@ async function scrapIt(){
 
 function clearForm(){
   editingId=null; $('subject').value=''; $('body').value=''; $('pv').innerHTML='';
-  document.querySelectorAll('.ticks input').forEach(i=>i.checked=false);
+  document.querySelectorAll('#typeTicks input, #seasonTicks input').forEach(i=>i.checked=false);
+  $('f_who').value='current'; whoChanged();
   $('f_area').value=''; $('f_news').value=''; $('whenMode').value='now'; $('sendAt').value='';
   $('scrapBtn').style.display='none'; whenChanged(); recount();
 }
@@ -239,7 +272,14 @@ async function openSaved(id){
   if(!d.ok){ say(d.error, true); return; }
   const n=d.notice;
   editingId=n.id; $('subject').value=n.subject||''; $('body').value=n.body||'';
-  document.querySelectorAll('.ticks input').forEach(i=>
+  $('f_who').value = n.filters.who==='lapsed' ? 'lapsed' : 'current';
+  whoChanged();
+  if(n.filters.who==='lapsed'){
+    await loadSeasons();
+    document.querySelectorAll('#seasonTicks input').forEach(i=>
+      i.checked = Array.isArray(n.filters.seasons) && n.filters.seasons.includes(i.value));
+  }
+  document.querySelectorAll('#typeTicks input').forEach(i=>
     i.checked = Array.isArray(n.filters.types) && n.filters.types.includes(i.value));
   $('f_area').value=n.filters.place||n.filters.area||'';
   $('f_news').value=n.filters.newsletter||'';
