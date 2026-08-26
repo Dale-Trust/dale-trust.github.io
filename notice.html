@@ -75,6 +75,15 @@
 
   <div class="panel">
     <h2>The message</h2>
+    <label>Who is it from?</label>
+    <select id="f_from">
+      <option value="info">Dale Supporters Trust &mdash; info@daletrust.uk</option>
+      <option value="membership">Dale Trust &mdash; membership@daletrust.uk</option>
+      <option value="travel">Dale Trust Travel &mdash; travel@daletrust.uk</option>
+      <option value="auction">Dale Trust Auctions &mdash; auction@daletrust.uk</option>
+    </select>
+    <p class="hint">Replies go to whichever you pick, so choose the one that can answer.</p>
+
     <label>Subject</label>
     <input id="subject" placeholder="e.g. AGM — Thursday 18 September, 7.30pm">
     <p class="hint">This is what they see in their inbox. Say the thing rather than teasing it.</p>
@@ -224,8 +233,10 @@ function preview(){
   const b=$('body').value.trim();
   if(!b){ $('pv').innerHTML='<p class="hint">Write something first.</p>'; return; }
   $('pv').innerHTML='<div class="pv"><p>Hi Chris,</p>'+asHtml(b)+
-    '<p style="color:#7A8AA5;font-size:13px;border-top:1px solid #DCE3EC;padding-top:12px">'+
-    'You are getting this because you are a Dale Trust member. This one is for members only and is not on the website.</p></div>';
+    '<p style="color:#7A8AA5;font-size:12.5px;border-top:1px solid #DCE3EC;padding-top:12px;margin-top:20px">'+
+    'You are getting this because you are, or were, a Dale Trust member.<br>'+
+    'If you would rather not hear from us, <u>unsubscribe here</u> and we will not email you again.<br>'+
+    'Dale Trust is the trading name of Rochdale Supporters Club Limited, a registered society (29690R).</p></div>';
 }
 
 function whenChanged(){
@@ -243,6 +254,7 @@ function whenChanged(){
 
 function collect(){
   return { id: editingId, subject:$('subject').value.trim(), body:$('body').value.trim(), filters:filters(),
+    from_box:$('f_from').value,
     send_at: $('whenMode').value==='later' && $('sendAt').value
       ? new Date($('sendAt').value).toISOString().slice(0,19).replace('T',' ') : null };
 }
@@ -272,7 +284,8 @@ function clearForm(){
   editingId=null; $('subject').value=''; $('body').value=''; $('pv').innerHTML='';
   document.querySelectorAll('#typeTicks input, #seasonTicks input').forEach(i=>i.checked=false);
   $('f_who').value='current'; whoChanged();
-  $('f_area').value=''; $('f_news').value=''; $('whenMode').value='now'; $('sendAt').value='';
+  $('f_area').value=''; $('f_news').value=''; $('f_from').value='info';
+  $('whenMode').value='now'; $('sendAt').value='';
   $('scrapBtn').style.display='none'; whenChanged(); recount();
 }
 
@@ -290,6 +303,7 @@ async function openSaved(id){
   }
   document.querySelectorAll('#typeTicks input').forEach(i=>
     i.checked = Array.isArray(n.filters.types) && n.filters.types.includes(i.value));
+  $('f_from').value=n.from_box||'info';
   $('f_area').value=n.filters.place||n.filters.area||'';
   $('f_news').value=n.filters.newsletter||'';
   if(n.send_at){
@@ -345,7 +359,8 @@ async function decide(id, action){
 }
 
 async function post(extra, okMsg){
-  const body=Object.assign({subject:$('subject').value.trim(), body:$('body').value.trim(), filters:filters()}, extra);
+  const body=Object.assign({id:editingId, subject:$('subject').value.trim(), body:$('body').value.trim(),
+    filters:filters(), from_box:$('f_from').value}, extra);
   $('sendBtn').disabled=true; say('Sending…');
   try{
     const d=await (await fetch(EP+'/notices/send',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
