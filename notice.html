@@ -126,6 +126,8 @@
         <option value="">Everyone</option><option value="in">Opted in only</option></select></div>
     </div>
     <div class="count" id="count">Counting&hellip;</div>
+    <button class="ghost" onclick="whoWould()">Show me exactly who would get this</button>
+    <div id="whoBox"></div>
   </div>
 
   <div class="panel">
@@ -290,6 +292,39 @@ function asHtml(t){
       return '<ul>'+s.split('\n').map(l=>'<li>'+inline(l.trim().slice(2))+'</li>').join('')+'</ul>';
     return '<p>'+inline(s).replace(/\n/g,'<br>')+'</p>';
   }).join('');
+}
+
+async function whoWould(){
+  const box=$('whoBox');
+  box.innerHTML='<p class="hint">Working it out\u2026</p>';
+  try{
+    const d=await (await fetch(EP+'/notices/whowould',{method:'POST',headers:H(),
+      body:JSON.stringify({filters:filters()})})).json();
+    if(!d.ok){ box.innerHTML='<p class="hint" style="color:var(--red)">'+esc(d.error)+'</p>'; return; }
+    const current = d.all.filter(p=>p.season==='2026/27' && p.member_no).length;
+    box.innerHTML =
+      '<div class="note'+(current?' gold':'')+'" style="margin-top:12px">'+
+      '<b>'+d.count+' would get it.</b>'+
+      (current
+        ? '<br><span style="color:#8A4B00"><b>Careful \u2014 '+current+' of them are current members for this season.</b> '+
+          'If this is meant for people who have left, something is wrong with who you have picked.</span>'
+        : '<br>None of them are current members for this season.')+
+      '</div>'+
+      '<div style="max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:10px">'+
+      '<table style="width:100%;border-collapse:collapse;font-size:13px">'+
+      '<tr><th style="text-align:left;padding:8px 10px;background:var(--navy);color:#fff;font-size:11px;'+
+        'text-transform:uppercase;letter-spacing:.05em">Name</th>'+
+      '<th style="text-align:left;padding:8px 10px;background:var(--navy);color:#fff;font-size:11px;'+
+        'text-transform:uppercase;letter-spacing:.05em">Last season</th>'+
+      '<th style="text-align:left;padding:8px 10px;background:var(--navy);color:#fff;font-size:11px;'+
+        'text-transform:uppercase;letter-spacing:.05em">Email</th></tr>'+
+      d.all.map(p=>'<tr style="border-bottom:1px solid var(--line)'+
+        (p.season==='2026/27'&&p.member_no?';background:#FFF3E4':'')+'">'+
+        '<td style="padding:7px 10px">'+esc(p.name||'\u2014')+'</td>'+
+        '<td style="padding:7px 10px">'+esc(p.season||'')+(p.member_no?' <b>current</b>':'')+'</td>'+
+        '<td style="padding:7px 10px;font-size:12px;color:#7A8AA5">'+esc(p.email)+'</td></tr>').join('')+
+      '</table></div>';
+  }catch(e){ box.innerHTML='<p class="hint" style="color:var(--red)">Could not work it out.</p>'; }
 }
 
 function preview(){
