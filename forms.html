@@ -57,8 +57,15 @@
     <button class="ghost" onclick="checkPayments()" id="chkBtn">Check SumUp for payments</button>
     <button class="ghost" onclick="toggleInspect()">Look one up in SumUp</button>
     <button class="ghost" onclick="recentPayments()">Recent SumUp payments</button>
+    <button class="ghost" onclick="whoStopped()">Who has unsubscribed</button>
     <span id="chkMsg" style="font-size:13.5px;font-weight:600"></span>
   </div>
+  <div class="panel" id="stopBox" style="display:none;border-left:5px solid var(--red)">
+    <h2>Asked us to stop</h2>
+    <p class="lede">People who have unsubscribed. They are left out of everything automatically.</p>
+    <div id="stopList"></div>
+  </div>
+
   <div class="panel" id="inspectBox" style="display:none;border-left:5px solid var(--gold)">
     <h2>Look a payment up in SumUp</h2>
     <p class="lede">For when someone says they have paid but the site does not agree. This asks SumUp directly.</p>
@@ -149,6 +156,29 @@ async function inspect(){
     out.textContent='Could not reach the server.';
     v.style.color='#C0392B'; v.textContent='Could not reach the server.';
   }
+}
+
+async function whoStopped(){
+  const box=$('stopBox'); box.style.display='block';
+  $('stopList').innerHTML='Loading\u2026';
+  try{
+    const d=await (await fetch(EP+'/unsubscribes',{headers:H()})).json();
+    if(!d.ok){ $('stopList').textContent=d.error; return; }
+    $('stopList').innerHTML = d.count
+      ? d.people.map(p=>'<div class="sent"><b>'+esc(p.email)+'</b>'+
+          '<small>'+(p.members?esc(p.members):'not a current member')+' \u00b7 '+
+          new Date(p.at.replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'</small>'+
+          '<button class="ghost" style="margin-top:6px;padding:7px 14px" onclick="putBack(\''+esc(p.email)+'\')">Put them back on</button>'+
+          '</div>').join('')
+      : '<p style="color:#7A8AA5;font-size:13.5px">Nobody has unsubscribed.</p>';
+  }catch(e){ $('stopList').textContent='Could not load.'; }
+}
+
+async function putBack(email){
+  if(!confirm('Put '+email+' back on the list?\n\nOnly do this if they have asked you to.')) return;
+  const d=await (await fetch(EP+'/unsubscribes/undo',{method:'POST',headers:H(),
+    body:JSON.stringify({email})})).json();
+  if(d.ok) whoStopped();
 }
 
 async function checkPayments(){

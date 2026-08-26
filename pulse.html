@@ -91,6 +91,8 @@ function whenCharts(cb,t){ if(window.Chart) return cb();
     kpi('Articles published',d.postsPublished,'last 30 days');
     kpi('Emails sent',d.mailshots,d.mailReached+' people reached');
     if(d.bounced) kpi('Bad addresses',d.bounced,'cannot be reached','bad');
+  if(d.optedOut) kpi('Asked us to stop',d.optedOut,
+    (d.optedOutRecent?d.optedOutRecent+' in the last month':'none in the last month'),'bad');
     if(d.noEmail) kpi('No email at all',d.noEmail,'need reaching another way','warn');
     if(d.pending) kpi('Awaiting payment',d.pending,'not yet members','warn');
     if(d.helpRequests) kpi('Asked for help',d.helpRequests,'last 30 days','warn');
