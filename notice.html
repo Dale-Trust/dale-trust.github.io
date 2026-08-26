@@ -81,7 +81,9 @@
 
     <label>What you want to say</label>
     <textarea id="body" placeholder="Blank line between paragraphs. Start a line with - for a bullet. **bold** for emphasis.&#10;&#10;Their first name is added at the top automatically."></textarea>
-    <p class="hint">Their first name goes at the top for you. Keep it short &mdash; people read email on a phone, standing up.</p>
+    <p class="hint">Their first name goes at the top for you. Keep it short &mdash; people read email on a phone, standing up.<br>
+      <b>**bold**</b> for emphasis &middot; <b># A heading</b> on its own line &middot; <b>- a bullet</b> &middot;
+      <b>[words](https://&hellip;)</b> for a link</p>
   </div>
 
   <div class="panel">
@@ -203,11 +205,18 @@ function recount(){
 }
 
 function asHtml(t){
+  const inline=s=>esc(s)
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2">$1</a>');
   return t.split(/\n{2,}/).map(p=>{
     const s=p.trim(); if(!s) return '';
+    const hd=s.match(/^(#{1,3})\s+(.+)$/);
+    if(hd && !s.includes('\n'))
+      return '<p style="font-weight:700;font-size:'+(hd[1].length===1?'18px':'16px')+
+             ';color:var(--ink);margin:18px 0 6px">'+inline(hd[2])+'</p>';
     if(s.split('\n').every(l=>l.trim().startsWith('- ')))
-      return '<ul>'+s.split('\n').map(l=>'<li>'+esc(l.trim().slice(2))+'</li>').join('')+'</ul>';
-    return '<p>'+esc(s).replace(/\n/g,'<br>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')+'</p>';
+      return '<ul>'+s.split('\n').map(l=>'<li>'+inline(l.trim().slice(2))+'</li>').join('')+'</ul>';
+    return '<p>'+inline(s).replace(/\n/g,'<br>')+'</p>';
   }).join('');
 }
 
