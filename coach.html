@@ -241,7 +241,17 @@ function drawBookings(){
       '<td><span class="pill '+b.payment_status+'">'+b.payment_status+'</span></td>'+
       '<td class="noprint"><small>'+esc(b.booking_ref)+'</small></td>'+
       '<td class="noprint">'+(b.payment_status==='pending'?'<button class="green sm" onclick="mark('+b.id+',&quot;cash&quot;)">Mark paid</button> ':'')+
+      (b.payment_status!=='pending'&&b.payment_status!=='cancelled'&&b.email?'<button class="ghost sm" onclick="resend('+b.id+')">Send confirmation</button> ':'')+
       (b.payment_status!=='cancelled'?'<button class="ghost sm" onclick="mark('+b.id+',&quot;cancelled&quot;)">Cancel</button>':'')+'</td></tr>').join('')+'</table>';
+}
+
+async function resend(id){
+  const b=(bookings||[]).find(x=>x.id===id)||{};
+  if(!confirm('Send '+b.name+' their seat confirmation again?\n\nIt goes to '+(b.email||'')+
+    ', and travel@ is told as well.')) return;
+  const d=await (await fetch(EP+'/coach/confirm',{method:'POST',headers:H(),body:JSON.stringify({id})})).json();
+  if(!d.ok){ alert(d.error); return; }
+  alert('Sent to '+d.sentTo+'.');
 }
 
 async function mark(id,status){
