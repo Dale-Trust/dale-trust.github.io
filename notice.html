@@ -141,6 +141,17 @@
       </div>
       <p class="hint" id="whenHint">Nobody thanks you for an email at half past ten at night.</p>
 
+      <label>How fast should it go?</label>
+      <select id="f_pace" onchange="paceChanged()">
+        <option value="0">All at once</option>
+        <option value="slow">A few at a time &mdash; safer for an old list</option>
+      </select>
+      <div id="paceBox" style="display:none" class="g2">
+        <div><label>How many each time</label><input id="f_batch" value="25"></div>
+        <div><label>Wait between (minutes)</label><input id="f_gap" value="60"></div>
+      </div>
+      <p class="hint" id="paceHint">Everyone gets it as fast as we can send.</p>
+
       <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
         <button class="go" id="sendBtn" onclick="sendIt()">Send it</button>
         <button class="ghost" onclick="saveDraft()">Save for later</button>
@@ -239,6 +250,18 @@ function preview(){
     'Dale Trust is the trading name of Rochdale Supporters Club Limited, a registered society (29690R).</p></div>';
 }
 
+function paceChanged(){
+  const slow=$('f_pace').value==='slow';
+  $('paceBox').style.display = slow ? 'grid' : 'none';
+  say('');
+  if(!slow){ $('paceHint').textContent='Everyone gets it as fast as we can send.'; return; }
+  const b=Number($('f_batch').value)||25, g=Number($('f_gap').value)||60;
+  const hrs = lastCount && b ? Math.ceil(lastCount/b)*g/60 : 0;
+  $('paceHint').innerHTML='<b>'+b+' every '+g+' minutes</b> \u2014 about '+
+    (hrs>=24 ? Math.round(hrs/24*10)/10+' days' : Math.round(hrs)+' hours')+' to reach all '+lastCount+'.<br>'+
+    'It stops by itself if more than 3.5% bounce, so a bad list is caught after a handful rather than hundreds.';
+}
+
 function whenChanged(){
   const later=$('whenMode').value==='later';
   $('sendAt').style.display = later ? 'block' : 'none';
@@ -253,8 +276,11 @@ function whenChanged(){
 }
 
 function collect(){
+  const slow = $('f_pace').value==='slow';
   return { id: editingId, subject:$('subject').value.trim(), body:$('body').value.trim(), filters:filters(),
     from_box:$('f_from').value,
+    batch_size: slow ? (Number($('f_batch').value)||25) : 0,
+    batch_gap:  slow ? (Number($('f_gap').value)||60)   : 0,
     send_at: $('whenMode').value==='later' && $('sendAt').value
       ? new Date($('sendAt').value).toISOString().slice(0,19).replace('T',' ') : null };
 }
@@ -285,6 +311,7 @@ function clearForm(){
   document.querySelectorAll('#typeTicks input, #seasonTicks input').forEach(i=>i.checked=false);
   $('f_who').value='current'; whoChanged();
   $('f_area').value=''; $('f_news').value=''; $('f_from').value='info';
+  $('f_pace').value='0'; $('f_batch').value='25'; $('f_gap').value='60'; paceChanged();
   $('whenMode').value='now'; $('sendAt').value='';
   $('scrapBtn').style.display='none'; whenChanged(); recount();
 }
@@ -304,6 +331,9 @@ async function openSaved(id){
   document.querySelectorAll('#typeTicks input').forEach(i=>
     i.checked = Array.isArray(n.filters.types) && n.filters.types.includes(i.value));
   $('f_from').value=n.from_box||'info';
+  $('f_pace').value = n.batch_size ? 'slow' : '0';
+  if(n.batch_size){ $('f_batch').value=n.batch_size; $('f_gap').value=n.batch_gap||60; }
+  paceChanged();
   $('f_area').value=n.filters.place||n.filters.area||'';
   $('f_news').value=n.filters.newsletter||'';
   if(n.send_at){
@@ -420,7 +450,11 @@ async function loadHistory(){
               'goes '+(when?when.toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')+'</span>'
             : '<span style="display:inline-block;background:var(--wash);color:#5A6880;font-size:10.5px;font-weight:700;'+
               'text-transform:uppercase;letter-spacing:.05em;padding:2px 9px;border-radius:100px;margin-left:8px">draft</span>')+
-          '<small>'+esc(s.audience_note||'')+' \u00b7 '+esc(s.created_by||'')+'</small>'+
+          '<small>'+esc(s.audience_note||'')+' \u00b7 '+esc(s.created_by||'')+
+          (s.gone_out?' \u00b7 <b>'+s.gone_out+' sent so far</b>':'')+
+          (s.batch_size?' \u00b7 '+s.batch_size+' every '+s.batch_gap+' min':'')+'</small>'+
+          (s.paused_reason?'<div style="background:#FFF9E8;border-left:4px solid var(--gold);padding:10px 14px;'+
+            'margin-top:8px;font-size:13px"><b>Stopped.</b> '+esc(s.paused_reason)+'</div>':'')+
           '<button class="ghost" style="margin-top:8px;padding:8px 16px" onclick="openSaved('+s.id+')">Open it</button>'+
           '</div>';
       }).join('');
@@ -435,7 +469,7 @@ async function loadHistory(){
   }catch(e){ $('history').textContent='Could not load.'; }
 }
 
-recount(); loadHistory(); whenChanged();
+recount(); loadHistory(); whenChanged(); paceChanged();
 </script>
 </body>
 </html>
