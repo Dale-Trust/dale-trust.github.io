@@ -51,6 +51,9 @@
 <div class="back"><a href="admin.html">&larr; Back to admin</a></div>
 <div class="top"><h1>Email members</h1><small>For things members should know that do not belong on the website</small></div>
 <div class="wrap">
+  <p style="text-align:right;margin-bottom:10px">
+    <button class="ghost" style="margin:0" onclick="toggleList()">Send to a list of addresses</button>
+  </p>
 
   <div class="panel" id="queuePanel" style="display:none;border-left:5px solid var(--gold)">
     <h2 style="border-left-color:var(--gold)">Waiting to be checked</h2>
@@ -162,6 +165,27 @@
     <p class="msg" id="msg"></p>
   </div>
 
+  <div class="panel" id="listPanel" style="display:none;border-left:5px solid var(--gold)">
+    <h2>Send to a list of addresses</h2>
+    <p class="lede">For putting something right quickly, when the filters cannot describe who needs it.</p>
+    <label>Who it is from</label>
+    <select id="l_from">
+      <option value="membership">Dale Trust &mdash; membership@daletrust.uk</option>
+      <option value="info">Dale Supporters Trust &mdash; info@daletrust.uk</option>
+      <option value="travel">Dale Trust Travel &mdash; travel@daletrust.uk</option>
+      <option value="auction">Dale Trust Auctions &mdash; auction@daletrust.uk</option>
+    </select>
+    <label>Subject</label>
+    <input id="l_subject">
+    <label>What you want to say</label>
+    <textarea id="l_body" style="min-height:170px"></textarea>
+    <label>Addresses &mdash; separated by commas, spaces or new lines</label>
+    <textarea id="l_addr" oninput="countList()" style="min-height:110px;font-family:ui-monospace,Menlo,monospace;font-size:13px"></textarea>
+    <p class="hint" id="l_count">No addresses yet.</p>
+    <button class="go" onclick="sendToList()">Send it</button>
+    <p class="msg" id="l_msg"></p>
+  </div>
+
   <div class="panel" id="savedPanel" style="display:none">
     <h2>Saved and waiting to go</h2>
     <div id="savedList"></div>
@@ -193,6 +217,34 @@ function filters(){
   if($('f_area').value) f.place=$('f_area').value;
   if($('f_news').value) f.newsletter=$('f_news').value;
   return f;
+}
+
+function toggleList(){
+  const p=$('listPanel');
+  p.style.display = p.style.display==='none' ? 'block' : 'none';
+  if(p.style.display==='block'){ $('l_subject').focus(); countList(); }
+}
+
+function countList(){
+  const n=[...new Set($('l_addr').value.split(/[\s,;]+/).map(s=>s.trim().toLowerCase())
+    .filter(s=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s)))].length;
+  $('l_count').textContent = n ? n+' address'+(n===1?'':'es')+' \u2014 one email each.' : 'No addresses yet.';
+}
+
+async function sendToList(){
+  const m=$('l_msg');
+  const addr=$('l_addr').value.trim();
+  if(!$('l_subject').value.trim() || !$('l_body').value.trim() || !addr){
+    m.style.color='var(--red)'; m.textContent='It needs a subject, something to say, and some addresses.'; return; }
+  const n=[...new Set(addr.split(/[\s,;]+/).map(s=>s.trim().toLowerCase())
+    .filter(s=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s)))].length;
+  if(!confirm('Send to '+n+' address'+(n===1?'':'es')+'?\n\n"'+$('l_subject').value.trim()+'"')) return;
+  m.style.color='var(--body)'; m.textContent='Sending\u2026';
+  const d=await (await fetch(EP+'/notices/tolist',{method:'POST',headers:H(),body:JSON.stringify({
+    subject:$('l_subject').value.trim(), body:$('l_body').value.trim(),
+    addresses:addr, from_box:$('l_from').value })})).json();
+  if(!d.ok){ m.style.color='var(--red)'; m.textContent=d.error; return; }
+  m.style.color='var(--green)'; m.textContent='Sent to '+d.sent+' of '+d.asked+'.';
 }
 
 function whoChanged(){
