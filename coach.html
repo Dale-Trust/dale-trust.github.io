@@ -378,10 +378,12 @@ function paxList(){
     let pax=[];
     try{ pax=JSON.parse(b.passengers||'[]'); }catch(e){}
     if(!pax.length){
-      // booked at the desk with no names taken — one row per seat
-      for(let i=0;i<b.seats;i++) rows.push({
-        name: b.seats>1 ? b.name+' ('+(i+1)+' of '+b.seats+')' : b.name,
-        age: null, mobile: i===0?(b.mobile||''):'', notes: b.notes||'',
+      // no passenger names on the booking. For a single seat the booker is the passenger,
+      // so that is not a missing name. For several, the others are genuinely unknown.
+      rows.push({ name: b.name, age: null, mobile: b.mobile||'', notes: b.notes||'',
+        paid: b.payment_status, ref: b.booking_ref });
+      for(let i=1;i<b.seats;i++) rows.push({
+        name: 'Travelling with '+b.name, age: null, mobile: '', notes: b.notes||'',
         paid: b.payment_status, ref: b.booking_ref, unknown: true });
     } else {
       pax.forEach((p,i)=>{
@@ -393,7 +395,15 @@ function paxList(){
       });
     }
   });
-  rows.sort((a,b)=>a.name.localeCompare(b.name));
+  // by surname, so families sit together on the list
+  const surname = n => {
+    const bits = String(n||'').trim().split(/\s+/);
+    return (bits.length > 1 ? bits[bits.length-1] : bits[0] || '').toLowerCase();
+  };
+  rows.sort((a,b)=>{
+    const s = surname(a.name).localeCompare(surname(b.name));
+    return s !== 0 ? s : String(a.name).localeCompare(String(b.name));
+  });
 
   const owed = live.filter(b=>b.payment_status==='pending'||b.payment_status==='oncoach')
                    .reduce((s,b)=>s+Number(b.amount||0),0);
@@ -428,7 +438,9 @@ function paxList(){
   w.document.write('<table><tr><th>Name</th><th>Under 18</th><th>Contact number</th>'+
     '<th class="tick">Out</th><th class="tick">Ret</th><th>Notes</th></tr>'+
     rows.map(r=>'<tr>'+
-      '<td><b>'+esc(r.name)+'</b>'+(r.unknown?' <span style="color:#8A4B00;font-size:10px">(name not taken)</span>':'')+'</td>'+
+      '<td>'+(r.unknown
+        ? '<span style="color:#8A4B00">'+esc(r.name)+'</span>'
+        : '<b>'+esc(r.name)+'</b>')+'</td>'+
       '<td>'+(r.age!==null&&r.age<18?'<span class="u18">'+r.age+'</span>':'')+'</td>'+
       '<td>'+esc(r.mobile||'')+'</td>'+
       '<td class="tick"><span class="box"></span></td>'+
