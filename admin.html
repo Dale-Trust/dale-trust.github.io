@@ -165,7 +165,6 @@ function show(){
     '<span class="gb-go">Open the guide &rarr;</span></a>';
   const tile=(href,title,desc)=>t.insertAdjacentHTML('beforeend','<a class="tile" href="'+href+'"><b>'+title+'</b><small>'+desc+'</small></a>');
   if(me.can_members){
-    if(me.can_members) tile('dashboard.html','Membership dashboard','Live register analysis \u2014 drop the sheet, press Connect');
     if(me.can_members) tile('register.html','Membership register','Look someone up, correct details, add a member by hand');
   if(me.can_members) tile('forms.html','What people have filled in','Joins, renewals, coach bookings and help requests \u2014 newest first');
     if(me.can_renewals||me.is_admin) tile('renewals.html','Renewals','Where the season stands, and the reminders that bring members back');
