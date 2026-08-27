@@ -60,8 +60,16 @@
     <button class="ghost" onclick="whoStopped()">Who has unsubscribed</button>
     <button class="ghost" onclick="checkDomains()">Check the lapsed addresses</button>
     <button class="ghost" onclick="neverHeard()">Members who have had nothing</button>
+    <button class="ghost" onclick="payPal()">What PayPal has taken</button>
     <span id="chkMsg" style="font-size:13.5px;font-weight:600"></span>
   </div>
+  <div class="panel" id="ppBox" style="display:none;border-left:5px solid var(--royal)">
+    <h2>What PayPal has taken</h2>
+    <p class="lede">Payments straight from PayPal, set against the register. This is how we find people
+      whose subscription is still paying but who show as lapsed.</p>
+    <div id="ppOut"></div>
+  </div>
+
   <div class="panel" id="nhBox" style="display:none;border-left:5px solid var(--gold)">
     <h2>Members who have never received anything</h2>
     <p class="lede">Current members with a working address who have had no email from us at all &mdash;
@@ -172,6 +180,46 @@ async function inspect(){
     out.textContent='Could not reach the server.';
     v.style.color='#C0392B'; v.textContent='Could not reach the server.';
   }
+}
+
+async function payPal(){
+  const box=$('ppBox'); box.style.display='block';
+  $('ppOut').innerHTML='<p style="color:#7A8AA5">Asking PayPal\u2026 this takes a moment, it goes back 18 months.</p>';
+  try{
+    const d=await (await fetch(EP+'/paypal/payments?days=540',{headers:H()})).json();
+    if(!d.ok){ $('ppOut').innerHTML='<p style="color:var(--red)">'+esc(d.error)+'</p>'; return; }
+    const money=n=>'\u00a3'+Number(n||0).toFixed(2);
+
+    // people paying who are not on the register for this season
+    const wrong = d.matched.filter(p=>p.season!=='2026/27' && p.date>='2026-04-01');
+
+    let html='<div class="kpis">'+
+      '<div class="kpi"><span>Payments found</span><b>'+d.payments+'</b></div>'+
+      '<div class="kpi"><span>Total</span><b>'+money(d.total)+'</b></div>'+
+      '<div class="kpi"><span>Matched to a member</span><b>'+d.matched.length+'</b></div>'+
+      '<div class="kpi'+(d.unmatched.length?' wait':'')+'"><span>Not matched</span><b>'+d.unmatched.length+'</b></div>'+
+      '</div>';
+
+    if(wrong.length){
+      html+='<div class="note" style="background:#FFF9E8;border-left:4px solid var(--gold);padding:14px 16px;margin-bottom:14px">'+
+        '<b>'+wrong.length+' '+(wrong.length===1?'person has':'people have')+' paid since April but are not on the register for this season.</b><br>'+
+        'These are the ones being wrongly treated as lapsed.</div>'+
+        '<table class="ctable" style="width:100%;margin-bottom:16px">'+
+        '<tr><th>Paid</th><th>Amount</th><th>Who</th><th>On the register as</th></tr>'+
+        wrong.map(p=>'<tr><td>'+esc(p.date)+'</td><td>'+money(p.amount)+'</td>'+
+          '<td><b>'+esc(p.member)+'</b><small style="display:block;color:#7A8AA5">'+esc(p.email||'')+'</small></td>'+
+          '<td>'+esc(p.season)+(p.method?' \u00b7 '+esc(p.method):'')+'</td></tr>').join('')+'</table>';
+    }
+
+    if(d.unmatched.length){
+      html+='<h2 style="font-size:15px;margin:16px 0 8px">Payments we could not match to anybody</h2>'+
+        '<table class="ctable" style="width:100%"><tr><th>Paid</th><th>Amount</th><th>Name</th><th>Email</th><th>Note</th></tr>'+
+        d.unmatched.slice(0,60).map(p=>'<tr><td>'+esc(p.date)+'</td><td>'+money(p.amount)+'</td>'+
+          '<td>'+esc(p.name||'')+'</td><td style="font-size:12px">'+esc(p.email||'')+'</td>'+
+          '<td style="font-size:12px">'+esc(p.note||'')+'</td></tr>').join('')+'</table>';
+    }
+    $('ppOut').innerHTML=html;
+  }catch(e){ $('ppOut').innerHTML='<p style="color:var(--red)">Could not reach PayPal just now.</p>'; }
 }
 
 async function neverHeard(){
