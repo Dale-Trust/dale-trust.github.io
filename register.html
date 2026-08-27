@@ -194,6 +194,7 @@
     <button class="ghost" onclick="document.getElementById('editor').style.display='none'">Close</button>
     <button class="ghost" onclick="printCard()">Print their card</button>
     <button class="ghost" id="welcomeBtn" onclick="resendWelcome()">Send their welcome email</button>
+    <button class="ghost" id="paylinkBtn" onclick="sendPayLink()">Send them a link to pay</button>
     <button class="green" id="rejoinBtn" style="display:none" onclick="rejoin()">Bring them back for this season</button>
     <button class="green" id="activateBtn" style="display:none" onclick="activateThem()">Payment received &mdash; activate them</button>
     <button style="background:var(--red);margin-left:auto" onclick="deleteMember()">Delete this record</button>
@@ -318,6 +319,9 @@ async function openMember(id){
   $('e_shareWrap').style.display=m.membership_type==='Exile'?'block':'none';
   if(m.membership_type==='Exile')$('e_share').value=m.exile_transport_share||'No';
   $('emsg').textContent=''; $('delBox').style.display='none';
+  const pb=$('paylinkBtn');
+  if(pb) pb.style.display = (Number(m.amount_due)>0 && m.payment_status!=='paid' && !m.deceased
+    && m.email && m.email!=='none@daletrust.uk') ? 'inline-block' : 'none';
   const wb=$('welcomeBtn');
   if(wb) wb.style.display = (m.member_no && !m.deceased && m.email && m.email!=='none@daletrust.uk')
     ? 'inline-block' : 'none';
@@ -358,6 +362,21 @@ let CURRENT_SEASON = null;
     if(d.ok) CURRENT_SEASON = d.season;
   }catch(e){}
 })();
+
+async function sendPayLink(){
+  if(!current) return;
+  const who = current.first_name+' '+current.last_name;
+  const amt = prompt('Send '+who+' a link to pay.\n\nHow much?', Number(current.amount_due||7.5).toFixed(2));
+  if(amt===null) return;
+  const note = prompt('Anything to say first? (optional)\n\ne.g. Sorry about the muddle when you signed up.','');
+  if(note===null) return;
+  const d = await (await fetch(EP+'/members/paylink',{method:'POST',headers:H(),
+    body:JSON.stringify({id:current.id, amount:amt, note:note.trim()})})).json();
+  if(!d.ok){ alert(d.error); return; }
+  alert('Sent to '+d.sentTo+'.\n\n\u00a3'+Number(d.amount).toFixed(2)+', reference '+d.ref+
+    '.\n\nTheir membership activates by itself the moment it is paid.');
+  search();
+}
 
 async function resendWelcome(){
   if(!current) return;
