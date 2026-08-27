@@ -285,8 +285,18 @@ function editBooking(id){
     '<button class="ghost sm" onclick="addPax()">Add another passenger</button> '+
     '<button class="ghost sm" onclick="removePax()">Remove the last one</button>'+
     '<div class="g2" style="margin-top:14px">'+
+      '<div><label>Payment</label><select id="e_status">'+
+        ['cash','sumup','transfer','oncoach','half','free','pending','paid'].map(s=>
+          '<option value="'+s+'"'+(b.payment_status===s?' selected':'')+'>'+
+          ({cash:'Paid \u2014 cash', sumup:'Paid \u2014 SumUp', transfer:'Paid \u2014 bank transfer',
+            oncoach:'Paying on the coach', half:'Half price', free:'Free seat',
+            pending:'Not paid yet', paid:'Paid'}[s])+'</option>').join('')+
+        (b.payment_status==='cancelled'?'<option value="cancelled" selected>Cancelled</option>':'')+
+        '</select></div>'+
       '<div><label>Amount (£)</label><input id="e_amount" value="'+Number(b.amount||0).toFixed(2)+'"></div>'+
+      '</div><div class="g2">'+
       '<div><label>Notes</label><input id="e_notes" value="'+esc(b.notes||'')+'"></div>'+
+      '<div></div>'+
     '</div>'+
     '<p style="font-size:13px;color:#7A8AA5;margin-top:8px">Seats follow the number of passengers. '+
       'Leave the amount alone and it will work itself out from the fare.</p>'+
@@ -326,6 +336,7 @@ async function saveBooking(id){
   const d=await (await fetch(EP+'/coach/edit',{method:'POST',headers:H(),body:JSON.stringify({
     id, name:document.getElementById('e_name').value, email:document.getElementById('e_email').value,
     mobile:document.getElementById('e_mobile').value, amount:document.getElementById('e_amount').value,
+    payment_status:document.getElementById('e_status').value,
     notes:document.getElementById('e_notes').value, passengers })})).json();
   if(!d.ok){ m.style.color='var(--red)'; m.textContent=d.error; return; }
   closeEdit(); load();
