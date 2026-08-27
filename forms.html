@@ -61,6 +61,7 @@
     <button class="ghost" onclick="checkDomains()">Check the lapsed addresses</button>
     <button class="ghost" onclick="neverHeard()">Members who have had nothing</button>
     <button class="ghost" onclick="payPal()">What PayPal has taken</button>
+    <button class="ghost" onclick="payPalCheck()">Why is PayPal empty?</button>
     <span id="chkMsg" style="font-size:13.5px;font-weight:600"></span>
   </div>
   <div class="panel" id="ppBox" style="display:none;border-left:5px solid var(--royal)">
@@ -180,6 +181,17 @@ async function inspect(){
     out.textContent='Could not reach the server.';
     v.style.color='#C0392B'; v.textContent='Could not reach the server.';
   }
+}
+
+async function payPalCheck(){
+  const box=$('ppBox'); box.style.display='block';
+  $('ppOut').innerHTML='<p style="color:#7A8AA5">Asking PayPal…</p>';
+  try{
+    const d=await (await fetch(EP+'/paypal/check',{headers:H()})).json();
+    $('ppOut').innerHTML='<pre style="background:#0E1F3D;color:#C7D6EC;padding:16px;border-radius:10px;'+
+      'font:12.5px ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-word;'+
+      'max-height:420px;overflow:auto">'+esc(JSON.stringify(d,null,2))+'</pre>';
+  }catch(e){ $('ppOut').textContent='Could not reach the server.'; }
 }
 
 async function payPal(){
