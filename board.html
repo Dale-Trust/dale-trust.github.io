@@ -145,7 +145,8 @@ function whenCharts(cb, tries){
     const diff=hd.previous?hd.members-hd.previous:null;
     const pct=hd.previous?Math.round((hd.members-hd.previous)/hd.previous*1000)/10:null;
     $('hero').innerHTML=
-      '<div class="big"><span>Members, '+d.season+'</span><b>'+hd.members+'</b>'+
+      '<div class="big"><span>Paid members, '+d.season+'</span><b>'+hd.members+'</b>'+
+        (hd.notYetPaid?'<em>plus '+hd.notYetPaid+' not yet paid</em>':'')+
         (diff!==null?'<em class="'+(diff>=0?'up':'down')+'">'+(diff>=0?'+':'')+diff+' on '+d.previous+' ('+(pct>=0?'+':'')+pct+'%)</em>':'')+'</div>'+
       (hd.shareOfCrowd!==null?'<div class="big"><span>Share of the home crowd</span><b>'+hd.shareOfCrowd+'%</b>'+
         '<em>of '+(hd.attendance||0).toLocaleString()+' average</em></div>':'')+

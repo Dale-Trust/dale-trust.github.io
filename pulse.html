@@ -79,7 +79,9 @@ function whenCharts(cb,t){ if(window.Chart) return cb();
     $('msg').style.display='none'; $('dash').style.display='block';
 
     $('hero').innerHTML=
-      '<div class="big"><span>Members, '+d.season+'</span><b>'+d.members+'</b></div>'+
+      '<div class="big"><span>Paid members, '+d.season+'</span><b>'+d.members+'</b>'+
+        (d.membersUnpaid ? '<em>'+d.membersAll+' on the register, '+d.membersUnpaid+
+          ' not yet paid</em>' : '<em>everybody has paid</em>')+'</div>'+
       '<div class="big"><span>Signed in, last 30 days</span><b>'+d.signins+'</b><em>'+d.signinPct+'% of members</em></div>'+
       '<div class="big"><span>Details checked</span><b>'+d.confirmed+'</b><em>'+d.confirmedPct+'% of members</em></div>'+
       '<div class="big"><span>Coach seats booked</span><b>'+d.coachSeats+'</b><em>£'+Number(d.coachTaken).toFixed(2)+' taken</em></div>';
