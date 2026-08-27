@@ -179,7 +179,20 @@
     <div><label>Payment</label><select id="e_status">
       <option value="paid">Paid</option><option value="desk">Desk / cash</option><option value="free">Free</option>
       <option value="pending">Not paid yet</option><option value="cancelled">Cancelled</option></select></div>
-    <div><label>Method</label><input id="e_method"></div>
+    <div><label>How they paid</label><select id="e_method">
+      <option value="">Not recorded</option>
+      <option value="online">Online, by card</option>
+      <option value="sumup">SumUp at the desk</option>
+      <option value="cash">Cash</option>
+      <option value="cheque">Cheque</option>
+      <option value="transfer">Bank transfer</option>
+      <option value="standing order">Standing order</option>
+      <option value="paypal">PayPal</option>
+      <option value="auto renew">PayPal, recurring</option>
+      <option value="form">Paper form</option>
+      <option value="honorary">Honorary</option>
+      <option value="other">Something else</option>
+    </select></div>
     <div><label>Subscription (£)</label><input id="e_amount" oninput="showTotal()"></div>
   </div>
   <div class="g3">
@@ -309,7 +322,14 @@ async function openMember(id){
   $('e_ad1').value=m.address1||''; $('e_ad2').value=m.address2||'';
   $('e_town').value=m.town||''; $('e_county').value=m.county||'';
   $('e_pc').value=m.postcode||''; $('e_country').value=m.country||'';
-  $('e_status').value=m.payment_status||'desk'; $('e_method').value=m.payment_method||'';
+  $('e_status').value=m.payment_status||'desk';   // keep whatever is already on the record, even if it is not one of ours
+  (function(){
+    const sel=$('e_method'), v=(m.payment_method||'').toLowerCase();
+    if(v && ![...sel.options].some(o=>o.value===v)){
+      sel.insertAdjacentHTML('afterbegin','<option value="'+esc(m.payment_method)+'">'+esc(m.payment_method)+' (as recorded)</option>');
+    }
+    sel.value = v || '';
+  })();
   $('e_news').value=m.newsletter_optin?'1':'0'; $('e_don').value=m.donation||0;
   // what is stored is the total charged, donation included — show the two parts separately
   const _paid = Number(m.amount_due) || 0, _don = Number(m.donation) || 0;

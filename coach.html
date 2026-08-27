@@ -104,7 +104,10 @@
       <h2 id="listTitle">Passenger list</h2>
       <div id="totals"></div>
       <div id="bookings"></div>
-      <div style="margin-top:14px" class="noprint"><button class="ghost" onclick="window.print()">Print / save the list</button></div>
+      <div style="margin-top:14px" class="noprint">
+        <button class="ghost" onclick="window.print()">Print the bookings</button>
+        <button class="ghost" onclick="paxList()">Passenger list for the day</button>
+      </div>
     </div>
   </div>
 
@@ -115,7 +118,7 @@ const $=id=>document.getElementById(id);
 let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
 if(!session) location.href='admin.html';
 const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
-let trips=[], bookings=[], current=null, editing=null;
+let trips=[], bookings=[], current=null, editing=null, shownTrip=null;
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
 const money=n=>'£'+Number(n||0).toFixed(2);
 const dfmt=d=>new Date(d+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long'});
@@ -126,6 +129,7 @@ async function load(tripId){
   const d=await r.json();
   if(!d.ok){$('trips').textContent=d.error||'Could not load.';return;}
   trips=d.trips; bookings=d.bookings||[];
+  if(tripId) shownTrip=tripId;
   drawTrips();
   if(tripId) drawBookings();
 }
@@ -350,6 +354,86 @@ async function mark(id,status){
   }
   await fetch(EP+'/coach/booking',{method:'POST',headers:H(),body:JSON.stringify(body)});
   load(current.id);
+}
+
+// One row per person travelling, with somewhere to tick them on and off.
+// The same columns as the sheet Emma has always used.
+function paxList(){
+  const t=(trips||[]).find(x=>x.id===shownTrip) || (trips||[])[0];
+  const live=(bookings||[]).filter(b=>b.payment_status!=='cancelled');
+
+  const rows=[];
+  live.forEach(b=>{
+    let pax=[];
+    try{ pax=JSON.parse(b.passengers||'[]'); }catch(e){}
+    if(!pax.length){
+      // booked at the desk with no names taken — one row per seat
+      for(let i=0;i<b.seats;i++) rows.push({
+        name: b.seats>1 ? b.name+' ('+(i+1)+' of '+b.seats+')' : b.name,
+        age: null, mobile: i===0?(b.mobile||''):'', notes: b.notes||'',
+        paid: b.payment_status, ref: b.booking_ref, unknown: true });
+    } else {
+      pax.forEach((p,i)=>{
+        let age=null;
+        if(p.dob){ age=Math.floor((Date.now()-new Date(p.dob))/31557600000); }
+        else if(p.age!==undefined) age=p.age;
+        rows.push({ name:p.name, age, mobile: i===0?(b.mobile||''):'',
+          notes: b.notes||'', paid: b.payment_status, ref: b.booking_ref });
+      });
+    }
+  });
+  rows.sort((a,b)=>a.name.localeCompare(b.name));
+
+  const owed = live.filter(b=>b.payment_status==='pending'||b.payment_status==='oncoach')
+                   .reduce((s,b)=>s+Number(b.amount||0),0);
+
+  const when = t && t.match_date
+    ? new Date(t.match_date+'T12:00:00').toLocaleDateString('en-GB',
+        {weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '';
+
+  const w=window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+
+    '<title>Passenger list</title><style>'+
+    'body{font-family:Arial,Helvetica,sans-serif;font-size:12px;margin:16px;color:#111}'+
+    'h1{font-size:19px;margin:0 0 2px}h2{font-size:13px;font-weight:400;margin:0 0 12px;color:#444}'+
+    'table{width:100%;border-collapse:collapse}'+
+    'th{background:#0E1F3D;color:#fff;text-align:left;padding:6px 7px;font-size:10.5px;'+
+      'text-transform:uppercase;letter-spacing:.04em}'+
+    'td{border-bottom:1px solid #ccc;padding:8px 7px;vertical-align:middle}'+
+    'tr:nth-child(even) td{background:#f6f8fb}'+
+    '.tick{width:34px;text-align:center}'+
+    '.box{display:inline-block;width:17px;height:17px;border:1.5px solid #333;border-radius:3px}'+
+    '.u18{background:#C0392B;color:#fff;font-weight:700;padding:1px 6px;border-radius:9px;font-size:10px}'+
+    '.owe{color:#8A4B00;font-weight:700}'+
+    '.foot{margin-top:16px;font-size:11px;color:#444;border-top:1px solid #ccc;padding-top:10px}'+
+    '.sign{margin-top:26px;font-size:11px}'+
+    '@page{size:A4;margin:12mm}'+
+    '</style></head><body>');
+  w.document.write('<h1>'+esc(t?t.opponent:'Coach')+'</h1>'+
+    '<h2>'+esc(when)+(t&&t.depart_time?' &middot; leaving '+esc(t.depart_time)+
+      ' from '+esc(t.depart_from||'the Crown Oil Arena'):'')+
+    ' &middot; '+rows.length+' travelling'+
+    (owed>0?' &middot; <span class="owe">\u00a3'+owed.toFixed(2)+' to collect</span>':'')+'</h2>');
+  w.document.write('<table><tr><th>Name</th><th>Under 18</th><th>Contact number</th>'+
+    '<th class="tick">Out</th><th class="tick">Ret</th><th>Notes</th></tr>'+
+    rows.map(r=>'<tr>'+
+      '<td><b>'+esc(r.name)+'</b>'+(r.unknown?' <span style="color:#8A4B00;font-size:10px">(name not taken)</span>':'')+'</td>'+
+      '<td>'+(r.age!==null&&r.age<18?'<span class="u18">'+r.age+'</span>':'')+'</td>'+
+      '<td>'+esc(r.mobile||'')+'</td>'+
+      '<td class="tick"><span class="box"></span></td>'+
+      '<td class="tick"><span class="box"></span></td>'+
+      '<td>'+esc(r.notes||'')+
+        (r.paid==='pending'?'<span class="owe">to pay</span>':'')+
+        (r.paid==='oncoach'?'<span class="owe">paying on the coach</span>':'')+
+      '</td></tr>').join('')+'</table>');
+  w.document.write('<div class="foot"><b>Anyone under 18 must be with a responsible adult.</b> '+
+    'Seats do not include a match ticket. Please be at the pick-up ten minutes before we leave.<br>'+
+    'Any problems on the day: travel@daletrust.uk</div>'+
+    '<div class="sign">Driver ______________________  Coach ______________  '+
+    'Left ______:______  Returned ______:______</div>');
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(()=>w.print(), 400);
 }
 
 function seedPax(){
