@@ -61,6 +61,7 @@
     <button class="ghost" onclick="checkDomains()">Check the lapsed addresses</button>
     <button class="ghost" onclick="neverHeard()">Members who have had nothing</button>
     <button class="ghost" onclick="payPal()">What PayPal has taken</button>
+    <button class="ghost" onclick="payPalSubs()">Who pays by PayPal</button>
     <button class="ghost" onclick="payPalCheck()">Why is PayPal empty?</button>
     <span id="chkMsg" style="font-size:13.5px;font-weight:600"></span>
   </div>
@@ -192,6 +193,45 @@ async function payPalCheck(){
       'font:12.5px ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-word;'+
       'max-height:420px;overflow:auto">'+esc(JSON.stringify(d,null,2))+'</pre>';
   }catch(e){ $('ppOut').textContent='Could not reach the server.'; }
+}
+
+async function payPalSubs(){
+  const box=$('ppBox'); box.style.display='block';
+  $('ppOut').innerHTML='<p style="color:#7A8AA5">Looking\u2026</p>';
+  try{
+    const d=await (await fetch(EP+'/paypal/subscribers',{headers:H()})).json();
+    if(!d.ok){ $('ppOut').innerHTML='<p style="color:var(--red)">'+esc(d.error)+'</p>'; return; }
+    let html='<div class="kpis"><div class="kpi"><span>Paying by standing agreement</span><b>'+d.count+'</b></div>'+
+      '<div class="kpi"><span>A year</span><b>\u00a3'+(d.count*7.5).toFixed(2)+'</b></div></div>'+
+      '<p style="font-size:13.5px;color:#7A8AA5;margin-bottom:12px">These renew by themselves. The site now '+
+      'checks PayPal every ten minutes, so a payment activates the member without anybody doing anything.</p>'+
+      '<div style="max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:10px">'+
+      '<table class="ctable" style="width:100%"><tr><th>Member</th><th>Number</th><th>Last paid</th></tr>'+
+      d.subscribers.map(s=>'<tr><td><b>'+esc((s.first_name+' '+s.last_name).trim())+'</b>'+
+        '<small style="display:block;color:#7A8AA5">'+esc(s.email||'')+'</small></td>'+
+        '<td>'+esc(s.member_no||'')+'</td><td>'+esc(s.last_paid||'\u2014')+'</td></tr>').join('')+
+      '</table></div>';
+    if(d.recent && d.recent.length){
+      html+='<h2 style="font-size:15px;margin:18px 0 8px">What the site has done lately</h2>'+
+        '<table class="ctable" style="width:100%"><tr><th>Paid</th><th>Who</th><th>Amount</th><th>What happened</th></tr>'+
+        d.recent.map(r=>'<tr><td>'+esc(r.paid_on||'')+'</td><td>'+esc(r.payer||'')+
+          '<small style="display:block;color:#7A8AA5">'+esc(r.payer_email||'')+'</small></td>'+
+          '<td>\u00a3'+Number(r.amount||0).toFixed(2)+'</td><td>'+esc(r.action||'')+'</td></tr>').join('')+
+        '</table>';
+    }
+    html+='<button class="ghost" style="margin-top:14px" onclick="ppSweep()">Check PayPal now</button>';
+    $('ppOut').innerHTML=html;
+  }catch(e){ $('ppOut').innerHTML='<p style="color:var(--red)">Could not load.</p>'; }
+}
+
+async function ppSweep(){
+  $('ppOut').innerHTML='<p style="color:#7A8AA5">Asking PayPal\u2026</p>';
+  const d=await (await fetch(EP+'/paypal/sweep',{method:'POST',headers:H()})).json();
+  alert(d.ok
+    ? (d.checked||0)+' new payment(s).\n'+(d.activated||0)+' member(s) activated.\n'+
+      (d.unknown||0)+' could not be matched.'
+    : d.error);
+  payPalSubs();
 }
 
 async function payPal(){
