@@ -78,8 +78,14 @@
       </div>
       <div class="grid3">
         <div><label>Email (optional)</label><input id="m_email"></div>
-        <div><label>Seats</label><input id="m_seats" type="number" value="1" min="1" max="10" onchange="manualAmount()"></div>
+        <div><label>Seats</label><input id="m_seats" type="number" value="1" min="1" max="10" onchange="manualAmount();manualPax()"></div>
         <div><label>Amount (£)</label><input id="m_amount" value=""></div>
+      </div>
+      <label style="margin-top:6px">Who is travelling</label>
+      <div id="m_pax"></div>
+      <p style="font-size:12.5px;color:#7A8AA5;margin-top:4px">The same as the website asks for.
+        A date of birth is needed for anyone under 16 &mdash; they cannot travel without an adult.</p>
+      <div class="g3" style="margin-top:12px">
         <div><label>Payment</label><select id="m_status" onchange="manualAmount()">
           <option value="cash">Paid &mdash; cash</option>
           <option value="sumup">Paid &mdash; SumUp</option>
@@ -346,6 +352,28 @@ async function mark(id,status){
   load(current.id);
 }
 
+function seedPax(){
+  const first=document.querySelector('#m_pax .mpxn');
+  if(first && !first.dataset.touched) first.value=document.getElementById('m_name').value;
+}
+
+function manualPax(){
+  const box=document.getElementById('m_pax'); if(!box) return;
+  const want=Math.max(1, Number(document.getElementById('m_seats').value)||1);
+  const have=box.querySelectorAll('.mpx').length;
+  if(have===want) return;
+  const names=[...box.querySelectorAll('.mpxn')].map(i=>i.value);
+  const dobs=[...box.querySelectorAll('.mpxd')].map(i=>i.value);
+  let html='';
+  for(let i=0;i<want;i++){
+    html+='<div class="mpx" style="display:grid;grid-template-columns:1fr 170px;gap:10px;margin-bottom:8px">'+
+      '<input class="mpxn" placeholder="Passenger '+(i+1)+(i===0?' — usually the person booking':'')+'" value="'+(names[i]||'')+'">'+
+      '<input class="mpxd" type="date" title="Date of birth" value="'+(dobs[i]||'')+'">'+
+      '</div>';
+  }
+  box.innerHTML=html;
+}
+
 function manualAmount(){
   const el=$('m_amount'); if(!el || !current) return;
   const s=$('m_status').value, seats=Number($('m_seats').value||1), price=Number(current.price||0);
@@ -359,6 +387,9 @@ async function addManual(){
   const body={trip_id:current.id,name:$('m_name').value.trim(),mobile:$('m_mobile').value.trim(),
     email:$('m_email').value.trim(),seats:$('m_seats').value,payment_status:$('m_status').value,
     amount:$('m_amount').value,
+    passengers:[...document.querySelectorAll('#m_pax .mpx')].map(r=>({
+      name:r.querySelector('.mpxn').value.trim(),
+      dob:r.querySelector('.mpxd').value })).filter(p=>p.name),
     notes:$('m_notes').value.trim()};
   if(!body.name){$('mmsg').innerHTML='<span style="color:var(--red)">A name is needed.</span>';return;}
   const d=await (await fetch(EP+'/coach/manual',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
