@@ -93,11 +93,13 @@
   .tb-txt{flex:1;min-width:0}
   .tb-txt b{font-family:'Oswald';text-transform:uppercase;font-size:16px;display:block;letter-spacing:.02em;color:#fff;line-height:1.2}
   .tb-txt span{font-size:13px;color:#C7D6EC;display:block;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  /* these sit on dark navy, so they need real contrast rather than a faint overlay */
+  /* these sit on dark navy, so they need a solid background rather than a faint overlay */
   .tb-flag{font-size:12px;font-weight:700;padding:5px 12px;border-radius:100px;
-    background:#8FC1FF;color:#0A1730;flex:none;white-space:nowrap;letter-spacing:.01em}
-  .tb-flag.low{background:var(--gold);color:#3a2c00}
-  .tb-flag.hot{background:#fff;color:var(--navy)}
+    background:#8FC1FF !important;color:#0A1730 !important;flex:none;white-space:nowrap;letter-spacing:.01em}
+  .tb-flag.low{background:#E8B84B !important;color:#3A2C00 !important}
+  .tb-flag.hot{background:#fff !important;color:#0E1F3D !important}
+  .tb-flag.none{background:transparent !important;padding:0}
+  .tb-flag:empty{display:none}
   .topbar{background:var(--navy);color:#B9CCE8;font-size:12.5px}
   .topbar-inner{display:flex;align-items:center;gap:22px;height:36px}
   .topbar a{color:#fff;text-decoration:none;font-weight:600}
@@ -1097,9 +1099,19 @@ loadHub();
 <script>
 // Anything open to vote on
 (async () => {
+  const none = () => {
+    document.getElementById('vbTitle').textContent = 'Have your say';
+    document.getElementById('vbSub').textContent = 'Nothing to vote on just now';
+    const col = document.getElementById('voteCol');
+    col.removeAttribute('href');
+    col.style.opacity = '.62';
+    col.style.cursor = 'default';
+    const f = document.getElementById('vbFlag');
+    if(f){ f.textContent=''; f.className='tb-flag none'; }
+  };
   try{
     const d = await (await fetch('https://join.daletrust.uk/surveys')).json();
-    if(!d.ok || !d.surveys.length) return;
+    if(!d.ok || !d.surveys.length){ none(); return; }
     const s = d.surveys[0];
     document.getElementById('vbTitle').textContent = s.title;
     document.getElementById('vbSub').textContent = s.intro ||
@@ -1107,14 +1119,19 @@ loadHub();
     document.getElementById('voteCol').href = 'vote.html?s=' + encodeURIComponent(s.slug);
     const f = document.getElementById('vbFlag');
     f.textContent = 'Open'; f.className = 'tb-flag hot';
-  }catch(e){}
+  }catch(e){ none(); }
 })();
 
 // Next coach
 (async () => {
   try{
     const d = await (await fetch('https://join.daletrust.uk/coach/trips')).json();
-    if(!d.ok || !d.trips.length) return;
+    if(!d.ok || !d.trips.length){
+      document.getElementById('cbWhen').textContent = 'No coach on just now';
+      const s0 = document.getElementById('cbSeats');
+      if(s0){ s0.textContent=''; s0.className='tb-flag none'; }
+      return;
+    }
     const t = d.trips[0];
     const when = new Date(t.match_date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
     document.getElementById('cbTitle').textContent = 'Coach to ' + t.opponent;
