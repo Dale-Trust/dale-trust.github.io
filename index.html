@@ -93,7 +93,9 @@
   .tb-txt{flex:1;min-width:0}
   .tb-txt b{font-family:'Oswald';text-transform:uppercase;font-size:16px;display:block;letter-spacing:.02em;color:#fff;line-height:1.2}
   .tb-txt span{font-size:13px;color:#C7D6EC;display:block;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .tb-flag{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:100px;background:rgba(255,255,255,.16);color:#fff;flex:none;white-space:nowrap}
+  /* these sit on dark navy, so they need real contrast rather than a faint overlay */
+  .tb-flag{font-size:12px;font-weight:700;padding:5px 12px;border-radius:100px;
+    background:#8FC1FF;color:#0A1730;flex:none;white-space:nowrap;letter-spacing:.01em}
   .tb-flag.low{background:var(--gold);color:#3a2c00}
   .tb-flag.hot{background:#fff;color:var(--navy)}
   .topbar{background:var(--navy);color:#B9CCE8;font-size:12.5px}
