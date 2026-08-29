@@ -110,6 +110,10 @@
   .afterNote{margin-top:20px;padding-top:16px;border-top:1px solid var(--line);
     font-size:14px;line-height:1.6;color:var(--body)}
   .afterNote a{color:#0057A7}
+  .dobsay{font-size:13px;margin-top:6px;line-height:1.5}
+  .dobsay.ok{color:#5A6880}
+  .dobsay.warn{color:#8A4B00;background:#FFF9E8;border-left:3px solid #E8B84B;padding:8px 12px;border-radius:0 8px 8px 0}
+  .dobsay.bad{color:#C0392B;font-weight:600}
 </style>
 </head>
 <body>
@@ -138,7 +142,8 @@
       <div><label>Last name</label><input type="text" id="ln" autocomplete="family-name"></div>
     </div>
     <label>Date of birth <small>— sets junior membership automatically</small></label>
-    <input type="date" id="dob">
+    <input type="date" id="dob" onchange="checkDob()" onblur="checkDob()">
+    <p class="dobsay" id="dobsay"></p>
     <label>Email <small>— your membership confirmation goes here</small></label>
     <input type="email" id="email" autocomplete="email">
     <label>Mobile <small>(optional)</small></label>
@@ -408,6 +413,49 @@ async function pay(method){
   }catch(err){
     e.style.display='block';e.textContent='Could not reach the server \u2014 '+(err&&err.message||err)+'. Please try again.';
   }
+}
+
+// A mistyped year turns a 76-year-old into a baby, and the form quietly gives them
+// a free junior membership. This has happened four times, so it is worth catching.
+function ageFrom(v){
+  if(!v) return null;
+  const d = new Date(v);
+  if(isNaN(d)) return null;
+  return Math.floor((Date.now() - d.getTime()) / 31557600000);
+}
+
+function checkDob(){
+  const el = document.getElementById('dob'), say = document.getElementById('dobsay');
+  if(!el || !say) return true;
+  const v = el.value;
+  say.textContent = ''; say.className = 'dobsay';
+  el.style.borderColor = '';
+  if(!v) return true;
+
+  const age = ageFrom(v);
+  if(age === null) return true;
+
+  if(new Date(v) > new Date()){
+    say.textContent = 'That date is in the future — check the year.';
+    say.className = 'dobsay bad'; el.style.borderColor = 'var(--red,#C0392B)';
+    return false;
+  }
+  if(age > 105){
+    say.textContent = 'That would make you over 105 — check the year.';
+    say.className = 'dobsay bad'; el.style.borderColor = 'var(--red,#C0392B)';
+    return false;
+  }
+  if(age < 2){
+    say.innerHTML = '<b>That is a baby.</b> If you meant a year in the 1900s, check it — ' +
+      'otherwise this will be recorded as a junior membership.';
+    say.className = 'dobsay warn'; el.style.borderColor = 'var(--gold,#E8B84B)';
+    return true;
+  }
+  say.textContent = age < 16
+    ? 'Junior membership — free, and under-16s travel with an adult.'
+    : (age < 18 ? 'Under 18.' : 'Adult membership.');
+  say.className = 'dobsay ok';
+  return true;
 }
 </script>
 </body>
