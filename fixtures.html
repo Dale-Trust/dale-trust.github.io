@@ -49,6 +49,9 @@
     padding:6px 12px;font:600 11px 'Oswald';text-transform:uppercase;letter-spacing:.05em;cursor:pointer}
   .fx .ed:hover{border-color:var(--royal);color:var(--royal)}
   .fx .dt,.fx .tm,.fx .comp{cursor:pointer}
+  .slot:empty{display:none}
+  .slot{margin:0 0 10px}
+  .slot .panel{margin:0;border-left:4px solid var(--royal);border-radius:0 12px 12px 0;background:#F7FAFF}
 </style>
 </head>
 <body>
@@ -69,6 +72,7 @@
   <div style="margin-top:14px"><button class="ghost" onclick="newFixture()">+ Add a fixture</button></div>
 </div>
 
+<div id="editorHome"></div>
 <div class="panel" id="editor">
   <h2 id="eTitle">Fixture</h2>
   <div class="g2">
@@ -83,6 +87,7 @@
   <div class="g2">
     <div><label>Score (leave blank if not played)</label><input id="f_score" placeholder="e.g. 2-1"></div>
     <div><label>Note (optional)</label><input id="f_note" placeholder="e.g. won 4-2 on penalties"></div>
+    <div><label>Line-up picture (optional)</label><input id="f_lineup" placeholder="img/lineup.jpg or a full web address"></div>
   </div>
   <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
     <button class="green" onclick="saveFixture()">Save</button>
@@ -131,6 +136,9 @@ function draw(){
   if(view==='played') list=fixtures.filter(f=>f.score);
   if(view==='upcoming') list=fixtures.filter(f=>dt(f.kickoff)>now);
   if(!list.length){$('list').innerHTML='<p style="color:#7A8AA5;padding:12px 4px">Nothing here.</p>';return;}
+  // the editor lives inside a row, so rescue it before the list is rebuilt
+  const ed=$('editor');
+  if(ed && ed.parentElement && ed.parentElement.classList.contains('slot')) $('editorHome').appendChild(ed);
   $('list').innerHTML=list.map(f=>{
     const played=dt(f.kickoff)<=now;
     return '<div class="fx">'+
@@ -143,8 +151,10 @@ function draw(){
           '<button class="qb" onclick="quickScore('+f.id+')" title="Save the score">Save</button></span>'
         : '<span class="sc" style="color:#C7D6EC" onclick="editFixture('+f.id+')">\u2014</span>')+
       '<span class="comp" onclick="editFixture('+f.id+')">'+esc(f.competition)+'</span>'+
-      '<button class="ed" onclick="editFixture('+f.id+')" title="Edit this fixture">Edit</button></div>';
+      '<button class="ed" onclick="editFixture('+f.id+')" title="Edit this fixture">Edit</button></div>'+
+      '<div class="slot" id="slot'+f.id+'"></div>';
   }).join('');
+  if(editing !== null && $('editor').style.display==='block') moveEditorTo(editing);
 }
 
 async function quickScore(id){
@@ -161,29 +171,42 @@ async function quickScore(id){
 }
 
 function newFixture(){
-  editing=null; $('eTitle').textContent='New fixture';
+  editing=null; moveEditorTo(null); $('eTitle').textContent='New fixture';
   $('f_home').value='Rochdale'; $('f_away').value=''; $('f_date').value='';
   $('f_time').value='15:00'; $('f_comp').value='Sky Bet League Two';
-  $('f_score').value=''; $('f_note').value=''; $('emsg').textContent='';
+  $('f_score').value=''; $('f_note').value=''; $('f_lineup').value=''; $('emsg').textContent='';
   $('delBtn').style.display='none';
   $('editor').style.display='block'; $('editor').scrollIntoView({behavior:'smooth'});
 }
 
+function moveEditorTo(id){
+  const ed=$('editor');
+  if(id===null){
+    // adding a new one: put it back at the top of the page
+    $('editorHome').appendChild(ed);
+  } else {
+    const slot=$('slot'+id);
+    if(slot) slot.appendChild(ed);
+  }
+}
+
 function editFixture(id){
   const f=fixtures.find(x=>x.id===id); editing=id;
+  moveEditorTo(id);
   $('eTitle').textContent=f.home+' v '+f.away;
   $('f_home').value=f.home; $('f_away').value=f.away;
   $('f_date').value=f.kickoff.slice(0,10); $('f_time').value=f.kickoff.slice(11,16);
   $('f_comp').value=f.competition; $('f_score').value=f.score||''; $('f_note').value=f.note||'';
+  $('f_lineup').value=f.lineup_image||'';
   $('emsg').textContent=''; $('delBtn').style.display='inline-block';
-  $('editor').style.display='block'; $('editor').scrollIntoView({behavior:'smooth',block:'start'});
+  $('editor').style.display='block'; $('editor').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 async function saveFixture(){
   const body={id:editing,home:$('f_home').value.trim(),away:$('f_away').value.trim(),
     kickoff:$('f_date').value+' '+($('f_time').value.trim()||'15:00'),
     competition:$('f_comp').value.trim(),score:$('f_score').value.trim(),
-    note:$('f_note').value.trim(),
+    note:$('f_note').value.trim(), lineup_image:$('f_lineup').value.trim(),
     venue:/rochdale/i.test($('f_home').value)?'H':'A'};
   if(!body.home||!body.away||!$('f_date').value){$('emsg').innerHTML='<span style="color:var(--red)">Both teams and a date are needed.</span>';return;}
   const d=await (await fetch(EP+'/fixtures/save',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();

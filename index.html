@@ -505,6 +505,14 @@
     .aucPic{width:72px;height:72px}
     .aucGoBig{grid-column:1/-1;text-align:center;padding:11px;margin-top:4px}
   }
+  /* the club's line-up graphic on the matchday hub */
+  #lineupWrap{margin-top:18px;text-align:center}
+  .lineupHead{font-family:'Oswald';text-transform:uppercase;font-size:12px;letter-spacing:.16em;
+    color:#8FC1FF;margin-bottom:10px}
+  #lineupWrap img{max-width:300px;width:100%;border-radius:12px;display:block;margin:0 auto;
+    box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  #lineupWrap a{display:block;text-decoration:none}
+  @media(max-width:640px){#lineupWrap img{max-width:230px}}
 </style>
 </head>
 <body>
@@ -608,6 +616,12 @@
           <div class="team" id="hubAway"><div class="badge"><img id="hubAwayBadge" src="img/badges/badge.png" alt=""></div><p id="hubAwayName">Rochdale AFC</p></div>
         </div>
         <p class="meta" id="hubMeta">Loading fixture&hellip;</p>
+        <div id="lineupWrap" style="display:none">
+          <p class="lineupHead">Today&rsquo;s line-up</p>
+          <a id="lineupLink" href="#" target="_blank" rel="noopener">
+            <img id="lineupImg" alt="Today's line-up" loading="lazy">
+          </a>
+        </div>
         <div class="countdown" id="countdown" aria-label="Countdown to kick-off">
           <div class="cd"><b id="cd-d">--</b><span>Days</span></div>
           <div class="cd"><b id="cd-h">--</b><span>Hrs</span></div>
@@ -1042,6 +1056,16 @@ async function loadHub(){
       set('hubComp', next.competition || '');
       const nice = n => /^rochdale$/i.test(String(n).trim()) ? 'Rochdale AFC' : n;
       set('hubHomeName', nice(next.home)); set('hubAwayName', nice(next.away));
+
+      // the club's own line-up graphic, if somebody has put one on the fixture
+      const lw = document.getElementById('lineupWrap');
+      if(lw){
+        if(next.lineup_image){
+          document.getElementById('lineupImg').src = next.lineup_image;
+          document.getElementById('lineupLink').href = next.lineup_image;
+          lw.style.display = 'block';
+        } else lw.style.display = 'none';
+      }
       const hb = document.getElementById('hubHomeBadge'), ab = document.getElementById('hubAwayBadge');
       if(hb){ hb.src = badgeFor(next.home); hb.alt = next.home; hb.style.display=''; }
       if(ab){ ab.src = badgeFor(next.away); ab.alt = next.away; ab.style.display=''; }
