@@ -1193,28 +1193,53 @@ loadHub();
 })();
 
 // ---- a shirt auction, if one is running ----
-(async function(){
+async function loadAuction(){
   try{
     const d = await (await fetch('https://join.daletrust.uk/auction')).json();
-    if(!d.ok || !d.auction || d.auction.status !== 'live') return;
+    if(!d.ok || !d.auction) return;
     const a = d.auction;
-    if(a.closes_at && new Date(a.closes_at.replace(' ','T')+'Z') <= new Date()) return;
+    const money = n => '\u00a3' + Number(n||0).toFixed(2);
+    const ends = a.closes_at ? new Date(a.closes_at.replace(' ','T')+'Z') : null;
+    const ms = ends ? ends - new Date() : 0;
+
+    // An auction that has just closed is still worth showing — it takes a few minutes
+    // to settle, and the result is the most interesting thing about the whole week.
+    const closed = a.status !== 'live' || (ends && ms <= 0);
+    if (closed && ends && (new Date() - ends) > 3 * 86400000) return;   // let it go after three days
 
     document.getElementById('aucTitle').textContent = a.title;
     if(a.images && a.images[0]) document.getElementById('aucPic').style.backgroundImage = "url('"+a.images[0]+"')";
 
-    const money = n => '\u00a3' + Number(n||0).toFixed(2);
-    const ms = a.closes_at ? new Date(a.closes_at.replace(' ','T')+'Z') - new Date() : 0;
-    const hrs = Math.floor(ms/3600000), mins = Math.floor(ms%3600000/60000);
-    const left = ms > 86400000 ? Math.floor(ms/86400000)+' days left'
-               : hrs > 0 ? hrs+'h '+mins+'m left' : mins+' minutes left';
-    document.getElementById('aucBid').innerHTML = (d.top
-      ? 'Bidding at <strong>'+money(d.top.amount)+'</strong>'
-      : 'Opening bid <strong>'+money(a.start_bid)+'</strong>') + ' \u00b7 ' + left;
+    const kick = document.querySelector('.aucKick');
+    const go = document.querySelector('.aucGoBig');
+
+    if (closed) {
+      if(kick) kick.textContent = a.winner_amount ? 'Sold' : 'Bidding has closed';
+      document.getElementById('aucBid').innerHTML = a.winner_amount
+        ? 'Sold for <strong>'+money(a.winner_amount)+'</strong> \u00b7 thank you to everyone who bid'
+        : (d.top ? 'Finished at <strong>'+money(d.top.amount)+'</strong> \u00b7 settling now'
+                 : 'Bidding has closed');
+      if(go) go.textContent = 'See the result \u2192';
+    } else {
+      const hrs = Math.floor(ms/3600000), mins = Math.floor(ms%3600000/60000);
+      const left = ms > 86400000 ? Math.floor(ms/86400000)+' days left'
+                 : hrs > 0 ? hrs+'h '+mins+'m left'
+                 : mins > 0 ? mins+' minutes left' : 'closing now';
+      if(kick) kick.textContent = 'Bidding now';
+      document.getElementById('aucBid').innerHTML = (d.top
+        ? 'Bidding at <strong>'+money(d.top.amount)+'</strong>'
+        : 'Opening bid <strong>'+money(a.start_bid)+'</strong>') + ' \u00b7 ' + left;
+      if(go) go.textContent = 'Bid now \u2192';
+    }
 
     document.getElementById('aucStrip').style.display='block';
+
+    // while it is closing, keep looking — a late bid may have extended it
+    if(!closed && ms < 20*60000) setTimeout(loadAuction, 30000);
+    if(closed && !a.winner_amount) setTimeout(loadAuction, 60000);
   }catch(e){}
-})();
+}
+loadAuction();
 
 // ---- membership, live from the register ----
 (async function(){
