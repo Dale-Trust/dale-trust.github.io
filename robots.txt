@@ -19,6 +19,7 @@ Disallow: /coach.html
 Disallow: /fixtures.html
 Disallow: /posts.html
 Disallow: /auctions.html
+Disallow: /comps.html
 Disallow: /graphics.html
 Disallow: /awayteams.html
 Disallow: /activity.html

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prediction leagues | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--badge:#002F7C;--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:21px}.top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:900px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
+  .panel h2{font-size:16px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:6px}
+  .lede{font-size:13.5px;color:#7A8AA5;margin-bottom:14px}
+  label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:12px 0 5px}
+  input,textarea,select{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
+  textarea{min-height:230px;font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.5}
+  button{background:var(--royal);color:#fff;border:0;border-radius:9px;padding:12px 22px;
+    font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer;margin-top:14px}
+  button.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line)}
+  .how{background:var(--wash);border-radius:10px;padding:14px 16px;font-size:13.5px;line-height:1.6;margin-top:12px}
+  .how b{color:var(--ink)}
+  .how code{background:#fff;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12.5px}
+  .msg{font-size:14px;font-weight:600;margin-top:10px}
+  .prev{margin-top:14px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .prev table{width:100%;border-collapse:collapse;font-size:13.5px}
+  .prev th{background:var(--navy);color:#fff;text-align:left;padding:8px 10px;font-size:11px;
+    text-transform:uppercase;letter-spacing:.05em}
+  .prev td{padding:8px 10px;border-bottom:1px solid var(--line)}
+  .prev td:last-child{text-align:right;font-family:'Oswald';font-size:15px;color:var(--ink)}
+  .tabs{display:flex;gap:8px;margin-bottom:14px}
+  .tab{flex:1;text-align:center;padding:12px;border:1.5px solid var(--line);border-radius:10px;
+    background:#fff;cursor:pointer;font-weight:600;color:var(--body)}
+  .tab.on{background:var(--royal);color:#fff;border-color:var(--royal)}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>Prediction leagues</h1><small>The Fantasy Football and Super 6 tables on the homepage</small></div>
+<div class="wrap">
+
+  <div class="tabs">
+    <div class="tab on" id="tabFF" onclick="pick('ff')">Fantasy Football</div>
+    <div class="tab" id="tabS6" onclick="pick('s6')">Super 6</div>
+  </div>
+
+  <div class="panel">
+    <h2 id="which">Fantasy Football</h2>
+    <p class="lede" id="when">&nbsp;</p>
+
+    <label>Heading above the table</label>
+    <input id="heading" placeholder="e.g. How it stands — end of September">
+
+    <label>The table</label>
+    <textarea id="paste" placeholder="Paste it straight from your spreadsheet, one line per person."></textarea>
+
+    <div class="how">
+      <b>How to do it.</b> Open your spreadsheet, select the rows you want &mdash; not the headings &mdash;
+      copy them, and paste into the box above. One line per person.<br><br>
+      <b>What it looks for.</b> A number at the start is the position. The next column is the name.
+      Anything that is a word becomes the small grey line underneath &mdash; the manager, or Adult and Exile.
+      The first number after the name is the points shown on the right.<br><br>
+      <b>So a line like</b> <code>1&nbsp;&nbsp;Locomotiv Moocow&nbsp;&nbsp;Roger Winterbottom&nbsp;&nbsp;Exile&nbsp;&nbsp;176</code>
+      becomes <b>1 &middot; Locomotiv Moocow &middot; Roger Winterbottom &middot; Exile &middot; 176</b>.<br><br>
+      Press <b>See how it looks</b> before saving. Nothing changes on the website until you save.
+    </div>
+
+    <button class="ghost" onclick="preview()">See how it looks</button>
+    <button onclick="save()">Save and put it on the website</button>
+    <p class="msg" id="msg"></p>
+    <div class="prev" id="prev" style="display:none"></div>
+  </div>
+
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+if(!session) location.href='admin.html';
+const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let comp='ff', data={};
+
+function pick(c){
+  comp=c;
+  $('tabFF').className='tab'+(c==='ff'?' on':'');
+  $('tabS6').className='tab'+(c==='s6'?' on':'');
+  $('which').textContent = c==='ff' ? 'Fantasy Football' : 'Super 6';
+  $('prev').style.display='none'; $('msg').textContent='';
+  const d=data[c]||{};
+  $('heading').value=d.heading||'';
+  $('when').textContent = d.updated_at
+    ? 'Last updated '+new Date(d.updated_at.replace(' ','T')+'Z').toLocaleString('en-GB',
+        {weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})
+    : 'Never updated';
+  $('paste').value = (d.rows||[]).map(r =>
+    [r.pos, r.name, (r.sub||'').split(' \u00b7 ').join('\t'), r.points].filter(x=>x!==null&&x!=='').join('\t')
+  ).join('\n');
+}
+
+function rowsFrom(text){
+  const out=[];
+  text.split('\n').map(l=>l.trim()).filter(Boolean).forEach(line=>{
+    const c=line.split(/\t|,(?![^(]*\))/).map(s=>s.trim());
+    if(c.length<2) return;
+    let pos=null,i=0;
+    if(/^\d+$/.test(c[0])){ pos=parseInt(c[0],10); i=1; } else pos=out.length+1;
+    const name=c[i]||'';
+    if(!name || /^(pos|position|team|player|name)$/i.test(name)) return;
+    const nums=c.slice(i+1).filter(x=>/^-?\d+$/.test(x)).map(Number);
+    const words=c.slice(i+1).filter(x=>x && !/^-?\d+$/.test(x));
+    out.push({pos,name,sub:words.join(' \u00b7 '),points:nums.length?nums[0]:null});
+  });
+  return out;
+}
+
+function preview(){
+  const rows=rowsFrom($('paste').value);
+  if(!rows.length){ say('Nothing usable in that yet.',true); return; }
+  $('prev').style.display='block';
+  $('prev').innerHTML='<table><tr><th>&nbsp;</th><th>'+
+    (comp==='ff'?'Team':'Player')+'</th><th style="text-align:right">Pts</th></tr>'+
+    rows.map(r=>'<tr><td>'+r.pos+'</td><td><b>'+esc(r.name)+'</b>'+
+      (r.sub?'<br><small style="color:#7A8AA5">'+esc(r.sub)+'</small>':'')+'</td>'+
+      '<td>'+(r.points!==null?r.points:'')+'</td></tr>').join('')+'</table>';
+  say(rows.length+' '+(rows.length===1?'person':'people')+'. If that looks right, save it.');
+}
+
+async function save(){
+  const rows=rowsFrom($('paste').value);
+  if(!rows.length){ say('Nothing usable in that.',true); return; }
+  if(!confirm('Put '+rows.length+' '+(rows.length===1?'row':'rows')+' on the website?\n\nThis replaces what is there now.')) return;
+  say('Saving\u2026');
+  const d=await (await fetch(EP+'/comps/save',{method:'POST',headers:H(),body:JSON.stringify({
+    comp, paste:$('paste').value, heading:$('heading').value })})).json();
+  if(!d.ok){ say(d.error,true); return; }
+  say('Saved. '+d.saved+' rows are now on the homepage.');
+  load();
+}
+
+function say(t,bad){ const m=$('msg'); m.style.color=bad?'var(--red)':'var(--green)'; m.textContent=t; }
+
+async function load(){
+  try{
+    const d=await (await fetch(EP+'/comps')).json();
+    if(d.ok){ data=d.comps||{}; pick(comp); }
+  }catch(e){}
+}
+load();
+</script>
+</body>
+</html>
