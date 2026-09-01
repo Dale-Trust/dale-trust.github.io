@@ -513,12 +513,20 @@
     box-shadow:0 8px 24px rgba(0,0,0,.35)}
   #lineupWrap a{display:block;text-decoration:none}
   @media(max-width:640px){#lineupWrap img{max-width:230px}}
-  /* the monthly league tables, dropped in as pictures */
-  .tablepic{display:block;background:#fff;border:1px solid var(--line);border-radius:10px;
-    padding:8px;text-decoration:none}
-  .tablepic img{width:100%;height:auto;display:block;border-radius:6px}
-  .tablepic:hover{border-color:var(--royal)}
-  .tablenote{font-size:12.5px;color:#7A8AA5;margin-top:8px;text-align:center}
+  /* the monthly league tables */
+  .ltwrap{max-height:360px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+  .lt{width:100%;border-collapse:collapse;font-size:13.5px}
+  .lt th{position:sticky;top:0;background:var(--navy);color:#fff;text-align:left;padding:8px 10px;
+    font-family:'Oswald';font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+  .lt td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .lt tr:last-child td{border-bottom:0}
+  .lt td.p{width:26px;color:#8A97AC;font-family:'Oswald';font-size:13px;text-align:center}
+  .lt td.n,.lt th.n{text-align:right;font-family:'Oswald';font-size:16px;color:var(--ink);width:52px}
+  .lt td b{display:block;color:var(--ink);font-weight:600;line-height:1.25}
+  .lt td small{display:block;color:#7A8AA5;font-size:11.5px;margin-top:1px}
+  .lt tr.lead td{background:#EAF2FB}
+  .lt tr.lead td.p{color:var(--royal);font-weight:700}
+  .lt tr.lead td.n{color:var(--royal)}
 </style>
 </head>
 <body>
@@ -746,10 +754,10 @@
       </div>
       <div class="podium">
         <div class="ph"><h4 class="disp">How it stands &mdash; end of August</h4></div>
-        <a href="comp/FF Aug update.jpg" target="_blank" rel="noopener" class="tablepic">
-          <img src="comp/FF Aug update.jpg" alt="Dale Trust FF Premiership table, August" loading="lazy">
-        </a>
-        <p class="tablenote">Tap to see it full size. Roger Winterbottom leads on 176.</p>
+        <div class="ltwrap"><table class="lt">
+          <tr><th>&nbsp;</th><th>Team</th><th class="n">Aug</th></tr>
+          <tr class="lead"><td class="p">1</td><td><b>Locomotiv Moocow</b><small>Roger Winterbottom &middot; Exile</small></td><td class="n">176</td></tr><tr><td class="p">2</td><td><b>Rossendale Rovers</b><small>Adam Sutcliffe &middot; Adult</small></td><td class="n">151</td></tr><tr><td class="p">3</td><td><b>Rochdalebarrowdouble</b><small>Mark King &middot; Exile</small></td><td class="n">162</td></tr><tr><td class="p">4</td><td><b>Rodri's Right Peg</b><small>Tony Mayor &middot; Adult</small></td><td class="n">159</td></tr><tr><td class="p">5</td><td><b>ROB</b><small>Robert Dickinson &middot; Exile</small></td><td class="n">143</td></tr><tr><td class="p">6</td><td><b>Norfolk en Chance</b><small>Lee Percy &middot; Adult</small></td><td class="n">142</td></tr><tr><td class="p">7</td><td><b>Deev's Dynamo's</b><small>Matthew Devine &middot; Adult</small></td><td class="n">134</td></tr><tr><td class="p">8</td><td><b>FC Spunkers</b><small>Jason Mould &middot; Adult</small></td><td class="n">127</td></tr><tr><td class="p">9</td><td><b>Lankyland</b><small>Paul Buckley &middot; Adult</small></td><td class="n">122</td></tr><tr><td class="p">10</td><td><b>Poxy Proxmoxes</b><small>Scott Rhodes &middot; Adult</small></td><td class="n">122</td></tr><tr><td class="p">11</td><td><b>McGinn &amp; Tonic</b><small>David Daniels &middot; Exile</small></td><td class="n">121</td></tr><tr><td class="p">12</td><td><b>Pass, Shoot, Goal</b><small>Matthew Greenhalgh &middot; Exile</small></td><td class="n">120</td></tr><tr><td class="p">13</td><td><b>Slovan Spotland</b><small>Scott Goulding &middot; Adult</small></td><td class="n">114</td></tr><tr><td class="p">14</td><td><b>Manidale</b><small>Matthew Laurel &middot; Exile</small></td><td class="n">113</td></tr><tr><td class="p">15</td><td><b>Korat Al Qadam</b><small>Martin Armitage &middot; Exile</small></td><td class="n">112</td></tr><tr><td class="p">16</td><td><b>Super Rochdale</b><small>Stephen Peacock &middot; Adult</small></td><td class="n">108</td></tr><tr><td class="p">17</td><td><b>Up The Dale</b><small>Mark Taylor &middot; Exile</small></td><td class="n">103</td></tr><tr><td class="p">18</td><td><b>Back Where We Belong</b><small>Vincent Ashall &middot; Adult</small></td><td class="n">71</td></tr>
+        </table></div>
       </div>
     </div>
 
@@ -769,10 +777,10 @@
       </div>
       <div class="podium">
         <div class="ph"><h4 class="disp">How it stands &mdash; end of August</h4></div>
-        <a href="comp/S6 Aug update.jpg" target="_blank" rel="noopener" class="tablepic">
-          <img src="comp/S6 Aug update.jpg" alt="Dale Trust Super 6 table, August" loading="lazy">
-        </a>
-        <p class="tablenote">Tap to see it full size. Ian Goodwin leads on 23.</p>
+        <div class="ltwrap"><table class="lt">
+          <tr><th>&nbsp;</th><th>Player</th><th class="n">Pts</th></tr>
+          <tr class="lead"><td class="p">1</td><td><b>Ian Goodwin</b><small>Exile</small></td><td class="n">23</td></tr><tr><td class="p">2</td><td><b>Roger Winterbottom</b><small>Exile</small></td><td class="n">22</td></tr><tr><td class="p">3</td><td><b>David Daniels</b><small>Exile</small></td><td class="n">21</td></tr><tr><td class="p">4</td><td><b>Shaun Mellish</b><small>Exile</small></td><td class="n">20</td></tr><tr><td class="p">5</td><td><b>David Coupe</b><small>Adult</small></td><td class="n">20</td></tr><tr><td class="p">6</td><td><b>Chris Hynd</b><small>Exile</small></td><td class="n">17</td></tr><tr><td class="p">7</td><td><b>Peter Coad</b><small>Adult</small></td><td class="n">17</td></tr><tr><td class="p">8</td><td><b>Lee Maddock</b><small>Exile</small></td><td class="n">15</td></tr><tr><td class="p">8</td><td><b>Chris Commins</b><small>Exile</small></td><td class="n">15</td></tr><tr><td class="p">8</td><td><b>Joe Bamford</b><small>Adult</small></td><td class="n">15</td></tr><tr><td class="p">8</td><td><b>Matthew Morrisey</b><small>Adult</small></td><td class="n">15</td></tr><tr><td class="p">8</td><td><b>Matthew Laurel</b><small>Exile</small></td><td class="n">15</td></tr><tr><td class="p">8</td><td><b>Colin Bainbridge</b><small>Exile</small></td><td class="n">15</td></tr><tr><td class="p">14</td><td><b>Mark King</b><small>Exile</small></td><td class="n">14</td></tr><tr><td class="p">14</td><td><b>Nathan Butterworth</b><small>Adult</small></td><td class="n">14</td></tr><tr><td class="p">14</td><td><b>Tony Mayor</b><small>Adult</small></td><td class="n">14</td></tr><tr><td class="p">17</td><td><b>Paul Buckley</b><small>Adult</small></td><td class="n">13</td></tr><tr><td class="p">18</td><td><b>Icarus Williams</b><small>Adult</small></td><td class="n">8</td></tr><tr><td class="p">19</td><td><b>Nigel Kershaw</b><small>Adult</small></td><td class="n">4</td></tr><tr><td class="p">20</td><td><b>Scott Goulding</b><small>Adult</small></td><td class="n">0</td></tr><tr><td class="p">21</td><td><b>David Chaffey</b><small>Adult</small></td><td class="n">0</td></tr><tr><td class="p">21</td><td><b>Michael Banford</b><small>Adult</small></td><td class="n">0</td></tr><tr><td class="p">21</td><td><b>Matthew Greenhalgh</b><small>Exile</small></td><td class="n">0</td></tr>
+        </table></div>
       </div>
     </div>
   </div>
