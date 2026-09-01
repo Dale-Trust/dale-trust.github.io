@@ -527,6 +527,9 @@
   .lt tr.lead td{background:#EAF2FB}
   .lt tr.lead td.p{color:var(--royal);font-weight:700}
   .lt tr.lead td.n{color:var(--royal)}
+  .lt .mth{font-size:12.5px;color:#7A8AA5;width:34px;font-family:'Montserrat'}
+  .lt th.mth{color:#C7D6EC}
+  .ltwrap{overflow-x:auto}
 </style>
 </head>
 <body>
@@ -1243,17 +1246,27 @@ loadAuction();
     const d = await (await fetch('https://join.daletrust.uk/comps')).json();
     if(!d.ok) return;
     const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    const NAMES = {aug:'Aug',sep:'Sep',oct:'Oct',nov:'Nov',dec:'Dec',
+                   jan:'Jan',feb:'Feb',mar:'Mar',apr:'Apr',may:'May'};
     const draw = (key, box, head, col) => {
       const c = d.comps[key];
       const el = document.getElementById(box), hd = document.getElementById(head);
       if(!el) return;
       if(!c || !c.rows || !c.rows.length){ el.closest('.podium').style.display='none'; return; }
       if(hd && c.heading) hd.textContent = c.heading;
-      el.innerHTML = '<table class="lt"><tr><th>&nbsp;</th><th>'+col+'</th><th class="n">Pts</th></tr>'+
+      // only the months somebody has filled in
+      const ms = c.monthsInUse || [];
+      const many = ms.length > 1;
+      el.innerHTML = '<table class="lt"><tr><th>&nbsp;</th><th>'+col+'</th>'+
+        (many ? ms.map(m => '<th class="n mth">'+NAMES[m]+'</th>').join('') : '')+
+        '<th class="n">'+(many ? 'Total' : (ms.length ? NAMES[ms[0]] : 'Pts'))+'</th></tr>'+
         c.rows.map(r => '<tr'+(r.pos===1?' class="lead"':'')+'>'+
           '<td class="p">'+(r.pos||'')+'</td>'+
           '<td><b>'+esc(r.name)+'</b>'+(r.sub?'<small>'+esc(r.sub)+'</small>':'')+'</td>'+
-          '<td class="n">'+(r.points!==null&&r.points!==undefined?r.points:'')+'</td></tr>').join('')+
+          (many ? ms.map(m => '<td class="n mth">'+
+            (r.scores[m]!==undefined&&r.scores[m]!==null ? r.scores[m] : '')+'</td>').join('') : '')+
+          '<td class="n">'+(many ? r.total
+            : (ms.length && r.scores[ms[0]]!==undefined ? r.scores[ms[0]] : ''))+'</td></tr>').join('')+
         '</table>';
     };
     draw('ff','ltFF','hdFF','Team');

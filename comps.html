@@ -39,6 +39,26 @@
   .tab{flex:1;text-align:center;padding:12px;border:1.5px solid var(--line);border-radius:10px;
     background:#fff;cursor:pointer;font-weight:600;color:var(--body)}
   .tab.on{background:var(--royal);color:#fff;border-color:var(--royal)}
+  .gridwrap{margin-top:14px;border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:560px}
+  .grid{width:100%;border-collapse:collapse;font-size:13px}
+  .grid th{position:sticky;top:0;background:var(--navy);color:#fff;padding:7px 6px;font-size:10.5px;
+    text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;text-align:center}
+  .grid th.l{text-align:left}
+  .grid td{border-bottom:1px solid var(--line);padding:3px 4px}
+  .grid tr:nth-child(even) td{background:#FAFCFE}
+  .grid input{border:1px solid transparent;background:transparent;padding:6px;border-radius:5px;font-size:13px}
+  .grid input:focus{border-color:var(--royal);background:#fff;outline:none}
+  .grid input.nm{width:100%;font-weight:600;color:var(--ink)}
+  .grid input.sb{width:100%;font-size:12px;color:#7A8AA5}
+  .grid input.sc{width:52px;text-align:center;font-family:'Oswald';font-size:14px}
+  .grid input.sc.has{background:#EAF2FB;border-color:#C7DCF5}
+  .grid td.tot{text-align:center;font-family:'Oswald';font-size:15px;color:var(--ink);
+    background:var(--wash);white-space:nowrap}
+  .grid td.mv{white-space:nowrap;text-align:center;width:54px}
+  .grid td.mv button{background:none;border:0;color:#8A97AC;font-size:15px;cursor:pointer;padding:2px 4px;margin:0}
+  .grid td.mv button:hover{color:var(--royal)}
+  .grid td.pos{text-align:center;color:#8A97AC;font-family:'Oswald';width:30px}
+  .grid .del{color:var(--red)!important}
 </style>
 </head>
 <body>
@@ -56,26 +76,34 @@
     <p class="lede" id="when">&nbsp;</p>
 
     <label>Heading above the table</label>
-    <input id="heading" placeholder="e.g. How it stands — end of September">
+    <input id="heading" placeholder="e.g. How it stands">
 
-    <label>The table</label>
-    <textarea id="paste" placeholder="Paste it straight from your spreadsheet, one line per person."></textarea>
+    <div class="gridwrap"><table class="grid" id="grid"></table></div>
 
     <div class="how">
-      <b>How to do it.</b> Open your spreadsheet, select the rows you want &mdash; not the headings &mdash;
-      copy them, and paste into the box above. One line per person.<br><br>
-      <b>What it looks for.</b> A number at the start is the position. The next column is the name.
-      Anything that is a word becomes the small grey line underneath &mdash; the manager, or Adult and Exile.
-      The first number after the name is the points shown on the right.<br><br>
-      <b>So a line like</b> <code>1&nbsp;&nbsp;Locomotiv Moocow&nbsp;&nbsp;Roger Winterbottom&nbsp;&nbsp;Exile&nbsp;&nbsp;176</code>
-      becomes <b>1 &middot; Locomotiv Moocow &middot; Roger Winterbottom &middot; Exile &middot; 176</b>.<br><br>
-      Press <b>See how it looks</b> before saving. Nothing changes on the website until you save.
+      <b>Adding this month&rsquo;s figures.</b> Find the column for the month, type the numbers in, and save.
+      Any month left empty is not shown on the website, so you can fill them in as the season goes.<br><br>
+      <b>The order.</b> Rows appear on the website in the order they are here. Use the arrows to move somebody,
+      or press <b>Sort by total</b> to put the leader at the top.<br><br>
+      <b>Somebody new.</b> Press <b>Add a row</b> at the bottom. To start again from a spreadsheet,
+      use <b>Paste a fresh list</b> &mdash; the figures already entered are kept where the names match.
     </div>
 
-    <button class="ghost" onclick="preview()">See how it looks</button>
-    <button onclick="save()">Save and put it on the website</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <button class="ghost" onclick="addRow()">Add a row</button>
+      <button class="ghost" onclick="sortTotal()">Sort by total</button>
+      <button class="ghost" onclick="showPaste()">Paste a fresh list</button>
+      <button onclick="save()">Save and put it on the website</button>
+    </div>
     <p class="msg" id="msg"></p>
-    <div class="prev" id="prev" style="display:none"></div>
+
+    <div id="pasteBox" style="display:none;margin-top:16px">
+      <label>Paste from your spreadsheet &mdash; one line per person</label>
+      <textarea id="paste" placeholder="1	Locomotiv Moocow	Roger Winterbottom	Exile"></textarea>
+      <button class="ghost" onclick="doPaste()">Use this list</button>
+      <button class="ghost" onclick="document.getElementById('pasteBox').style.display='none'">Cancel</button>
+    </div>
+
   </div>
 
 </div>
@@ -86,62 +114,89 @@ let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
 if(!session) location.href='admin.html';
 const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-let comp='ff', data={};
+let comp='ff', data={}, rows=[], months=[];
+const MONTHS = {aug:'Aug',sep:'Sep',oct:'Oct',nov:'Nov',dec:'Dec',jan:'Jan',feb:'Feb',mar:'Mar',apr:'Apr',may:'May'};
 
 function pick(c){
   comp=c;
   $('tabFF').className='tab'+(c==='ff'?' on':'');
   $('tabS6').className='tab'+(c==='s6'?' on':'');
   $('which').textContent = c==='ff' ? 'Fantasy Football' : 'Super 6';
-  $('prev').style.display='none'; $('msg').textContent='';
+  $('msg').textContent=''; $('pasteBox').style.display='none';
   const d=data[c]||{};
   $('heading').value=d.heading||'';
   $('when').textContent = d.updated_at
     ? 'Last updated '+new Date(d.updated_at.replace(' ','T')+'Z').toLocaleString('en-GB',
         {weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})
     : 'Never updated';
-  $('paste').value = (d.rows||[]).map(r =>
-    [r.pos, r.name, (r.sub||'').split(' \u00b7 ').join('\t'), r.points].filter(x=>x!==null&&x!=='').join('\t')
-  ).join('\n');
+  months = (d.months && d.months.length) ? d.months.slice() : Object.keys(MONTHS);
+  rows = (d.rows||[]).map(r=>({name:r.name||'', sub:r.sub||'', scores:Object.assign({}, r.scores||{})}));
+  draw();
 }
 
-function rowsFrom(text){
-  const out=[];
-  text.split('\n').map(l=>l.trim()).filter(Boolean).forEach(line=>{
-    const c=line.split(/\t|,(?![^(]*\))/).map(s=>s.trim());
-    if(c.length<2) return;
-    let pos=null,i=0;
-    if(/^\d+$/.test(c[0])){ pos=parseInt(c[0],10); i=1; } else pos=out.length+1;
-    const name=c[i]||'';
-    if(!name || /^(pos|position|team|player|name)$/i.test(name)) return;
-    const nums=c.slice(i+1).filter(x=>/^-?\d+$/.test(x)).map(Number);
-    const words=c.slice(i+1).filter(x=>x && !/^-?\d+$/.test(x));
-    out.push({pos,name,sub:words.join(' \u00b7 '),points:nums.length?nums[0]:null});
+function total(r){ return months.reduce((a,m)=>a+(Number(r.scores[m])||0),0); }
+
+function draw(){
+  const isFF = comp==='ff';
+  let html='<tr><th>&nbsp;</th><th class="l">'+(isFF?'Team':'Player')+'</th>'+
+    (isFF?'<th class="l">Manager</th>':'<th class="l">Adult or Exile</th>')+
+    months.map(m=>'<th>'+MONTHS[m]+'</th>').join('')+
+    '<th>Total</th><th>&nbsp;</th></tr>';
+  rows.forEach((r,i)=>{
+    html+='<tr><td class="pos">'+(i+1)+'</td>'+
+      '<td><input class="nm" value="'+esc(r.name)+'" oninput="rows['+i+'].name=this.value"></td>'+
+      '<td><input class="sb" value="'+esc(r.sub)+'" oninput="rows['+i+'].sub=this.value"></td>'+
+      months.map(m=>{
+        const v=r.scores[m];
+        const has=(v!==undefined&&v!==null&&v!=='');
+        return '<td><input class="sc'+(has?' has':'')+'" inputmode="numeric" value="'+(has?v:'')+
+          '" oninput="setScore('+i+',\''+m+'\',this.value,this)"></td>';
+      }).join('')+
+      '<td class="tot" id="t'+i+'">'+total(r)+'</td>'+
+      '<td class="mv"><button onclick="move('+i+',-1)" title="Up">&#9650;</button>'+
+      '<button onclick="move('+i+',1)" title="Down">&#9660;</button>'+
+      '<button class="del" onclick="drop('+i+')" title="Remove">&times;</button></td></tr>';
   });
-  return out;
+  $('grid').innerHTML=html;
 }
 
-function preview(){
-  const rows=rowsFrom($('paste').value);
-  if(!rows.length){ say('Nothing usable in that yet.',true); return; }
-  $('prev').style.display='block';
-  $('prev').innerHTML='<table><tr><th>&nbsp;</th><th>'+
-    (comp==='ff'?'Team':'Player')+'</th><th style="text-align:right">Pts</th></tr>'+
-    rows.map(r=>'<tr><td>'+r.pos+'</td><td><b>'+esc(r.name)+'</b>'+
-      (r.sub?'<br><small style="color:#7A8AA5">'+esc(r.sub)+'</small>':'')+'</td>'+
-      '<td>'+(r.points!==null?r.points:'')+'</td></tr>').join('')+'</table>';
-  say(rows.length+' '+(rows.length===1?'person':'people')+'. If that looks right, save it.');
+function setScore(i,m,v,el){
+  if(v==='') delete rows[i].scores[m]; else rows[i].scores[m]=v;
+  el.className='sc'+(v!==''?' has':'');
+  const t=document.getElementById('t'+i); if(t) t.textContent=total(rows[i]);
+}
+function move(i,d){ const j=i+d; if(j<0||j>=rows.length) return;
+  [rows[i],rows[j]]=[rows[j],rows[i]]; draw(); }
+function drop(i){ if(!confirm('Remove '+(rows[i].name||'this row')+'?')) return; rows.splice(i,1); draw(); }
+function addRow(){ rows.push({name:'',sub:'',scores:{}}); draw();
+  const inputs=document.querySelectorAll('.grid input.nm'); inputs[inputs.length-1].focus(); }
+function sortTotal(){ rows.sort((a,b)=>total(b)-total(a)); draw(); say('Sorted by total.'); }
+function showPaste(){ const p=$('pasteBox'); p.style.display = p.style.display==='none'?'block':'none'; }
+
+async function doPaste(){
+  const text=$('paste').value.trim();
+  if(!text){ say('Nothing pasted.',true); return; }
+  const d=await (await fetch(EP+'/comps/paste',{method:'POST',headers:H(),body:JSON.stringify({paste:text})})).json();
+  if(!d.ok){ say(d.error,true); return; }
+  // keep any figures already entered against the same name
+  const old={}; rows.forEach(r=>{ old[r.name.toLowerCase()]=r.scores; });
+  rows = d.rows.map(r=>({ name:r.name, sub:r.sub||'',
+    scores: old[r.name.toLowerCase()] || (r.first!=='' ? {[months[0]]:r.first} : {}) }));
+  $('pasteBox').style.display='none';
+  draw();
+  say(rows.length+' rows. Figures already entered have been kept.');
 }
 
 async function save(){
-  const rows=rowsFrom($('paste').value);
-  if(!rows.length){ say('Nothing usable in that.',true); return; }
-  if(!confirm('Put '+rows.length+' '+(rows.length===1?'row':'rows')+' on the website?\n\nThis replaces what is there now.')) return;
+  const keep=rows.filter(r=>r.name.trim());
+  if(!keep.length){ say('There is nothing to save.',true); return; }
+  if(!confirm('Put '+keep.length+' rows on the website?')) return;
   say('Saving\u2026');
   const d=await (await fetch(EP+'/comps/save',{method:'POST',headers:H(),body:JSON.stringify({
-    comp, paste:$('paste').value, heading:$('heading').value })})).json();
+    comp, heading:$('heading').value, months,
+    rows: keep.map((r,i)=>({pos:i+1, name:r.name, sub:r.sub, scores:r.scores})) })})).json();
   if(!d.ok){ say(d.error,true); return; }
-  say('Saved. '+d.saved+' rows are now on the homepage.');
+  say('Saved. '+d.saved+' rows are on the homepage.');
   load();
 }
 
