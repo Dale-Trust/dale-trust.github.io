@@ -40,16 +40,19 @@
     background:#fff;cursor:pointer;font-weight:600;color:var(--body)}
   .tab.on{background:var(--royal);color:#fff;border-color:var(--royal)}
   .gridwrap{margin-top:14px;border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:560px}
-  .grid{width:100%;border-collapse:collapse;font-size:13px}
-  .grid th{position:sticky;top:0;background:var(--navy);color:#fff;padding:7px 6px;font-size:10.5px;
+  /* wide enough for real names — the box scrolls sideways rather than squashing them */
+  .grid{border-collapse:collapse;font-size:13px;min-width:100%;width:max-content}
+  .grid th{position:sticky;top:0;z-index:2;background:var(--navy);color:#fff;padding:7px 6px;font-size:10.5px;
     text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;text-align:center}
   .grid th.l{text-align:left}
   .grid td{border-bottom:1px solid var(--line);padding:3px 4px}
   .grid tr:nth-child(even) td{background:#FAFCFE}
   .grid input{border:1px solid transparent;background:transparent;padding:6px;border-radius:5px;font-size:13px}
   .grid input:focus{border-color:var(--royal);background:#fff;outline:none}
-  .grid input.nm{width:100%;font-weight:600;color:var(--ink)}
-  .grid input.sb{width:100%;font-size:12px;color:#7A8AA5}
+  .grid td.name{min-width:190px}
+  .grid td.sub{min-width:190px}
+  .grid input.nm{width:100%;min-width:180px;font-weight:600;color:var(--ink)}
+  .grid input.sb{width:100%;min-width:180px;font-size:12px;color:#7A8AA5}
   .grid input.sc{width:52px;text-align:center;font-family:'Oswald';font-size:14px}
   .grid input.sc.has{background:#EAF2FB;border-color:#C7DCF5}
   .grid td.tot{text-align:center;font-family:'Oswald';font-size:15px;color:var(--ink);
@@ -144,8 +147,8 @@ function draw(){
     '<th>Total</th><th>&nbsp;</th></tr>';
   rows.forEach((r,i)=>{
     html+='<tr><td class="pos">'+(i+1)+'</td>'+
-      '<td><input class="nm" value="'+esc(r.name)+'" oninput="rows['+i+'].name=this.value"></td>'+
-      '<td><input class="sb" value="'+esc(r.sub)+'" oninput="rows['+i+'].sub=this.value"></td>'+
+      '<td class="name"><input class="nm" value="'+esc(r.name)+'" oninput="rows['+i+'].name=this.value"></td>'+
+      '<td class="sub"><input class="sb" value="'+esc(r.sub)+'" oninput="rows['+i+'].sub=this.value"></td>'+
       months.map(m=>{
         const v=r.scores[m];
         const has=(v!==undefined&&v!==null&&v!=='');
