@@ -1021,6 +1021,25 @@ function parseFixtureDate(s){
   return new Date(+m[3], mo, +m[2], hr, min);
 }
 
+// Turn "2026-09-05 15:00" into the right moment, wherever the reader is sitting.
+function ukTime(s){
+  if(!s) return null;
+  if(s instanceof Date) return s;
+  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if(!m) return new Date(s);
+  const guess = Date.UTC(+m[1], +m[2]-1, +m[3], +m[4], +m[5]);
+  // how far ahead of UTC is London on that date? (BST in summer, GMT in winter)
+  let offset = 0;
+  try{
+    const f = new Intl.DateTimeFormat('en-GB', { timeZone:'Europe/London', hour12:false,
+      year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+    const p = {};
+    f.formatToParts(new Date(guess)).forEach(x => { p[x.type] = x.value; });
+    offset = Date.UTC(+p.year, +p.month-1, +p.day, +(p.hour==='24'?'00':p.hour), +p.minute) - guess;
+  }catch(e){}
+  return new Date(guess - offset);
+}
+
 let cdTimer = null;
 function startCountdown(target){
   const pad = n => String(n).padStart(2,'0');
@@ -1043,7 +1062,9 @@ function startCountdown(target){
 async function loadHub(){
   try{
     const raw = await (await fetch('https://join.daletrust.uk/fixtures')).json();
-    const items = (raw.fixtures || []).map(f => ({...f, when: new Date(f.when)})).filter(f => !isNaN(f.when));
+    // Kick-off times are UK times. Without this, somebody reading in Malta or Australia
+    // sees the countdown against their own clock and thinks the game has started.
+    const items = (raw.fixtures || []).map(f => ({...f, when: ukTime(f.when)})).filter(f => f.when && !isNaN(f.when));
     items.sort((a,b) => a.when - b.when);
     const now = Date.now();
     const next = items.find(f => f.when.getTime() > now);
