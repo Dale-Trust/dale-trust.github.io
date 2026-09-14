@@ -216,13 +216,14 @@ function whenCharts(cb, tries){
       datasets:[{data:[pick(d.newsletter,'1'),pick(d.newsletter,'0')],
         backgroundColor:[GREEN,GREY],borderWidth:0}]},options:DO});
 
-    drawCoaches(d.coaches||[]);
-    findMembers();
+    try{ drawCoaches(d.coaches||[]); }catch(e){ console.error('coaches', e); }
+    try{ findMembers(); }catch(e){ console.error('members', e); }
     $('stamp').textContent='Live from the Trust\u2019s membership database \u00b7 generated '+new Date(d.generated).toLocaleString('en-GB')+' \u00b7 no personal details appear on this page';
   }catch(e){ say('Could not load the figures just now.'); }
 })();
 
 const H = () => ({'Authorization':'Bearer ' + (window._sess || '')});
+const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 // ---- coach travel ----
 function drawCoaches(list){
