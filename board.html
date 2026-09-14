@@ -91,8 +91,21 @@
     </div>
 
     <div class="card" style="margin-top:16px">
-      <h2>The membership list</h2>
-      <p class="lede">For looking up a member. Nothing here can be changed, and personal contact details are not shown.</p>
+      <h2>This week</h2>
+      <p class="lede">The last seven days, at a glance.</p>
+      <div class="kpis" id="weekKpis"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>Money this season</h2>
+      <p class="lede">What has come in through the website. Subscriptions recorded against members, coach fares, and auctions.</p>
+      <div class="kpis" id="moneyKpis"></div>
+      <p class="lede" style="margin-top:10px">Imported memberships from before the website show no subscription figure, so the subs total is what has been taken online plus anything entered by hand.</p>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>Find a member</h2>
+      <p class="lede">Type a name, membership number or town. Nothing here can be changed, and personal contact details are not shown.</p>
       <div class="mfilters">
         <input id="mq" placeholder="Name, membership number or town&hellip;" oninput="findMembers()">
         <select id="mseason" onchange="findMembers()"></select>
@@ -102,6 +115,12 @@
       </div>
       <p class="found" id="mfound"></p>
       <div id="memberTable"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>The last 50 to join</h2>
+      <p class="lede">Newest first. Who is coming in, and how.</p>
+      <div id="recentTable"></div>
     </div>
 
     <p class="stamp" id="stamp"></p>
@@ -217,6 +236,9 @@ function whenCharts(cb, tries){
         backgroundColor:[GREEN,GREY],borderWidth:0}]},options:DO});
 
     try{ drawCoaches(d.coaches||[]); }catch(e){ console.error('coaches', e); }
+    try{ drawWeek(d.week||{}); }catch(e){ console.error('week', e); }
+    try{ drawMoney(d.money||{}); }catch(e){ console.error('money', e); }
+    try{ drawRecent(d.recentJoins||[]); }catch(e){ console.error('recent', e); }
     try{ findMembers(); }catch(e){ console.error('members', e); }
     $('stamp').textContent='Live from the Trust\u2019s membership database \u00b7 generated '+new Date(d.generated).toLocaleString('en-GB')+' \u00b7 no personal details appear on this page';
   }catch(e){ say('Could not load the figures just now.'); }
@@ -224,6 +246,46 @@ function whenCharts(cb, tries){
 
 const H = () => ({'Authorization':'Bearer ' + (window._sess || '')});
 const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+// ---- this week ----
+function drawWeek(w){
+  const box=document.getElementById('weekKpis'); if(!box) return;
+  const k=(label,val,sub)=>'<div class="kpi"><span>'+label+'</span><b>'+val+'</b>'+(sub?'<em>'+sub+'</em>':'')+'</div>';
+  const rate = (w.delivered+w.bounced) ? Math.round(w.bounced/(w.delivered+w.bounced)*1000)/10 : 0;
+  box.innerHTML =
+    k('Joined', w.joined||0, (w.came_back||0)+' came back') +
+    k('Signed in', w.signed_in||0, 'different people') +
+    k('Coach seats booked', w.coach_bookings||0, '') +
+    k('Emails sent', w.delivered||0, (w.bounced||0)+' bounced \u00b7 '+rate+'%');
+}
+
+// ---- money ----
+function drawMoney(m){
+  const box=document.getElementById('moneyKpis'); if(!box) return;
+  const money=n=>'\u00a3'+Number(n||0).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const k=(label,val,sub)=>'<div class="kpi"><span>'+label+'</span><b>'+val+'</b>'+(sub?'<em>'+sub+'</em>':'')+'</div>';
+  const total = Number(m.subs||0)+Number(m.donations||0)+Number(m.coach||0)+Number(m.auctions||0);
+  box.innerHTML =
+    k('Subscriptions', money(m.subs), 'recorded against members') +
+    k('Donations', money(m.donations), 'on top of subs') +
+    k('Coach fares', money(m.coach), (m.coachSeats||0)+' seats') +
+    k('Auctions', money(m.auctions), (m.auctionsSold||0)+' sold') +
+    k('All together', money(total), 'through the website');
+}
+
+// ---- the last 50 to join ----
+function drawRecent(list){
+  const box=document.getElementById('recentTable'); if(!box) return;
+  if(!list.length){ box.innerHTML='<p style="color:#7A8AA5;font-size:13.5px">Nobody yet.</p>'; return; }
+  const HOW={online:'Joined online',rejoin:'Came back',renewal:'Renewed',import:'Imported',desk:'At the desk'};
+  box.innerHTML='<div style="max-height:420px;overflow:auto"><table class="ctable">'+
+    '<tr><th>When</th><th>Name</th><th>Number</th><th>Type</th><th>Where</th><th>How</th></tr>'+
+    list.map(m=>'<tr><td>'+esc(m.joined||'')+'</td><td><b>'+esc((m.first_name+' '+m.last_name).trim())+'</b></td>'+
+      '<td>'+esc(m.member_no||'')+'</td><td>'+esc(m.membership_type||'')+'</td>'+
+      '<td>'+esc(m.town||'')+(m.country?', '+esc(m.country):'')+'</td>'+
+      '<td>'+esc(HOW[m.joined_via]||m.joined_via||'')+'</td></tr>').join('')+
+    '</table></div>';
+}
 
 // ---- coach travel ----
 function drawCoaches(list){
@@ -266,6 +328,13 @@ function findMembers(reset){
 
 async function loadMembers(){
   const q=document.getElementById('mq').value.trim();
+  const t0=document.getElementById('mtype').value;
+  // a blank search shows nothing — the full list is not what this box is for
+  if(!q && !t0){
+    document.getElementById('mfound').textContent='';
+    document.getElementById('memberTable').innerHTML='';
+    return;
+  }
   const s=document.getElementById('mseason').value;
   const t=document.getElementById('mtype').value;
   const box=document.getElementById('memberTable');
