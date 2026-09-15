@@ -75,6 +75,7 @@
   <div class="g2">
     <div><label>This season</label><input id="s_current"></div>
     <div><label>Next season</label><input id="s_next"></div>
+    <div><label>Season tickets sold</label><input id="s_tickets" inputmode="numeric" placeholder="e.g. 3405"></div>
   </div>
   <label>Renewals for next season</label>
   <select id="s_open"><option value="0">Not open yet</option><option value="1">Open — members can renew</option></select>
@@ -174,6 +175,7 @@ function draw(){
       ' members have no email address, so they cannot be sent a renewal notice. They will need reaching another way.</p>':'');
 
   $('s_current').value=data.current; $('s_next').value=data.next;
+  $('s_tickets').value=(d.settings&&d.settings.season_tickets)||'';
   $('s_open').value=data.renewals_open?'1':'0';
 
   if(!data.renewals_open){
@@ -210,7 +212,8 @@ async function send(stage,test){
 }
 
 async function saveSettings(){
-  const s={current_season:$('s_current').value.trim(), next_season:$('s_next').value.trim(), renewals_open:$('s_open').value};
+  const s={current_season:$('s_current').value.trim(), next_season:$('s_next').value.trim(), renewals_open:$('s_open').value,
+    season_tickets:$('s_tickets').value.replace(/[^0-9]/g,'')};
   const d=await (await fetch(EP+'/settings',{method:'POST',headers:H(),body:JSON.stringify({settings:s})})).json();
   $('smsg').innerHTML=d.ok?'<span style="color:var(--green)">Saved.</span>':'<span style="color:var(--red)">'+esc(d.error)+'</span>';
   if(d.ok) load();
