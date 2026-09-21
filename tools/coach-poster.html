@@ -3,170 +3,257 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dale Trust — Coach Poster Maker</title>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Coach poster maker | Dale Trust admin</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC}
+  :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A}
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:15px}
-  .top{background:var(--navy);color:#fff;padding:16px 22px}
-  .top h1{font-family:'Oswald';text-transform:uppercase;font-size:20px;letter-spacing:.04em}
-  .top small{color:#8FC1FF;font-size:12px}
-  .wrap{max-width:1150px;margin:0 auto;padding:18px;display:grid;grid-template-columns:330px 1fr;gap:18px}
-  @media(max-width:860px){.wrap{grid-template-columns:1fr}}
-  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px}
-  label{display:block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);margin:13px 0 5px}
-  input,select{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink)}
-  input:focus,select:focus{outline:none;border-color:#1173D4}
-  .go{width:100%;margin-top:18px;background:var(--royal);color:#fff;border:0;border-radius:10px;font:600 15px 'Oswald';text-transform:uppercase;letter-spacing:.08em;padding:14px;cursor:pointer}
-  .go:hover{background:#1173D4}
-  .hint{font-size:12px;color:#7A8AA5;margin-top:4px}
-  canvas{width:100%;border-radius:10px;border:1px solid var(--line);background:#0E1F3D}
-  #badgeFile{display:none}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:14.5px}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-family:'Oswald';font-size:21px;text-transform:uppercase;font-weight:600}
+  .top small{color:#8FC1FF;font-size:12.5px;display:block;margin-top:2px}
+  .wrap{max-width:1180px;margin:0 auto;padding:18px;display:grid;grid-template-columns:360px 1fr;gap:18px;align-items:start}
+  @media(max-width:880px){.wrap{grid-template-columns:1fr}}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}
+  label{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin:14px 0 5px}
+  label:first-child{margin-top:0}
+  input,select{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
+  input:focus,select:focus{outline:none;border-color:var(--royal)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .hint{font-size:12.5px;color:#7A8AA5;margin-top:5px;line-height:1.5}
+  .pick{background:#EAF2FB;border-radius:10px;padding:14px;margin-bottom:6px}
+  button{width:100%;background:var(--green);color:#fff;border:0;border-radius:9px;padding:14px;
+    font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer;margin-top:18px}
+  button:hover{filter:brightness(1.08)}
+  button:focus-visible{outline:3px solid #8FC1FF;outline-offset:2px}
+  .stage{position:sticky;top:14px}
+  canvas{width:100%;height:auto;display:block;border-radius:10px;box-shadow:0 10px 30px rgba(14,31,61,.18);background:#fff}
+  .note{font-size:12.5px;color:#7A8AA5;margin-top:10px;text-align:center}
 </style>
 </head>
 <body>
-<div style="background:#0A1730;padding:8px 20px;font-family:Montserrat,system-ui,sans-serif;font-size:13px">
-  <a href="../admin.html" style="color:#8FC1FF;text-decoration:none;font-weight:600">&larr; Back to admin</a>
-</div>
+<div class="back"><a href="../admin.html">&larr; Back to admin</a></div>
+<div class="top"><h1>Coach poster maker</h1><small>Choose a trip and the poster fills itself in. Change anything you like before downloading.</small></div>
 
-<div class="top"><h1>Coach Poster Maker</h1><small>Pick the opposition, set the details, download — the design stays identical every time.</small></div>
 <div class="wrap">
   <div class="panel">
-    <label>Opposition badge</label>
+    <div class="pick">
+      <label for="trip">Which trip?</label>
+      <select id="trip"><option value="">Loading the trips&hellip;</option></select>
+      <p class="hint">Everything below comes from the trip Emma has set up. Pick one and check it.</p>
+    </div>
+
+    <label for="badge">Their badge</label>
     <select id="badge"></select>
-    <input type="file" id="badgeFile" accept="image/*">
-    <p class="hint">Cup tie against someone new? Choose "Upload a badge…" and pick their crest image.</p>
-    <label>Opposition name (as shown on the poster)</label>
-    <input type="text" id="opp" value="BRADFORD CITY">
-    <p class="hint">Tip: shorter names render bigger — "BRADFORD CITY" matches the Rochdale text; adding "AFC" makes it shrink to fit.</p>
-    <label>Match date</label>
-    <input type="text" id="date" value="SATURDAY 8TH AUGUST">
-    <label>Kick-off</label>
-    <input type="text" id="ko" value="15:00">
-    <label>Coach departs</label>
-    <input type="text" id="dep" value="12:00 PM">
-    <label>Price per seat <small style="text-transform:none">(number only &mdash; the &pound; is on the poster)</small></label>
-    <input type="text" id="price" value="15">
-    <button class="go" onclick="download()">&#11015; Download poster</button>
-    <p class="hint" style="margin-top:10px">Posts perfectly to Facebook &amp; X. For Instagram, crop square in the app or ask Chris for a square template.</p>
+    <input type="file" id="badgeFile" accept="image/*" hidden>
+
+    <label for="team">Team name on the poster</label>
+    <input id="team">
+
+    <label for="date">Date</label>
+    <input id="date">
+
+    <div class="row">
+      <div><label for="dep">Coach leaves</label><input id="dep"></div>
+      <div><label for="ko">Kick-off</label><input id="ko"></div>
+    </div>
+
+    <label for="from">Leaving from</label>
+    <input id="from">
+
+    <label for="venue">Their ground</label>
+    <input id="venue">
+    <label for="venue2">Line under the ground</label>
+    <input id="venue2">
+
+    <label for="price">Price per seat</label>
+    <input id="price" inputmode="decimal">
+    <p class="hint">Just the number &mdash; the &pound; sign is added for you.</p>
+
+    <button id="dl">Download the poster</button>
   </div>
-  <div class="panel"><canvas id="cv" width="1983" height="793"></canvas></div>
+
+  <div class="stage">
+    <canvas id="cv" width="1122" height="1402" aria-label="Preview of the coach poster"></canvas>
+    <p class="note">4:5 portrait &mdash; the right shape for Facebook and Instagram feeds without cropping.</p>
+  </div>
 </div>
 
 <script>
-const $=id=>document.getElementById(id);
-const cv=$('cv'), x=cv.getContext('2d');
-const BLUE='#35A7FF', WHITE='#FFFFFF', ICE='#7EC3FF';
+const EP = 'https://join.daletrust.uk';
+const $ = id => document.getElementById(id);
+const cv = $('cv'), x = cv.getContext('2d');
+const NAVY = '#021444';
 
-const TEAMS=[
+const TEAMS = [
  ['Accrington Stanley','accrington.png'],['Barnet','Barnet.png'],['Bristol Rovers','bristol-rovers.png'],
  ['Cheltenham Town','Cheltenham.png'],['Chesterfield','Chesterfield.png'],['Colchester United','Colchester-united.png'],
- ['Crawley Town','Crawley-Town.png'],['Crewe Alexandra','crewe.png'],['Exeter City','exeter-city.png'],
- ['Fleetwood Town','Fleetwood-Town.png'],['Gillingham','Gillingham.png'],['Grimsby Town','grimsby.png'],
+ ['Crawley Town','Crawley-Town.png'],['Crewe Alexandra','crewe.png'],['Doncaster Rovers','Doncaster.png'],
+ ['Exeter City','exeter-city.png'],['Fleetwood Town','Fleetwood-Town.png'],['Gillingham','Gillingham.png'],
+ ['Grimsby Town','grimsby.png'],['Huddersfield Town','Huddersfield.png'],['Liverpool U-21','Liverpool.png'],
  ['Newport County','Newport-County.png'],['Northampton Town','Northampton-Town.png'],['Oldham Athletic','oldham.png'],
  ['Port Vale','port-vale.png'],['Rotherham United','Rotherham.png'],['Salford City','Salford-City.png'],
  ['Shrewsbury Town','Shrewsbury.png'],['Swindon Town','Swindon-Town.png'],['Tranmere Rovers','Tranmere-Rovers.png'],
  ['Walsall','Walsall.png'],['York City','York-City.png'],
 ];
-const sel=$('badge');
-TEAMS.forEach(([n,f],i)=>sel.add(new Option(n,'../img/badges/'+f)));
-sel.add(new Option('Upload a badge\u2026','__upload'));
-sel.value='../img/badges/Tranmere-Rovers.png';
+const sel = $('badge');
+TEAMS.forEach(([n,f]) => sel.add(new Option(n, '../img/badges/' + f)));
+sel.add(new Option('Upload a different badge\u2026', '__upload'));
 
-const tmpl=new Image(); tmpl.src='coach-template.png';
-let badgeImg=new Image(); badgeImg.src=sel.value;
-
-sel.onchange=()=>{
-  if(sel.value==='__upload'){$('badgeFile').click();return;}
+// ---------- the template and the badge ----------
+const tmpl = new Image(); tmpl.src = 'coach-template-portrait.png';
+let badge = null;
+function loadBadge(src){
+  const im = new Image();
+  im.onload = () => { badge = im; render(); };
+  im.onerror = () => { badge = null; render(); };
+  im.src = src;
+}
+sel.onchange = () => {
+  if (sel.value === '__upload') { $('badgeFile').click(); return; }
   loadBadge(sel.value);
-  const name=sel.options[sel.selectedIndex].text.toUpperCase();
-  $('opp').value=name;
-  render();
 };
-$('badgeFile').onchange=e=>{
-  const f=e.target.files[0]; if(!f)return;
-  loadBadge(URL.createObjectURL(f));
-};
-function loadBadge(src){badgeImg=new Image();badgeImg.onload=render;badgeImg.src=src;}
-['opp','date','ko','dep','price'].forEach(id=>$(id).addEventListener('input',render));
+$('badgeFile').onchange = e => { const f = e.target.files[0]; if (f) loadBadge(URL.createObjectURL(f)); };
 
-function fitFont(text, weight, maxSize, maxWidth, family='Oswald'){
-  let s=maxSize;
-  do{x.font=`${weight} ${s}px ${family}`;if(x.measureText(text).width<=maxWidth)break;s-=2;}while(s>20);
-  return s;
+// ---------- tidying what comes out of the database ----------
+const MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+const DAYS = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+function niceDate(iso){
+  const d = new Date(iso + 'T12:00:00');
+  if (isNaN(d)) return '';
+  return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+}
+function clock(t){ return String(t || '').trim().replace('.', ':'); }
+function twelve(t){
+  const m = clock(t).match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return clock(t).toUpperCase();
+  let h = +m[1]; const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+  return h + ':' + m[2] + ap;
+}
+function badgeFor(name){
+  const n = String(name || '').toLowerCase();
+  const hit = TEAMS.find(([t]) => t.toLowerCase() === n) || TEAMS.find(([t]) => n.includes(t.toLowerCase().split(' ')[0]));
+  return hit ? '../img/badges/' + hit[1] : null;
+}
+
+// ---------- fitting type to the spaces in the template ----------
+// Each space was measured off the original poster: where the text starts, where it sits,
+// how tall the capitals are, and how wide it's allowed to go.
+function fit(text, cap, maxW, weight = 700, ref = 'H'){
+  x.font = `${weight} 100px Oswald`;
+  const ratio = x.measureText(ref).actualBoundingBoxAscent / 100 || 0.72;
+  let size = cap / ratio;
+  x.font = `${weight} ${size}px Oswald`;
+  const w = x.measureText(text).width;
+  if (w > maxW) { size *= maxW / w; x.font = `${weight} ${size}px Oswald`; }
+}
+function put(text, left, baseline, cap, maxW, weight){
+  if (!text) return;
+  fit(text, cap, maxW, weight);
+  x.fillStyle = NAVY; x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+  x.fillText(text, left, baseline);
 }
 
 function render(){
-  if(!tmpl.complete)return;
-  x.clearRect(0,0,1983,793);
-  x.drawImage(tmpl,0,0);
-  x.textBaseline='alphabetic';
-  // full headline composed dynamically: VS centred under the Trust roundel (x=991)
-  const opp=$('opp').value.toUpperCase()||'OPPOSITION';
-  const home='ROCHDALE AFC', GAP=26, BASE=411, CX=991;
-  let size=84;
-  for(;;){
-    x.font=`700 ${size}px Oswald`;
-    var vsW=x.measureText('VS').width*1.28;
-    var oppW=x.measureText(opp).width, homeW=x.measureText(home).width;
-    const left=CX-vsW/2-GAP-oppW, right=CX+vsW/2+GAP+homeW;
-    if((left>=60&&right<=1545)||size<=30)break;
-    size-=3;
+  if (!tmpl.complete || !tmpl.naturalWidth) return;
+  x.clearRect(0, 0, cv.width, cv.height);
+  x.drawImage(tmpl, 0, 0, cv.width, cv.height);
+
+  // their badge, centred in the space left of the V
+  if (badge){
+    const box = 184, cx = 151, cy = 607;
+    const s = Math.min(box / badge.width, box / badge.height);
+    const w = badge.width * s, h = badge.height * s;
+    x.drawImage(badge, cx - w / 2, cy - h / 2, w, h);
   }
-  x.font=`700 ${size}px Oswald`;
-  x.fillStyle='#FFFFFF';
-  x.fillText(opp, CX-vsW/2-GAP-x.measureText(opp).width, BASE);
-  x.fillText(home, CX+vsW/2+GAP, BASE);
-  // the VS: bigger, blue, slight tilt for the brush feel
-  x.save();
-  x.translate(CX, BASE-6);
-  x.rotate(-0.06);
-  x.font=`700 ${Math.round(size*1.28)}px Oswald`;
-  x.fillStyle='#35A7FF';
-  const vw=x.measureText('VS').width;
-  x.fillText('VS', -vw/2, 0);
-  x.restore();
-  // date line composed between the static dashes, centred at 948
-  const dateT=($('date').value.toUpperCase()||'').trim();
-  const koT=(($('ko').value||'').trim())+' KO';
-  const sep='  |  ';
-  let ds=44, full=dateT+sep+koT;
-  do{x.font=`600 ${ds}px Oswald`;if(x.measureText(full).width<=560)break;ds-=2;}while(ds>20);
-  let cx=948-x.measureText(full).width/2;
-  x.fillStyle='#FFFFFF';x.fillText(dateT,cx,500);cx+=x.measureText(dateT).width;
-  x.fillStyle='#35A7FF';x.fillText(sep,cx,500);cx+=x.measureText(sep).width;
-  x.fillStyle='#FFFFFF';x.fillText(koT,cx,500);
-  // opponent badge in the clear zone left of the bus
-  if(badgeImg.complete&&badgeImg.naturalWidth){
-    const bx=470,by=480,bw=230,bh=172;
-    const s=Math.min(bw/badgeImg.naturalWidth,bh/badgeImg.naturalHeight);
-    const w2=badgeImg.naturalWidth*s,h2=badgeImg.naturalHeight*s;
-    x.drawImage(badgeImg,bx+(bw-w2)/2,by+(bh-h2)/2,w2,h2);
+
+  const up = id => $(id).value.trim().toUpperCase();
+  put(up('team'),                      64,  758, 55, 470, 700);
+  put(up('date'),                      148, 874, 28, 332, 700);
+  put(up('dep') ? 'DEPARTS ' + up('dep') : '', 149, 929, 27, 330, 700);
+  put(up('from') ? 'FROM ' + up('from') : '',  149, 954, 16, 330, 600);
+  put(up('venue'),                     149, 1005, 26, 332, 700);
+  put(up('venue2'),                    149, 1030, 17, 332, 600);
+  put(up('ko') ? 'KICK OFF ' + up('ko') : '',  149, 1081, 27, 245, 700);
+
+  const p = $('price').value.replace(/[^0-9.]/g, '');
+  if (p) put('\u00a3' + Number(p).toFixed(2), 63, 1245, 76, 285, 700);
+
+  // the right email address — the original artwork had the old .co.uk one
+  x.font = '500 100px Oswald';
+  const r = x.measureText('d').actualBoundingBoxAscent / 100 || 0.72;
+  x.font = `500 ${20 / r}px Oswald`;
+  x.fillStyle = NAVY; x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+  x.fillText('travel@daletrust.uk', 190, 1320);
+}
+['team','date','dep','ko','from','venue','venue2','price'].forEach(id => $(id).addEventListener('input', render));
+
+// ---------- the trips ----------
+let trips = [];
+function fillFrom(t){
+  $('team').value = (t.opponent || '').toUpperCase();
+  $('date').value = niceDate(t.match_date);
+  $('dep').value = clock(t.depart_time);
+  $('ko').value = twelve(t.kickoff);
+  $('from').value = t.depart_from || 'Crown Oil Arena';
+  $('venue').value = t.venue || '';
+  $('venue2').value = t.opponent ? '(' + t.opponent + ' FC)' : '';
+  $('price').value = t.price != null ? t.price : '';
+  const b = badgeFor(t.opponent);
+  if (b){ sel.value = b; loadBadge(b); } else { badge = null; render(); }
+}
+$('trip').onchange = () => {
+  const t = trips.find(v => String(v.id) === $('trip').value);
+  if (t) fillFrom(t);
+};
+
+async function loadTrips(){
+  let session = null; try { session = localStorage.getItem('dt_session'); } catch (e) {}
+  let list = [];
+  try {
+    if (session){
+      const r = await fetch(EP + '/coach/admin', { headers: { Authorization: 'Bearer ' + session } });
+      if (r.ok){ const d = await r.json(); list = d.trips || []; }
+    }
+    if (!list.length){
+      const d = await (await fetch(EP + '/coach/trips')).json();
+      list = d.trips || [];
+    }
+  } catch (e) {}
+  const today = new Date().toISOString().slice(0, 10);
+  trips = list.filter(t => t.match_date >= today && t.status !== 'cancelled')
+              .sort((a, b) => a.match_date.localeCompare(b.match_date));
+  const s = $('trip');
+  s.innerHTML = '';
+  if (!trips.length){
+    s.add(new Option('No trips set up \u2014 fill the boxes in by hand', ''));
+    return;
   }
-  // departs time, right of the static label
-  const dep=$('dep').value.toUpperCase()||'';
-  let ts=38;do{x.font=`700 ${ts}px Oswald`;if(x.measureText(dep).width<=205)break;ts-=2;}while(ts>18);
-  x.fillStyle='#FFFFFF';x.fillText(dep,322,752);
-  // price digits, right of the static £
-  const pr=($('price').value||'').replace(/[^0-9.]/g,'');
-  let ps=40;do{x.font=`700 ${ps}px Oswald`;if(x.measureText(pr).width<=150)break;ps-=2;}while(ps>18);
-  x.fillStyle='#FFFFFF';x.fillText(pr,1504,694);
+  trips.forEach(t => s.add(new Option(
+    t.opponent + ' \u2014 ' + niceDate(t.match_date).toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) +
+    (t.status === 'draft' ? ' (not open yet)' : ''), t.id)));
+  const want = new URLSearchParams(location.search).get('trip');
+  const start = trips.find(t => String(t.id) === want) || trips[0];
+  s.value = start.id;
+  fillFrom(start);
 }
 
-function download(){
+$('dl').onclick = () => {
   render();
-  const a=document.createElement('a');
-  a.download='dale-trust-coach-'+($('opp').value||'match').toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.png';
-  a.href=cv.toDataURL('image/png');a.click();
-}
+  const a = document.createElement('a');
+  a.download = 'dale-trust-coach-' + ($('team').value || 'match').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.png';
+  a.href = cv.toDataURL('image/png');
+  a.click();
+};
 
+// wait for the typeface before drawing, or the first render uses a fallback
 Promise.all([
-  document.fonts.load('700 66px Oswald'),
-  document.fonts.load('600 38px Oswald'),
-  new Promise(r=>{tmpl.onload=r;if(tmpl.complete)r();}),
-]).then(render);
-badgeImg.onload=render;
+  document.fonts.load('700 40px Oswald'), document.fonts.load('600 40px Oswald'), document.fonts.load('500 40px Oswald'),
+  new Promise(r => { if (tmpl.complete) r(); else tmpl.onload = r; })
+]).then(() => { render(); loadTrips(); });
 </script>
 </body>
 </html>
