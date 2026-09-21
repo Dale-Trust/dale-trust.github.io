@@ -91,7 +91,8 @@
   .tb-col:hover{background:rgba(255,255,255,.07)}
   .tb-ico{font-size:22px;flex:none;opacity:.9}
   .tb-txt{flex:1;min-width:0}
-  .tb-txt b{font-family:'Oswald';text-transform:uppercase;font-size:16px;display:block;letter-spacing:.02em;color:#fff;line-height:1.2}
+  .tb-txt b{font-family:'Oswald';text-transform:uppercase;font-size:16px;display:block;letter-spacing:.02em;color:#fff;line-height:1.2;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tb-txt span{font-size:13px;color:#C7D6EC;display:block;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   /* these sit on dark navy, so they need a solid background rather than a faint overlay */
   .tb-flag{font-size:12px;font-weight:700;padding:5px 12px;border-radius:100px;
@@ -1157,9 +1158,16 @@ loadHub();
     const d = await (await fetch('https://join.daletrust.uk/surveys')).json();
     if(!d.ok || !d.surveys.length){ none(); return; }
     const s = d.surveys[0];
-    document.getElementById('vbTitle').textContent = s.title;
-    document.getElementById('vbSub').textContent = s.intro ||
-      (s.kind==='potm' ? 'Who gets your vote this month?' : 'Tell us what you think');
+    // "Player of the Month — September" is too long for the bar, so the heading keeps the
+    // part before the dash and the rest goes on the line underneath with the closing date
+    const parts = String(s.title || '').split(/\s+[\u2014\u2013-]\s+/);
+    document.getElementById('vbTitle').textContent = parts[0] || 'Have your say';
+    let sub = parts[1] ? 'Vote for ' + parts[1] : (s.kind==='potm' ? 'Who gets your vote this month?' : 'Tell us what you think');
+    if (s.closes_at) {
+      const c = new Date(s.closes_at);
+      if (!isNaN(c)) sub += ', closes ' + c.toLocaleDateString('en-GB', { timeZone:'Europe/London', weekday:'short', day:'numeric', month:'short' });
+    }
+    document.getElementById('vbSub').textContent = sub;
     document.getElementById('voteCol').href = 'vote.html?s=' + encodeURIComponent(s.slug);
     const f = document.getElementById('vbFlag');
     f.textContent = 'Open'; f.className = 'tb-flag hot';
