@@ -175,6 +175,7 @@ function drawTrips(){
         '<input type="checkbox"'+(live?' checked':'')+' onchange="setLive('+t.id+',this.checked)">'+
         (live?'On the website':'Not shown yet')+'</label>'+
       '<button class="ghost sm noprint" style="margin-left:8px" id="eb'+t.id+'" onclick="event.stopPropagation();toggleTrip('+t.id+')">Edit</button>'+
+      '<a class="ghost sm noprint" style="margin-left:6px;text-decoration:none;display:inline-block;padding:6px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:12.5px;color:var(--body)" href="tools/coach-poster.html?trip='+t.id+'" target="_blank" onclick="event.stopPropagation()">Poster</a>'+
       '</div>'+
       '<div class="tripedit" id="te'+t.id+'">'+tripFields('t'+t.id, t)+'</div>'+
       '</div>';

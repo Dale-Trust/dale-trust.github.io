@@ -189,7 +189,7 @@ function show(){
   if(me.is_admin) tile('activity.html','Activity','Everything officers have done, newest first');
   tile('emails.html','Trust email addresses','Who has what, and where the shared ones go');
   if(me.can_coach) tile('coach.html','Coach travel','Set up coaches, take phone bookings, print the passenger list');
-  tile('tools/coach-poster.html','Coach poster maker','Matchday travel posters in four fields');
+  tile('tools/coach-poster.html','Coach poster maker','Pick a trip and download the poster \u2014 everything fills in from the booking');
   if(me.can_awaytrusts||me.is_admin) tile('awayteams.html','Visiting trusts','The note we send before an away following visits, and who to send it to');
   if(me.is_admin){$('officersCard').style.display='block';loadOfficers();$('backupCard').style.display='block';loadBackupCounts();$('retentionCard').style.display='block';loadRetention();}
 }
