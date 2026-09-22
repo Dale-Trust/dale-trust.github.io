@@ -747,12 +747,12 @@
     <h3 class="disp comp-title s6-title"><img src="img/comps/fpl.svg" alt="Fantasy Premier League" style="height:34px"> <span>Dale Trust FF Premiership</span></h3>
     <div class="ff-grid">
       <div class="ff-copy">
-        <p><b>There is still time — we have extended the deadline to Friday 5 September.</b> Our own Fantasy Football league is back, free to every Trust member. Last season's winner was Exile member <strong>Roger Winterbottom</strong> with 2,354 points.</p>
+        <p>Our own Fantasy Football league runs all season, free to every Trust member. Last season's winner was Exile member <strong>Roger Winterbottom</strong> with 2,354 points.</p>
         <div class="ff-entry">
           <b>How to enter</b>
           Register your team at <a href="https://fantasy.premierleague.com" target="_blank" rel="noopener">fantasy.premierleague.com</a>, then join our league with the code:
           <span class="code">htejf9</span>
-          <small><span class="extended">Deadline extended</span> Now <b>Friday 5 September</b> &middot; FREE to all current 26/27 Trust members &middot; Prize for the winner (TBC)</small>
+          <small>FREE to all current 26/27 Trust members &middot; join any time, points count from the week you start</small>
         </div>
         
       </div>
@@ -767,12 +767,12 @@
     <h3 class="disp comp-title s6-title"><img src="img/comps/super6.png" alt="Sky Sports Super 6"> <span>Dale Trust Prediction League</span></h3>
     <div class="ff-grid">
       <div class="ff-copy">
-        <p><b>There is still time — we have extended the deadline to Friday 5 September.</b> Predict six Premier League scores each Saturday. 76 of us played last season &mdash; won by Adult member <strong>Michael Manning</strong> on 450 points.</p>
+        <p>Predict six Premier League scores each Saturday. 76 of us played last season &mdash; won by Adult member <strong>Michael Manning</strong> on 450 points.</p>
         <div class="ff-entry">
           <b>How to enter</b>
           Register at <a href="https://super6.skysports.com/" target="_blank" rel="noopener">super6.skysports.com</a>, then join our league with the code:
           <span class="code">HHJFGY</span>
-          <small><span class="extended">Deadline extended</span> Now <b>Friday 5 September</b> &middot; FREE to all current 26/27 Trust members &middot; Prize for the winner (TBC)</small>
+          <small>FREE to all current 26/27 Trust members &middot; join any time, points count from the week you start</small>
         </div>
         
       </div>
@@ -792,8 +792,8 @@
       <p class="intro">From Wembley to the EFL — this club runs on its supporters. Trust membership funds the coaches, the charity work and the fan voice at the Crown Oil Arena.</p>
       <div class="perks">
         <div class="perk"><span class="tick">✓</span><span>Discounts with Partners of the Trust — pubs, local businesses and matchday offers</span></div>
-        <div class="perk"><span class="tick">✓</span><span>Priority booking on Trust coach travel to every away fixture</span></div>
-        <div class="perk"><span class="tick">✓</span><span>Members' handbook, competitions and the World Cup prediction league</span></div>
+        <div class="perk"><span class="tick">✓</span><span>Coach travel to every away fixture, booked and paid online</span></div>
+        <div class="perk"><span class="tick">✓</span><span>A chance to present the Player of the Month trophy, plus our Fantasy Football and Super 6 leagues</span></div>
         <div class="perk"><span class="tick">✓</span><span>A democratic voice — the Trust represents fans to the club and the FSA</span></div>
       </div>
     </div>
@@ -977,7 +977,7 @@
     </div>
     <div class="legal">
       <span class="cs">Crede Signo — Believe in the sign</span>
-      <span>&copy; 2026 Dale Trust &middot; Design concept, not the live site</span>
+      <span>&copy; 2026 Dale Supporters Trust &middot; Rochdale Supporters Club Limited, a registered society, no. 29690R</span>
     </div>
   </div>
 </footer>
@@ -1129,8 +1129,12 @@ async function loadHub(){
         const theirs = isHome ? +parts[2] : +parts[1];
         verdict = ours > theirs ? 'Won' : (ours < theirs ? 'Lost' : 'Drew');
       }
+      // A note usually says the thing the score can't — a shootout, a replay. Without it
+      // a 3-3 that went out on penalties just reads as a draw.
+      const note = String(last.note || '').trim();
       document.getElementById('lastLine').textContent =
-        (verdict ? verdict + ' ' : '') + sc + ' ' + (isHome ? 'v ' : 'away at ') + opp;
+        (verdict ? verdict + ' ' : '') + sc + ' ' + (isHome ? 'v ' : 'away at ') + opp +
+        (note ? ' \u2014 ' + note.charAt(0).toLowerCase() + note.slice(1) : '');
       document.getElementById('lastMeta').textContent =
         (last.competition || '') + ' \u00b7 ' + last.when.toLocaleDateString('en-GB',{day:'numeric',month:'long'});
       box.style.display = 'block';
