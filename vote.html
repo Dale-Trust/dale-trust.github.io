@@ -84,9 +84,34 @@ let msession=null; try{msession=localStorage.getItem('dt_member');}catch(e){}
   else loadList();
 })();
 
+// Facebook and Instagram open links in their own browser, which sometimes drops the
+// first request. Try a few times before giving up, and never leave a dead end.
+async function getJSON(url, opts){
+  let last;
+  for (let i = 0; i < 3; i++){
+    try{
+      const r = await fetch(url, Object.assign({ cache:'no-store' }, opts||{}));
+      const t = await r.text();
+      try { return JSON.parse(t); }
+      catch(e){ last = new Error('Not JSON (' + r.status + ')'); }
+    }catch(e){ last = e; }
+    await new Promise(res => setTimeout(res, 600 * (i + 1)));
+  }
+  throw last || new Error('failed');
+}
+function couldNotLoad(){
+  const inApp = /FBAN|FBAV|FB_IAB|Instagram/i.test(navigator.userAgent);
+  $('out').innerHTML = '<div class="card"><h2>That didn&rsquo;t load</h2>'+
+    '<p>Sorry &mdash; the vote didn&rsquo;t come through first time. It&rsquo;s usually a blip.</p>'+
+    '<p style="margin-top:12px"><button type="button" onclick="location.reload()">Try again</button></p>'+
+    (inApp ? '<p style="margin-top:12px;font-size:14px;color:#46536B">If you&rsquo;ve opened this from Facebook, '+
+      'tap the <b>&middot;&middot;&middot;</b> menu and choose <b>Open in browser</b> &mdash; that usually sorts it.</p>' : '')+
+    '<p style="margin-top:12px;font-size:14px"><a href="https://daletrust.uk/vote.html">See what&rsquo;s open to vote on</a></p></div>';
+}
+
 async function loadList(){
   try{
-    const d=await (await fetch(EP+'/surveys')).json();
+    const d=await getJSON(EP+'/surveys');
     if(!d.ok||!d.surveys.length){
       $('out').innerHTML='<p>Nothing open at the moment &mdash; check back soon.</p>';return;
     }
@@ -97,7 +122,7 @@ async function loadList(){
       (s.closes_at?'<p style="font-size:13px;color:#7A8AA5;margin-top:6px">Closes '+new Date(s.closes_at).toLocaleDateString('en-GB',{day:'numeric',month:'long'})+'</p>':'')+
       '<a href="vote.html?s='+encodeURIComponent(s.slug)+'"><button>'+(s.kind==='potm'?'Cast your vote':'Take part')+' &rarr;</button></a>'+
       '<p style="margin-top:10px;font-size:14px"><a href="vote.html?r='+encodeURIComponent(s.slug)+'">See the results</a></p></div>').join('');
-  }catch(e){$('out').textContent='Could not load just now.';}
+  }catch(e){ couldNotLoad(); }
 }
 
 async function showResults(slug){
@@ -137,15 +162,14 @@ async function showResults(slug){
 
 async function loadOne(slug){
   try{
-    const r=await fetch(EP+'/survey?slug='+encodeURIComponent(slug));
-    const d=await r.json();
+    const d=await getJSON(EP+'/survey?slug='+encodeURIComponent(slug));
     if(!d.ok){$('out').innerHTML='<div class="card"><p>'+esc(d.error)+'</p><p style="margin-top:10px"><a href="vote.html">See what else is open</a></p></div>';return;}
     survey=d.survey;
     $('heroTitle').textContent=survey.title;
     $('heroSub').textContent=survey.intro||'';
     document.title=survey.title+' | Dale Supporters Trust';
     render();
-  }catch(e){$('out').textContent='Could not load just now.';}
+  }catch(e){ couldNotLoad(); }
 }
 
 // For supporters who aren't members: what they'd get, honestly, and how to join.
