@@ -492,7 +492,9 @@ async function post(extra, okMsg){
     if(!d.ok){ say(d.error, true); }
     else if(d.test){ say(okMsg||'Test sent.'); }
     else if(d.carryingOn){
-      say('Sent to '+d.sent+' so far. The rest go out by themselves — '+d.remaining+' still to come.');
+      say('Sent to '+d.sent+' so far. The rest go out by themselves — '+d.remaining+' still to come. You can close this page.');
+      // clear it, so there is nothing to press again
+      $('subject').value=''; $('body').value=''; $('pv').innerHTML=''; editingId=null;
       loadHistory();
     }
     else { say('Sent to '+d.sent+' member'+(d.sent===1?'':'s')+'.'); $('subject').value=''; $('body').value=''; $('pv').innerHTML=''; loadHistory(); }
