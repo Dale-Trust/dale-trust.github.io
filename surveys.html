@@ -58,6 +58,13 @@
   <h2 style="border-left-color:var(--gold)">The draw</h2>
   <p style="font-size:13.5px;margin-bottom:12px" id="drawWho"></p>
   <div id="drawCount" style="background:var(--wash);border-radius:10px;padding:14px 16px;font-size:14.5px"></div>
+  <label for="drawOnly" style="display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin:14px 0 5px">Draw from</label>
+  <select id="drawOnly" style="padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;min-width:220px">
+    <option value="">Everyone who ticked the box</option>
+    <option value="adult">Adults only</option>
+    <option value="junior">Juniors only</option>
+  </select>
+  <p style="font-size:12.5px;color:#7A8AA5;margin-top:6px">Anyone already drawn is left out, so if you need to draw again it will always be someone new.</p>
   <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
     <button class="green" onclick="doDraw()">Draw a winner</button>
     <button class="ghost" onclick="loadDraw()">Refresh</button>
@@ -246,16 +253,23 @@ async function loadDraw(){
 }
 
 async function doDraw(){
-  if(!confirm('Draw a winner at random?\n\nIt is recorded, so there is a record of who was drawn and when.')) return;
+  const grp={'':'everyone who ticked the box',adult:'adults only',junior:'juniors only'}[$('drawOnly').value];
+  if(!confirm('Draw a winner at random from '+grp+'?\n\nIt is recorded, so there is a record of who was drawn and when.')) return;
   const note=prompt('Anything to note? (optional)\n\ne.g. drawn at the board meeting, 25 September','');
   if(note===null) return;
   const d=await (await fetch(EP+'/survey/draw',{method:'POST',headers:H(),
-    body:JSON.stringify({survey_id:editing, note:note.trim()||null})})).json();
+    body:JSON.stringify({survey_id:editing, note:note.trim()||null, only:$('drawOnly').value})})).json();
   const m=$('drawMsg');
   if(!d.ok){ m.style.color='var(--red)'; m.textContent=d.error; return; }
   m.style.color='var(--green)';
   m.innerHTML='<b style="font-size:17px">'+esc(d.winner.name)+'</b> \u2014 drawn from '+d.entrants+' entries.<br>'+
-    '<span style="font-weight:400;color:#46536B">'+esc(d.winner.member_no)+' \u00b7 '+esc(d.winner.email)+'</span>';
+    '<span style="font-weight:400;color:#46536B">'+esc(d.winner.member_no)+' \u00b7 '+esc(d.winner.email)+'</span>'+
+    (d.winner.junior
+      ? '<div style="margin-top:10px;background:#FFF9E8;border-left:4px solid #E8B84B;border-radius:0 8px 8px 0;'+
+        'padding:10px 12px;color:#8A4B00;font-weight:500;font-size:13.5px">'+
+        '<b>This is a junior member.</b> Contact the parent or guardian at this address, not the child, '+
+        'and make sure an adult they know is with them on the pitch.</div>'
+      : '');
   loadDraw();
 }
 
