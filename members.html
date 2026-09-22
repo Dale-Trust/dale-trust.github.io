@@ -344,16 +344,23 @@ async function requestLink(){
   const email=$('email').value.trim();
   if(!email){$('simsg').textContent='Please enter your email address.';return;}
   await fetch(EP+'/member/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
-  $('simsg').innerHTML='<span style="color:var(--green)">Check your email.</span> If we hold that address for a member, a sign-in link is on its way. It lasts 30 minutes.';
+  $('simsg').innerHTML='<span style="color:var(--green)">Check your email.</span> If we hold that address for a member, a sign-in link is on its way. It lasts 24 hours, so there is no rush.';
 }
 
 async function verifyFromHash(){
   const m=location.hash.match(/in=([a-f0-9]{64})/);
   if(!m) return false;
+  window._next=(location.hash.match(/[#&]next=([^&]+)/)||[])[1]||'';
   history.replaceState(null,'',location.pathname);
   const d=await (await fetch(EP+'/member/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:m[1]})})).json();
   if(!d.ok){show('signin');$('simsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return true;}
   session=d.session; try{localStorage.setItem('dt_member',session);}catch(e){}
+  // came from somewhere on the site, like a vote? go back there, signed in
+  const nx=(location.hash.match(/[#&]next=([^&]+)/)||[])[1] || window._next;
+  if(nx){
+    const dest=decodeURIComponent(nx);
+    if(/^[a-z][a-z0-9-]*\.html(\?[a-z0-9=&%._-]*)?$/i.test(dest)){ location.replace(dest); return true; }
+  }
   return false;
 }
 

@@ -148,13 +148,49 @@ async function loadOne(slug){
   }catch(e){$('out').textContent='Could not load just now.';}
 }
 
+// For supporters who aren't members: what they'd get, honestly, and how to join.
+function joinPanel(where){
+  const trophy = survey && survey.optin_label
+    ? '<li>A chance to <b>present the Player of the Month trophy</b> on the pitch</li>' : '';
+  return '<div class="joinbox" style="margin-top:16px;background:#FFF9E8;border-left:4px solid #E8B84B;'+
+    'border-radius:0 12px 12px 0;padding:16px 18px">'+
+    '<b style="color:#10203A;font-size:16px;display:block;margin-bottom:6px">'+
+      (where==='after' ? 'Thanks for voting. Fancy doing more than vote?' : 'Not a member yet?')+'</b>'+
+    '<p style="font-size:14px;color:#46536B;margin-bottom:8px">Join the Dale Trust and you get:</p>'+
+    '<ul style="font-size:14px;color:#46536B;margin:0 0 12px 0;padding-left:18px;line-height:1.7">'+
+      trophy+
+      '<li>A <b>vote on how the Trust is run</b>, and on who runs it, at the AGM</li>'+
+      '<li>A <b>voice on the club board</b>, through the Trust&rsquo;s seat</li>'+
+      '<li><b>Discounts at local partners</b> &mdash; pubs, the cricket club, holidays and more</li>'+
+    '</ul>'+
+    '<a href="join.html" style="display:inline-block;background:#1E8E5A;color:#fff;text-decoration:none;'+
+      'font-weight:700;padding:12px 20px;border-radius:9px">Join for &pound;7.50 &rarr;</a>'+
+    '<p style="font-size:12.5px;color:#7A8AA5;margin-top:8px">Under-16s free. Takes two minutes, card or phone.</p>'+
+  '</div>';
+}
+
+async function askLink(){
+  const e=(document.getElementById('siEmail').value||'').trim();
+  const msg=document.getElementById('siMsg');
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){ msg.style.color='#C0392B'; msg.textContent='That email doesn\u2019t look right.'; return; }
+  msg.style.color='#46536B'; msg.textContent='Sending\u2026';
+  try{
+    await fetch(EP+'/member/request',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ email:e, next:'vote.html'+location.search })});
+    msg.style.color='#1E8E5A';
+    msg.innerHTML='<b>Check your email.</b> If you&rsquo;re a member, a link is on its way &mdash; tap it and you&rsquo;ll come straight back to this vote, signed in. It lasts 24 hours.';
+  }catch(err){ msg.style.color='#C0392B'; msg.textContent='Could not send just now \u2014 please try again.'; }
+}
+
 function render(){
   let html='<div class="card">';
   html += member
     ? '<div class="who"><b>Signed in as '+esc(member.name)+'</b> &mdash; your vote will be counted as a verified member.</div>'
     : (survey.members_only
         ? '<div class="who"><b>This one is for Trust members.</b> <a href="members.html">Sign in</a> to take part.</div>'
-        : '<div class="who">You can take part as a supporter. <a href="members.html">Sign in</a> first if you&rsquo;re a Trust member and your response will be marked as verified.</div>');
+        : '<div class="who">You can vote as a supporter &mdash; just fill it in below. '+
+          (survey.optin_label ? 'Trust members who want to <b>'+esc(survey.optin_label.replace(/^I would like to /i,'').replace(/^I'd like to /i,''))+'</b> need to sign in first.' : 'Trust members can sign in first to have their vote verified.')+
+          '</div>');
 
   survey.questions.forEach(q=>{
     html+='<div class="q"><h3>'+esc(q.question)+(q.required?'':' <span style="color:#7A8AA5;font-weight:400;font-size:14px">(optional)</span>')+'</h3>';
@@ -185,8 +221,14 @@ function render(){
         '</span></label></div>'
       : '<div class="q" style="background:var(--wash);border-left:4px solid #B8C6DA;border-radius:0 10px 10px 0">'+
         '<b style="color:var(--ink)">'+esc(survey.optin_label)+'</b>'+
-        '<p style="font-size:13.5px;margin-top:4px">Trust members can also take part. '+
-        '<a href="members.html">Sign in</a> and you can enter.</p></div>';
+        '<p style="font-size:13.5px;margin-top:4px">For Trust members. Put your email in and we&rsquo;ll send a link '+
+        'that signs you in and brings you straight back here &mdash; your vote isn&rsquo;t lost.</p>'+
+        '<p style="font-size:13px;color:#7A8AA5;margin-top:10px">Not a member? '+
+        '<a href="join.html" style="color:#0057A7;font-weight:600">Join for &pound;7.50</a> and you can enter too.</p>'+
+        '<div class="signbox" style="margin-top:10px">'+
+          '<input type="email" id="siEmail" placeholder="Your email address" style="padding:10px 12px;border:1.5px solid #DCE3EC;border-radius:9px;font:inherit;width:100%;max-width:320px">'+
+          '<button type="button" onclick="askLink()" style="margin-top:8px;background:#0057A7;color:#fff;border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer">Send me a sign-in link</button>'+
+          '<p id="siMsg" style="font-size:13px;margin-top:6px"></p></div>'+'</div>';
   }
 
   if(!member && !survey.members_only){
@@ -245,8 +287,15 @@ async function submit(){
     return;
   }
   if(!d.ok){msg.innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return;}
-  $('out').innerHTML='<div class="card"><h2>Thank you</h2><p>Your '+(survey.kind==='potm'?'vote':'answers')+' '+
-    (d.verified?'have been counted as a verified member.':'have been recorded.')+'</p>'+
+  if(d.alreadyVoted){
+    $('out').innerHTML='<div class="card"><h2>You&rsquo;re in the draw</h2><p>'+esc(d.message)+'</p>'+
+      '<p style="margin-top:12px"><a href="vote.html">What else is open</a> &middot; <a href="index.html">Back to the Trust</a></p></div>';
+    return;
+  }
+  const one = survey.kind==='potm';
+  $('out').innerHTML='<div class="card"><h2>Thank you</h2><p>Your '+(one?'vote':'answers')+' '+
+    (d.verified ? (one?'has':'have')+' been counted as a verified member.' : (one?'has':'have')+' been recorded.')+'</p>'+
+    (d.isMember ? '' : joinPanel('after'))+
     '<p style="margin-top:12px"><a href="vote.html?r='+encodeURIComponent(survey.slug)+'">See the results</a> &middot; <a href="vote.html">What else is open</a> &middot; <a href="index.html">Back to the Trust</a></p></div>';
 }
 
