@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Player of the Month | Dale Trust</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://daletrust.uk/vote.html">
+<!-- if scripts are off, the vote page lists whatever is open -->
+<noscript><meta http-equiv="refresh" content="0; url=/vote.html"></noscript>
+<style>
+  body{font-family:system-ui,-apple-system,sans-serif;background:#0E1F3D;color:#fff;
+    display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center;padding:24px}
+  a{color:#8FC1FF}
+</style>
+</head>
+<body>
+<p>Taking you to the Player of the Month vote&hellip;<br><small><a href="/vote.html">Tap here if nothing happens</a></small></p>
+<script>
+// Always the current Player of the Month, so daletrust.uk/potm works every month
+// without anyone changing it.
+(async function(){
+  let dest = '/vote.html';
+  try{
+    const d = await (await fetch('https://join.daletrust.uk/surveys')).json();
+    const open = (d.surveys || []).filter(s => s.kind === 'potm');
+    if (open.length) dest = '/vote.html?s=' + encodeURIComponent(open[0].slug);
+  }catch(e){}
+  location.replace(dest);
+})();
+</script>
+</body>
+</html>
