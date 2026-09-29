@@ -53,22 +53,28 @@
   <a href="#signin">Signing in</a>
   <a href="#who">Who does what</a>
   <a href="#register">Membership register</a>
+  <a href="#forms">What people have filled in</a>
   <a href="#dashboard">Membership dashboard (retired)</a>
   <a href="#letters">Membership letters</a>
   <a href="#import">Member import</a>
   <a href="#renewals">Renewals</a>
   <a href="#fixtures">Fixtures &amp; results</a>
+  <a href="#lineups">Match day line-ups</a>
   <a href="#writing">Writing a post</a>
   <a href="#approving">Approving a post</a>
   <a href="#articles">Managing articles</a>
   <a href="#emailing">Emailing members</a>
   <a href="#notices">Email members only</a>
   <a href="#surveys">Surveys &amp; voting</a>
+  <a href="#auctions">Shirt auctions</a>
+  <a href="#comps">Prediction leagues</a>
   <a href="#coach">Coach travel</a>
+  <a href="#poster">Coach poster maker</a>
   <a href="#graphics">Graphics maker</a>
   <a href="#visiting">Visiting trusts</a>
   <a href="#figures">Board figures</a>
   <a href="#pulse">How it&rsquo;s going</a>
+  <a href="#visitors">Who&rsquo;s visiting</a>
   <a href="#emails">Trust email addresses</a>
   <a href="#decisions">Decisions &amp; tasks</a>
   <a href="#policies">Policies</a>
@@ -121,6 +127,10 @@
   <p>Do not retype them. Search their name, open the old record, and press <strong>Bring them back for this season</strong> &mdash; the green button only appears on records from an earlier season.</p>
   <p>It asks how they paid and checks their email, then creates a fresh record for this season carrying over their address, phone, date of birth and everything else. They get a membership number and the welcome email, and they are recorded as renewing rather than new.</p>
   <div class="box"><strong>Their old record is left exactly as it was.</strong> Nothing is overwritten, so the history stays intact.</div>
+
+  <h3>Somebody who has not paid</h3>
+  <p>If there is money outstanding, a <strong>Send them a link to pay</strong> button appears on their record. It emails a proper payment link for the amount you choose, with a note if you want to add one. Their membership completes itself the moment they pay, and they get their number and welcome email.</p>
+  <p>Use <strong>Payment received &mdash; activate them</strong> instead when somebody has paid another way &mdash; cash at the desk, a bank transfer, or a card payment that came through without a reference. Put the reference in so it can be traced later.</p>
 
   <h3>When someone leaves</h3>
   <p>Each record has an <strong>If they have left</strong> panel. Choose a reason &mdash; payment defaulted, standing order cancelled, resigned, moved away, deceased, or asked not to be contacted &mdash; and add a note if it helps. This keeps their history and stops them being contacted. It is not the same as deleting.</p>
@@ -200,6 +210,25 @@
   <div class="box"><strong>Anyone already on the register for that season is skipped, not duplicated.</strong> So re-importing the same sheet is safe. Anyone recorded as deceased is never re-added, whatever the spreadsheet says.</div>
 </section>
 
+<section id="forms">
+  <h2>What people have filled in</h2>
+  <p class="who">Tile: What people have filled in &middot; Scott, Chris</p>
+  <p>Everything that has come in through the website, and a set of tools for chasing what has not.</p>
+  <h3>Who hasn&rsquo;t paid</h3>
+  <p>Lists everyone who applied this season and never completed the payment, with what they owe, how long they have been waiting, how many payment links have already gone, and their email and phone. They are <strong>not members yet</strong>.</p>
+  <div class="box warn">Anyone shown in red <strong>already has a membership number</strong> &mdash; usually because a record was corrected by hand. They have had a welcome email, so from their side it looks finished. Those need a phone call, not another email.</div>
+  <h3>Members who have had nothing</h3>
+  <p>Finds current members with a good email address who have never received anything from us, and sends all their welcome emails in one go.</p>
+  <h3>Check the lapsed addresses</h3>
+  <p>Looks up every email domain on the lapsed list and reports dead ones before you send to them. Worth running before any win-back email.</p>
+  <h3>Who has unsubscribed</h3>
+  <p>Anyone who has opted out, with a <strong>Put them back on</strong> button if they ask to return.</p>
+  <h3>What PayPal has taken</h3>
+  <p>Payments straight from PayPal, set against the register. This is how we find members whose standing agreement is still paying while they show as lapsed. <strong>Who pays by PayPal</strong> lists everyone on a standing agreement and when they last paid.</p>
+  <h3>Check SumUp for payments</h3>
+  <p>Asks SumUp directly about anything the site has not matched. Worth pressing if somebody says they have paid and the register disagrees.</p>
+</section>
+
 <section id="renewals">
   <h2>Renewals</h2>
   <div class="box"><strong>The go-live email lives at the top of this screen.</strong> It is the one that tells every member their membership is now online. It is sent once, it asks twice before going, and it warns you if it has been sent before. Leave it alone unless you know you are meant to be sending it.</div>
@@ -223,6 +252,18 @@
   <p>The home page looks after itself &mdash; it finds the next game, counts down to kick-off, and rolls on to the following one automatically after the whistle.</p>
   <p><strong>The one thing it cannot know is the score.</strong> Put it in here after a game and the &ldquo;last time out&rdquo; line under the countdown updates itself.</p>
   <div class="box">If a score has not been entered yet, the home page says so rather than reaching back to an older game &mdash; so a forgotten score looks like a gap, which is your nudge to fill it in.</div>
+</section>
+
+<section id="lineups">
+  <h2>Match day line-ups</h2>
+  <p class="who">Tile: Fixtures &amp; results</p>
+  <p>The club publishes the line-up as a picture an hour or so before kick-off. Put it on the matchday page in two steps:</p>
+  <ol>
+    <li>Save the club&rsquo;s graphic and upload it to the website as <code>img/lineups/opponent.jpg</code></li>
+    <li>On the fixture, paste that path into <strong>Line-up picture</strong> and save</li>
+  </ol>
+  <p>It appears on the home page under the countdown, and can be tapped to see it full size.</p>
+  <div class="box warn">Name the file after the opponent, not just <code>lineup.jpg</code>. Capital letters matter: <code>Liverpool.jpg</code> and <code>liverpool.jpg</code> are different files, and re-using one name means an old fixture ends up showing the wrong team.</div>
 </section>
 
 <section id="writing">
@@ -283,6 +324,19 @@
     <li>Send it. You are asked twice, because emails cannot be unsent</li>
   </ol>
   <p>Everything sent is kept at the bottom of the screen &mdash; the subject, how many people, and who sent it.</p>
+
+  <h3>Check who would actually get it</h3>
+  <div class="box good">Press <strong>Show me exactly who would get this</strong> before you send anything. It lists every person by name, and warns you in amber if any of them are current members when you meant to email people who have left. It is built from the code that does the sending, so what you see is what will go.</div>
+
+  <h3>Sending to a lot of people</h3>
+  <p>Set <strong>a few at a time</strong> &mdash; 25 every hour is a sensible pace. A big send cannot all go at once, so the rest carries on by itself in the background. You can close the page.</p>
+  <p>It watches the bounce rate as it goes and stops itself if too many addresses turn out to be dead, rather than risking the Trust&rsquo;s email being suspended. If it stops, membership@ is told.</p>
+
+  <h3>Sending to a particular list of people</h3>
+  <p><strong>Send to a list of addresses</strong>, at the top right, is for putting something right quickly &mdash; when the normal filters cannot describe who needs it. Paste in the addresses, write the message, send.</p>
+
+  <h3>Who it comes from</h3>
+  <p>Choose the address that can answer replies: info@, membership@, travel@ or auction@. Replies go back there, not to you.</p>
 </section>
 
 <section id="emailing">
@@ -323,6 +377,56 @@
   <h3>The results</h3>
   <p>Shows the total <strong>and how many came from verified Trust members</strong>. Anyone can respond, but a member who is signed in is counted as verified &mdash; and <em>&ldquo;312 responses, 198 from verified members&rdquo;</em> is a far stronger thing to put in front of the club than a bare number.</p>
   <div class="box good"><strong>Written answers are never published</strong>, whatever the setting. Only the counts. People answer honestly when they know their comments are not going on a website.</div>
+
+  <h3>Drawing a member to present the award</h3>
+  <p>If the vote has an opt-in box &mdash; <em>&ldquo;I would like to present the trophy&rdquo;</em> &mdash; members who tick it go into a draw.</p>
+  <div class="box warn"><strong>The draw is not on the results screen.</strong> Press <strong>Edit</strong> on the survey and scroll to the bottom. The panel with the gold stripe is <strong>The draw</strong>. You are not editing anything; it just lives on that page.</div>
+  <ol>
+    <li>Choose who to draw from &mdash; everyone, adults only, or juniors only</li>
+    <li>Press <strong>Draw a winner</strong></li>
+    <li>Press it again to draw a reserve. Anyone already drawn is left out, so you always get somebody new</li>
+    <li>Put a line in the <strong>note</strong> box saying who drew it and who was there</li>
+  </ol>
+  <p>You see the winner&rsquo;s name, membership number and email address. If they are a junior a warning appears: contact the parent, not the child.</p>
+  <div class="box stop"><strong>The site does not email the winner.</strong> That is a person&rsquo;s job. Give them a date to confirm by, so there is time to fall back on the reserve.</div>
+</section>
+
+<section id="auctions">
+  <h2>Shirt auctions</h2>
+  <p class="who">Tile: Auctions &middot; Matt Cullen, Chris</p>
+  <h3>Setting one up</h3>
+  <ol>
+    <li>Give it a title, a description and some photographs</li>
+    <li>Set the opening bid, the smallest step between bids, and when it closes</li>
+    <li>Say where the money goes &mdash; this appears on the page, so members can see it</li>
+    <li>Set it live</li>
+  </ol>
+  <h3>While it runs</h3>
+  <p>Anyone can bid, member or not, and nobody needs an account &mdash; bidders confirm by email. The public page shows the bids without names. You see the names.</p>
+  <div class="box good"><strong>Nobody can snipe it.</strong> A bid in the last few minutes pushes the closing time back, and keeps doing so until the bidding stops.</div>
+  <h3>When it closes</h3>
+  <p>It settles itself. The winner is emailed a payment link, everyone who bid is thanked, and non-members get an invitation to join. When they pay, they are asked for a delivery address, and there is a <strong>Posted</strong> button once it is sent.</p>
+  <p>If the winner does not pay, <strong>They didn&rsquo;t pay</strong> passes it to the next bidder.</p>
+</section>
+
+<section id="comps">
+  <h2>Prediction leagues</h2>
+  <p class="who">Tile: Prediction leagues &middot; Scott, Chris</p>
+  <p>The Fantasy Football and Super 6 tables on the home page. Two tabs, one for each.</p>
+  <h3>Adding this month&rsquo;s figures</h3>
+  <ol>
+    <li>Find the column for the month</li>
+    <li>Type the numbers in</li>
+    <li>Press <strong>Save and put it on the website</strong></li>
+  </ol>
+  <p>A month with nothing in it is not shown on the website, so you can fill them in as the season goes. Filled cells are tinted blue.</p>
+  <h3>Other things you can do</h3>
+  <ul>
+    <li><strong>Add a row</strong> for somebody new</li>
+    <li><strong>Sort by total</strong> to put the leader at the top</li>
+    <li><strong>Paste a fresh list</strong> from a spreadsheet &mdash; figures already entered are kept where the names match</li>
+    <li>The arrows move somebody up or down; the cross removes them</li>
+  </ul>
 </section>
 
 <section id="coach">
@@ -344,7 +448,23 @@
   <h3>The passenger list</h3>
   <p>Shows everyone booked with their mobile numbers, seats and payment status, and a running total: seats booked, money taken, anything still owed, seats left. People who paid online are marked as paid automatically.</p>
   <p>Anyone who has not paid has a <strong>Mark paid</strong> button for when they hand it over on the day, and a <strong>Cancel</strong> button that frees the seat.</p>
-  <p><strong>Print / save the list</strong> gives you a clean passenger list for the morning &mdash; no menus, no buttons, just names and numbers.</p>
+  <p><strong>Passenger list for the day</strong> opens a printable sheet with one row per person, sorted by surname so families sit together. The columns are the ones you are used to: name, under 18, contact number, Out, Ret, notes. It also shows what is still to collect, and has a line at the bottom for the driver, the coach number and the times out and back.</p>
+
+  <h3>Changing a booking</h3>
+  <p>Every booking has a <strong>Change</strong> button. You can correct the name, add or remove passengers, change the seats, the amount, the notes, and how they paid. Seats follow the number of passengers, and the amount works itself out from the fare unless you set it. Choosing <strong>Free seat</strong> makes it zero whatever is in the box.</p>
+  <p>Every change is recorded &mdash; what it was, what it became, and who did it.</p>
+
+  <h3>The poster</h3>
+  <p>Each coach has a <strong>Poster</strong> button. It opens the poster maker with everything already filled in. See <a href="#poster">Coach poster maker</a>.</p>
+</section>
+
+<section id="poster">
+  <h2>Coach poster maker</h2>
+  <p class="who">Tile: Coach poster maker &middot; Emma, Ruby</p>
+  <p>Choose a trip and the poster fills itself in &mdash; their badge, the team, the date, the departure time and place, their ground, kick-off and the price. Change anything you like, then press <strong>Download the poster</strong>.</p>
+  <p>Quicker still: press <strong>Poster</strong> on a coach in the travel screen and it opens on that trip.</p>
+  <div class="box good">The size is 4:5 portrait, which is what Facebook and Instagram show in the feed without cropping it.</div>
+  <p>If a badge does not appear automatically &mdash; a cup tie against a club outside the league &mdash; choose <strong>Upload a different badge</strong> at the bottom of the badge list.</p>
 </section>
 
 <section id="graphics">
@@ -382,6 +502,13 @@
   <p>Whether the site is actually being used, rather than just that it exists. Members signed in, how many have checked their details, coach seats and money taken, survey responses, articles published, emails sent and how many arrived.</p>
   <p>It also flags the problems: addresses that bounce, members with no email at all, applications awaiting payment, and anyone who has asked for help.</p>
   <div class="box">The two worth watching are <strong>signed in</strong> and <strong>details checked</strong>. They start near zero and should climb after members are emailed. If they do not move, people are not finding their way in.</div>
+</section>
+
+<section id="visitors">
+  <h2>Who&rsquo;s visiting</h2>
+  <p class="who">Tile: Who&rsquo;s visiting</p>
+  <p>Visitor figures for the website &mdash; how many people, which pages they read, and where they came from. Useful for knowing whether anything we put out is actually being seen.</p>
+  <div class="box">No personal data is collected and nobody is tracked between visits. It counts page views, not people.</div>
 </section>
 
 <section id="emails">
