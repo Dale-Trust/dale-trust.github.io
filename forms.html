@@ -60,11 +60,18 @@
     <button class="ghost" onclick="whoStopped()">Who has unsubscribed</button>
     <button class="ghost" onclick="checkDomains()">Check the lapsed addresses</button>
     <button class="ghost" onclick="neverHeard()">Members who have had nothing</button>
+    <button class="ghost" onclick="unpaid()">Who hasn't paid</button>
     <button class="ghost" onclick="payPal()">What PayPal has taken</button>
     <button class="ghost" onclick="payPalSubs()">Who pays by PayPal</button>
     <button class="ghost" onclick="payPalCheck()">Why is PayPal empty?</button>
     <span id="chkMsg" style="font-size:13.5px;font-weight:600"></span>
   </div>
+  <div class="panel" id="upBox" style="display:none;border-left:5px solid var(--gold)">
+    <h2>Who hasn&rsquo;t paid</h2>
+    <p class="lede">People who applied for this season and never completed the payment. They are not members yet.</p>
+    <div id="upOut"></div>
+  </div>
+
   <div class="panel" id="ppBox" style="display:none;border-left:5px solid var(--royal)">
     <h2>What PayPal has taken</h2>
     <p class="lede">Payments straight from PayPal, set against the register. This is how we find people
@@ -232,6 +239,32 @@ async function ppSweep(){
       (d.unknown||0)+' could not be matched.'
     : d.error);
   payPalSubs();
+}
+
+async function unpaid(){
+  const box=$('upBox'); box.style.display='block';
+  $('upOut').innerHTML='<p style="color:#7A8AA5">Looking\u2026</p>';
+  try{
+    const d=await (await fetch(EP+'/members/unpaid',{headers:H()})).json();
+    if(!d.ok){ $('upOut').innerHTML='<p style="color:var(--red)">'+esc(d.error)+'</p>'; return; }
+    if(!d.people.length){ $('upOut').innerHTML='<p style="color:var(--green)"><b>Nobody.</b> Everyone who applied has paid.</p>'; return; }
+    const money=n=>'\u00a3'+Number(n||0).toFixed(2);
+    $('upOut').innerHTML=
+      '<div class="kpis"><div class="kpi wait"><span>Waiting to pay</span><b>'+d.people.length+'</b></div>'+
+      '<div class="kpi"><span>Outstanding</span><b>'+money(d.owed)+'</b></div></div>'+
+      '<table class="ctable" style="width:100%"><tr><th>Who</th><th>Owes</th><th>Waiting</th><th>Reminders</th><th>Contact</th></tr>'+
+      d.people.map(p=>'<tr>'+
+        '<td><b>'+esc((p.first_name+' '+p.last_name).trim())+'</b>'+
+          (p.member_no?'<small style="display:block;color:#C0392B">Has a number ('+esc(p.member_no)+') \u2014 may think they have joined</small>'
+                      :'<small style="display:block;color:#7A8AA5">'+esc(p.app_ref||'')+' \u00b7 '+esc(p.membership_type||'')+'</small>')+'</td>'+
+        '<td>'+money(p.amount_due)+'</td>'+
+        '<td>'+(p.days_waiting||0)+' days</td>'+
+        '<td>'+(p.links_sent||0)+'</td>'+
+        '<td style="font-size:12.5px">'+esc(p.email||'')+
+          (p.mobile?'<small style="display:block;color:#7A8AA5">'+esc(p.mobile)+'</small>':'')+'</td></tr>').join('')+
+      '</table>'+
+      '<p class="lede" style="margin-top:12px">Open their record in the register to send a payment link, or to mark them paid if they have settled another way.</p>';
+  }catch(e){ $('upOut').innerHTML='<p style="color:var(--red)">Could not load.</p>'; }
 }
 
 async function payPal(){
