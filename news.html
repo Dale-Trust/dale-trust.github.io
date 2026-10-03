@@ -71,6 +71,17 @@
   article img.hero{max-width:100%;max-height:460px;width:auto;height:auto;
     border-radius:12px;margin:0 auto 20px;display:block}
   @media(max-width:700px){ article img.hero{max-height:340px} }
+  /* pictures in an article open full size when tapped */
+  article img.hero, article .body img{cursor:zoom-in}
+  .zoomhint{font-size:12.5px;color:#7A8AA5;text-align:center;margin:-10px 0 18px}
+  #lb{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;
+    background:rgba(8,16,34,.94);padding:18px;cursor:zoom-out;touch-action:pinch-zoom}
+  #lb.open{display:flex}
+  #lb img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  #lb .x{position:absolute;top:12px;right:14px;width:44px;height:44px;border-radius:50%;border:0;
+    background:rgba(255,255,255,.16);color:#fff;font-size:26px;line-height:1;cursor:pointer}
+  #lb .x:hover{background:rgba(255,255,255,.28)}
+  #lb .x:focus-visible{outline:3px solid #8FC1FF;outline-offset:2px}
 </style>
 </head>
 <body>
@@ -105,7 +116,7 @@ function md(t){
   }).join('');
   function inline(s){
     return s
-      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1" loading="lazy">')
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img tabindex="0" role="button" src="$2" alt="$1" loading="lazy">')
       .replace(/\[([^\]]+)\]\(([^)]+)\)/g,(m,t,u)=>{
         const ext=/^https?:\/\//i.test(u)&&!/daletrust\.(uk|co\.uk)/i.test(u);
         return '<a href="'+u+'"'+(ext?' target="_blank" rel="noopener"':'')+'>'+t+'</a>';
@@ -185,13 +196,25 @@ function clearAll(){
 (async()=>{
   try{
     if(slug){
-      const r=await fetch(EP+'/posts?slug='+encodeURIComponent(slug));
+      // a preview key lets a post be read before it is on the site
+      const pk = new URLSearchParams(location.search).get('k');
+      const r = pk
+        ? await fetch(EP+'/posts/preview?slug='+encodeURIComponent(slug)+'&k='+encodeURIComponent(pk))
+        : await fetch(EP+'/posts?slug='+encodeURIComponent(slug));
       if(!r.ok){out.innerHTML='<p>That story isn\u2019t available. <a href="news.html">See all news</a>.</p>';return;}
-      const {post:p}=await r.json();
+      const data=await r.json();
+      if(pk && !data.ok){out.innerHTML='<p>'+(data.error||'That preview link is not right.')+'</p>';return;}
+      const p=data.post;
+      if(pk){
+        out.insertAdjacentHTML('beforebegin',
+          '<div style="background:#FFF9E8;border:1px solid #EAD198;border-left:5px solid #E8B84B;'+
+          'border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:18px;font-size:14.5px">'+
+          '<b>Preview \u2014 not on the website yet.</b> '+esc(data.note||'')+'</div>');
+      }
       document.title=p.title+' — Dale Supporters Trust';
       document.getElementById('heroTitle').textContent=p.category;
       document.getElementById('heroSub').textContent='Dale Trust news';
-      out.innerHTML='<article><h2>'+esc(p.title)+'</h2><p class="meta">By '+esc(p.author)+' \u00b7 '+fmt(p.publish_at)+'</p>'+(p.image?'<img class="hero" src="'+p.image+'" alt="">':'')+'<div class="body">'+md(p.body)+'</div>'+
+      out.innerHTML='<article><h2>'+esc(p.title)+'</h2><p class="meta">By '+esc(p.author)+' \u00b7 '+fmt(p.publish_at)+'</p>'+(p.image?'<img class="hero" tabindex="0" role="button" src="'+p.image+'" alt="'+esc(p.title)+'"><p class="zoomhint">Tap the picture to enlarge it</p>':'')+'<div class="body">'+md(p.body)+'</div>'+
         (p.policy_slug ? '<div class="policybox"><b>Worth reading alongside this</b>'+
           '<a href="policies.html?p='+encodeURIComponent(p.policy_slug)+'">Read the policy &rarr;</a></div>' : '')+
         '<p style="margin-top:26px"><a href="news.html">&larr; All news &amp; newsletters</a></p></article>';
@@ -210,6 +233,42 @@ function clearAll(){
       apply();
     }
   }catch(e){out.innerHTML='<p>Couldn\u2019t load the news just now. Please try again shortly.</p>';}
+})();
+</script>
+<div id="lb" role="dialog" aria-modal="true" aria-label="Picture" hidden>
+  <button type="button" class="x" aria-label="Close picture">&times;</button>
+  <img alt="">
+</div>
+<script>
+// Tap any picture in an article to see it full size. Tap anywhere, press Esc, or use the cross to close.
+(function(){
+  const box = document.getElementById('lb'), big = box.querySelector('img'), x = box.querySelector('.x');
+  let opener = null;
+  function open(img){
+    opener = img;
+    big.src = img.currentSrc || img.src;
+    big.alt = img.alt || '';
+    box.hidden = false; box.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    x.focus();
+  }
+  function close(){
+    box.classList.remove('open'); box.hidden = true; big.removeAttribute('src');
+    document.body.style.overflow = '';
+    if (opener) { try { opener.focus({preventScroll:true}); } catch(e){} opener = null; }
+  }
+  document.addEventListener('click', e => {
+    const img = e.target.closest && e.target.closest('article img');
+    if (img && !box.classList.contains('open')) { e.preventDefault(); open(img); return; }
+    if (box.classList.contains('open') && (e.target === box || e.target === big || e.target === x)) close();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && box.classList.contains('open')) { close(); return; }
+    if ((e.key === 'Enter' || e.key === ' ') && !box.classList.contains('open')) {
+      const img = document.activeElement;
+      if (img && img.matches && img.matches('article img')) { e.preventDefault(); open(img); }
+    }
+  });
 })();
 </script>
 </body>
