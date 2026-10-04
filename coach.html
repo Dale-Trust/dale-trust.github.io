@@ -54,6 +54,8 @@
   #editPanel label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;
     text-transform:uppercase;color:var(--ink);margin:10px 0 4px}
   #editPanel input{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit}
+  #wlEditPanel label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:10px 0 4px}
+  #wlEditPanel input{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
 </style>
 </head>
 <body>
@@ -113,6 +115,7 @@
     <div class="panel noprint" id="wlPanel" style="display:none;border-left:5px solid var(--gold)">
       <h2>Waiting list and extra coaches</h2>
       <div id="wlSummary"></div>
+      <div id="wlEdit"></div>
       <div id="wlBody"></div>
       <div id="wlActions" style="margin-top:14px"></div>
       <p class="msg" id="wlMsg"></p>
@@ -199,11 +202,11 @@ function drawWaitlist(){
       let state, act = '';
       if(e.status==='waiting'){
         state = '<span style="color:#8A4B00;font-weight:600">Waiting</span>';
-        act = '<button class="green sm" onclick="offerWl('+e.id+')">Send link</button> <button class="ghost sm" onclick="removeWl('+e.id+')">Remove</button>';
+        act = '<button class="green sm" onclick="offerWl('+e.id+')">Send link</button> <button class="ghost sm" onclick="editWl('+e.id+')">Edit</button> <button class="ghost sm" onclick="removeWl('+e.id+')">Remove</button>';
       } else if(e.booking_status==='cancelled'){
         state = '<span style="color:#7A8AA5">Seat released</span>';
       } else if(!e.booking_status || e.booking_status==='pending'){
-        state = '<span style="color:#C0392B;font-weight:600">Link sent '+ago(e.offered_at)+', not paid</span>';
+        state = '<span style="color:#C0392B;font-weight:600">Link sent '+ago(e.offered_at)+', not paid</span><br><small style="color:#7A8AA5">Change details in the passenger list</small>';
       } else {
         state = '<span style="color:var(--green);font-weight:600">Paid</span>';
       }
@@ -298,6 +301,56 @@ async function addCoach(){
   $('wlMsg').style.color = (r.failed || (!r.sent && r.skip.length)) ? 'var(--red)' : 'var(--green)';
   $('wlMsg').textContent = added+' '+linkSummary(r);
 }
+// ---- changing somebody's details on the list ----
+function wlRead(){
+  if(!$('we_name')) return;
+  window._wlForm = { name:$('we_name').value, mobile:$('we_mobile').value, email:$('we_email').value };
+  const dobs = document.querySelectorAll('#wlEditPanel .wlpd');
+  window._wlPax = [...document.querySelectorAll('#wlEditPanel .wlpn')].map((el,i) => ({ name: el.value, dob: (dobs[i]||{}).value || '' }));
+}
+function editWl(id){
+  const e = ((wl && wl.entries) || []).find(x => x.id===id); if(!e) return;
+  let pax = []; try{ pax = JSON.parse(e.passengers||'[]'); }catch(_){}
+  if(!pax.length) pax = [{name:e.name, dob:''}];
+  window._wlEditId = id;
+  window._wlForm = { name:e.name, mobile:e.mobile||'', email:e.email };
+  window._wlPax = pax.map(p => ({ name:p.name||'', dob:p.dob||'' }));
+  drawWlEdit();
+  $('wlEdit').scrollIntoView({behavior:'smooth', block:'center'});
+}
+function drawWlEdit(){
+  const f = window._wlForm, rows = window._wlPax.map((p,i) =>
+    '<div class="g2" style="margin-bottom:8px"><div><label>Passenger '+(i+1)+'</label><input class="wlpn" value="'+esc(p.name)+'"></div>'+
+    '<div><label>Date of birth</label><input class="wlpd" type="date" value="'+esc(p.dob)+'"></div></div>').join('');
+  $('wlEdit').innerHTML = '<div id="wlEditPanel" style="border:1.5px solid var(--line);border-radius:12px;padding:16px;margin-top:14px;background:#FAFCFE">'+
+    '<b>Change the details</b><p style="font-size:13px;color:#7A8AA5;margin:4px 0 10px">They keep their place in the queue.</p>'+
+    '<div class="g2"><div><label>Name</label><input id="we_name" value="'+esc(f.name)+'"></div>'+
+    '<div><label>Mobile</label><input id="we_mobile" value="'+esc(f.mobile)+'"></div></div>'+
+    '<label>Email (the payment link goes here)</label><input id="we_email" value="'+esc(f.email)+'">'+
+    '<label style="margin-top:14px">Who is travelling</label>'+rows+
+    '<button type="button" class="ghost sm" onclick="wlPaxAdd()">Add a passenger</button> '+
+    '<button type="button" class="ghost sm" onclick="wlPaxDrop()">Remove the last one</button>'+
+    '<div style="margin-top:14px"><button type="button" class="green" onclick="saveWl()">Save the changes</button> '+
+    '<button type="button" class="ghost" onclick="document.getElementById(\'wlEdit\').innerHTML=\'\'">Cancel</button></div>'+
+    '<p class="msg" id="we_msg"></p></div>';
+}
+function wlPaxAdd(){ wlRead(); if(window._wlPax.length>=6) return; window._wlPax.push({name:'',dob:''}); drawWlEdit(); }
+function wlPaxDrop(){ wlRead(); if(window._wlPax.length>1) window._wlPax.pop(); drawWlEdit(); }
+async function saveWl(){
+  wlRead();
+  const m = $('we_msg'); m.style.color = 'var(--body)'; m.textContent = 'Saving\u2026';
+  let d;
+  try{
+    d = await (await fetch(EP+'/coach/waitlist/edit',{method:'POST',headers:H(),body:JSON.stringify({
+      id: window._wlEditId, name: window._wlForm.name, mobile: window._wlForm.mobile, email: window._wlForm.email,
+      passengers: window._wlPax.filter(p => p.name.trim()) })})).json();
+  }catch(e){ m.style.color='var(--red)'; m.textContent='Could not reach the server \u2014 try again.'; return; }
+  if(!d.ok){ m.style.color='var(--red)'; m.textContent=d.error; return; }
+  $('wlEdit').innerHTML = '';
+  await load(current.id);
+  $('wlMsg').style.color = 'var(--green)'; $('wlMsg').textContent = 'Details changed. They keep their place in the queue.';
+}
+
 async function removeWl(id){
   const e = ((wl && wl.entries) || []).find(x => x.id===id);
   if(!confirm('Take '+(e?e.name:'this person')+' off the waiting list?')) return;
