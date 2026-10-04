@@ -109,6 +109,14 @@
         <button class="ghost" onclick="paxList()">Passenger list for the day</button>
       </div>
     </div>
+
+    <div class="panel noprint" id="wlPanel" style="display:none;border-left:5px solid var(--gold)">
+      <h2>Waiting list</h2>
+      <div id="wlSummary"></div>
+      <div id="wlBody"></div>
+      <div id="wlActions" style="margin-top:14px"></div>
+      <p class="msg" id="wlMsg"></p>
+    </div>
   </div>
 
 </div>
@@ -130,8 +138,109 @@ async function load(tripId){
   if(!d.ok){$('trips').textContent=d.error||'Could not load.';return;}
   trips=d.trips; bookings=d.bookings||[];
   if(tripId) shownTrip=tripId;
+  await loadWlCounts();
   drawTrips();
-  if(tripId) drawBookings();
+  if(tripId){ drawBookings(); loadWaitlist(); }
+}
+
+// ---------- the waiting list ----------
+let wlCounts = {}, wl = null;
+async function loadWlCounts(){
+  try{
+    const d = await (await fetch(EP+'/coach/waitlist',{headers:H()})).json();
+    wlCounts = {};
+    (d.counts||[]).forEach(x => { wlCounts[x.trip_id] = x; });
+  }catch(e){}
+}
+function waitChip(t){
+  const x = wlCounts[t.id];
+  return x ? ' \u00b7 <b style="color:#8A4B00">'+x.people+' waiting ('+x.seats+' seat'+(x.seats===1?'':'s')+')</b>' : '';
+}
+async function loadWaitlist(){
+  if(!current) return;
+  try{
+    const d = await (await fetch(EP+'/coach/waitlist?trip_id='+current.id,{headers:H()})).json();
+    if(!d.ok){ $('wlPanel').style.display='none'; return; }
+    wl = d; drawWaitlist();
+  }catch(e){ $('wlPanel').style.display='none'; }
+}
+function ago(t){
+  const h = Math.floor((Date.now() - new Date(String(t).replace(' ','T')+'Z').getTime())/3600000);
+  if(h < 1) return 'less than an hour ago';
+  if(h < 48) return h+' hour'+(h===1?'':'s')+' ago';
+  return Math.floor(h/24)+' days ago';
+}
+function drawWaitlist(){
+  const list = (wl && wl.entries) || [];
+  const panel = $('wlPanel');
+  if(!list.length){ panel.style.display='none'; return; }     // nobody waiting: stay out of the way
+  panel.style.display = 'block';
+  const waiting = list.filter(e => e.status==='waiting');
+  const want = waiting.reduce((a,e) => a+e.seats, 0);
+  $('wlSummary').innerHTML =
+    '<div class="tot"><b>'+waiting.length+'</b> waiting, wanting <b>'+want+'</b> seat'+(want===1?'':'s')+
+    ' \u00b7 <b>'+wl.remaining+'</b> seat'+(wl.remaining===1?'':'s')+' free on the coach now</div>'+
+    (waiting.length ? '<p style="font-size:13.5px;color:#46536B;margin:10px 0 0"><b>To put an extra coach on:</b> press <b>Edit</b> on the trip above and raise '+
+      '<b>Seats on the coach</b> by the size of the extra coach, then send the links. They go out in the order people joined, and a seat is held for each person until they pay or you cancel it.</p>' : '');
+  const when = t => new Date(String(t).replace(' ','T')+'Z').toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  $('wlBody').innerHTML = '<table style="margin-top:12px"><tr><th>Name</th><th>Seats</th><th>Contact</th><th>Joined</th><th>Where it is</th><th class="noprint"></th></tr>'+
+    list.map(e => {
+      let pax = '';
+      try{
+        const p = JSON.parse(e.passengers||'[]');
+        if(p.length) pax = '<br><small style="color:#46536B">'+p.map(x => esc(x.name)+(x.age!==undefined&&x.age<=15?' <b style="color:#C0392B">('+x.age+')</b>':'')).join(', ')+'</small>';
+      }catch(_){}
+      let state, act = '';
+      if(e.status==='waiting'){
+        state = '<span style="color:#8A4B00;font-weight:600">Waiting</span>';
+        act = '<button class="green sm" onclick="offerWl('+e.id+')">Send link</button> <button class="ghost sm" onclick="removeWl('+e.id+')">Remove</button>';
+      } else if(e.booking_status==='cancelled'){
+        state = '<span style="color:#7A8AA5">Seat released</span>';
+      } else if(!e.booking_status || e.booking_status==='pending'){
+        state = '<span style="color:#C0392B;font-weight:600">Link sent '+ago(e.offered_at)+', not paid</span>';
+      } else {
+        state = '<span style="color:var(--green);font-weight:600">Paid</span>';
+      }
+      return '<tr><td><b>'+esc(e.name)+'</b>'+pax+'</td><td>'+e.seats+'</td>'+
+        '<td style="font-size:13px">'+esc(e.mobile||'')+'<br><small style="color:#7A8AA5">'+esc(e.email)+'</small></td>'+
+        '<td style="font-size:13px">'+when(e.created_at)+'</td><td>'+state+'</td><td class="noprint" style="white-space:nowrap">'+act+'</td></tr>';
+    }).join('')+'</table>';
+  $('wlActions').innerHTML = waiting.length
+    ? '<button class="green" onclick="offerWl()">Send payment links to everyone who fits</button>' : '';
+}
+async function offerWl(id){
+  const msg = $('wlMsg');
+  if(wl && wl.remaining===0){ msg.style.color='var(--red)'; msg.textContent='There are no seats free yet. Raise the seats on the trip first (Edit), then send the links.'; return; }
+  const who = id ? 'this person' : 'everyone on the list who fits in the seats free';
+  if(!confirm('Email a payment link to '+who+'?\n\nThey are emailed straight away. A seat is held for each of them until they pay or you cancel it.')) return;
+  let sent = 0, failed = 0, skip = [];
+  msg.style.color = 'var(--body)'; msg.textContent = 'Sending\u2026';
+  for(let guard = 0; guard < 25; guard++){
+    let d;
+    try{
+      d = await (await fetch(EP+'/coach/waitlist/offer',{method:'POST',headers:H(),
+        body:JSON.stringify({trip_id:current.id, id:id||undefined, skip})})).json();
+    }catch(e){ msg.style.color='var(--red)'; msg.textContent='Lost the connection after '+sent+' \u2014 check the list before pressing again.'; break; }
+    if(!d.ok){ msg.style.color='var(--red)'; msg.textContent=d.error; break; }
+    sent += d.sent; failed += d.failed; skip = skip.concat(d.noRoom||[]);
+    msg.textContent = 'Sent '+sent+'\u2026';
+    if(!d.more) break;
+  }
+  const parts = [];
+  parts.push(sent ? 'Sent '+sent+' payment link'+(sent===1?'':'s')+'.' : 'No links sent.');
+  if(skip.length) parts.push(skip.length+' did not fit in the seats left, so '+(skip.length===1?'is':'are')+' still waiting.');
+  if(failed) parts.push(failed+' could not be sent \u2014 they are still waiting, so try again.');
+  msg.style.color = (failed || (!sent && skip.length)) ? 'var(--red)' : 'var(--green)';
+  msg.textContent = parts.join(' ');
+  await load(current.id);
+  $('wlMsg').textContent = parts.join(' ');
+}
+async function removeWl(id){
+  const e = ((wl && wl.entries) || []).find(x => x.id===id);
+  if(!confirm('Take '+(e?e.name:'this person')+' off the waiting list?')) return;
+  const d = await (await fetch(EP+'/coach/waitlist/remove',{method:'POST',headers:H(),body:JSON.stringify({id})})).json();
+  if(!d.ok){ alert(d.error); return; }
+  await load(current.id);
 }
 
 function tripFields(p, t){
@@ -169,7 +278,7 @@ function drawTrips(){
       '<div class="seats"><b>'+t.remaining+'</b><span>seats left</span></div>'+
       '<b>'+esc(t.opponent)+'</b>'+
       '<small>'+dfmt(t.match_date)+' \u00b7 departs '+esc(t.depart_time)+' from '+esc(t.depart_from)+' \u00b7 '+money(t.price)+' a seat</small>'+
-      '<small>'+t.taken+' of '+t.seats+' seats taken'+
+      '<small>'+t.taken+' of '+t.seats+' seats taken'+waitChip(t)+
       (t.status==='closed'||t.status==='cancelled'?' \u00b7 <b style="color:#C0392B">'+t.status+'</b>':'')+'</small>'+
       '<label class="liveswitch'+(live?' on':'')+'" onclick="event.stopPropagation()">'+
         '<input type="checkbox"'+(live?' checked':'')+' onchange="setLive('+t.id+',this.checked)">'+

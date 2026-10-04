@@ -59,6 +59,8 @@
   .memberhint{background:#E8F1FC;border-radius:10px;padding:12px 16px;font-size:14px;margin-bottom:18px}
   .cap{min-height:0}
   .cap:empty{display:none}
+  .wlnote{background:#FFF9E8;border-left:4px solid #E8B84B;border-radius:0 10px 10px 0;padding:12px 14px;font-size:14px;margin:0 0 14px;color:#46536B}
+  .wldone{background:#EAF6EF;border-left:4px solid #4CAF7A;border-radius:0 10px 10px 0;padding:14px 16px;font-size:14.5px;color:#1E6B45}
 </style>
 </head>
 <body>
@@ -127,17 +129,18 @@ async function load(){
         (t.notes?'<p style="font-size:14px;color:#7A8AA5">'+esc(t.notes)+'</p>':'')+
         '<div><span class="seatsleft '+cls+'">'+left+'</span></div>'+
         '<div class="book">'+(t.remaining===0
-          ? '<button disabled>Fully booked</button>'
+          ? '<button onclick="openForm('+t.id+')">Join the waiting list &rarr;</button>'
           : '<button onclick="openForm('+t.id+')">Book a seat &rarr;</button>')+'</div>'+
         '<div class="form" id="f'+t.id+'">'+
+          (t.remaining===0 ? '<p class="wlnote"><b>This coach is full.</b> Put your name down and we&rsquo;ll email you a payment link if we put another coach on or seats come free. Seats are offered in the order people join. <b>There is nothing to pay now.</b></p>' : '')+
           '<div class="row2"><div><label>Your name</label><input id="n'+t.id+'" value="'+esc(member?member.name:'')+'"></div>'+
           '<div><label>Mobile number</label><input id="p'+t.id+'" value="'+esc(member&&member.record?member.record.mobile||'':'')+'"></div></div>'+
-          '<div class="row2"><div><label>Email</label><input id="e'+t.id+'" type="email" value="'+esc(member&&member.record?member.record.email||'':'')+'"></div>'+
+          '<div class="row2"><div><label>'+(t.remaining===0?'Email (your payment link goes here)':'Email')+'</label><input id="e'+t.id+'" type="email" value="'+esc(member&&member.record?member.record.email||'':'')+'"></div>'+
           '<div><label>How many seats?</label><select id="s'+t.id+'" onchange="paxFields('+t.id+')">'+
-            [1,2,3,4,5,6].filter(n=>n<=t.remaining).map(n=>'<option>'+n+'</option>').join('')+'</select></div></div>'+
+            [1,2,3,4,5,6].filter(n=>t.remaining===0||n<=t.remaining).map(n=>'<option>'+n+'</option>').join('')+'</select></div></div>'+
           '<div id="pax'+t.id+'"></div>'+
           (member ? '' : '<div class="cap" id="cap'+t.id+'" style="margin-top:14px"></div>')+
-          '<div style="margin-top:14px"><button class="green" onclick="book('+t.id+')">Book and pay &rarr;</button></div>'+
+          '<div style="margin-top:14px"><button class="green" onclick="'+(t.remaining===0?'joinList':'book')+'('+t.id+')">'+(t.remaining===0?'Join the waiting list':'Book and pay')+' &rarr;</button></div>'+
           '<p class="msg" id="m'+t.id+'"></p>'+
         '</div></div>';
     }).join('');
@@ -191,6 +194,32 @@ async function book(id){
       msg.innerHTML='<span style="color:var(--green)">Booking taken — reference '+esc(d.booking_ref)+'.</span> Your seat is held but not confirmed until payment. We&rsquo;ll be in touch.';
     }
   }catch(e){msg.innerHTML='<span style="color:var(--red)">Could not book just now — please try again.</span>';}
+}
+
+async function joinList(id){
+  const name=$('n'+id).value.trim(), mobile=$('p'+id).value.trim(), email=$('e'+id).value.trim();
+  const seats=parseInt($('s'+id).value,10)||1;
+  const msg=$('m'+id);
+  if(!name||!mobile){msg.innerHTML='<span style="color:var(--red)">We need your name and a mobile number.</span>';return;}
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){msg.innerHTML='<span style="color:var(--red)">We need your email address, because that is where the payment link will go.</span>';return;}
+  const passengers=[];
+  for(let i=0;i<seats;i++){
+    const pn=($('pn'+id+'_'+i)||{}).value||'', pd=($('pd'+id+'_'+i)||{}).value||'';
+    if(!pn.trim()||!pd){msg.innerHTML='<span style="color:var(--red)">Please give a name and date of birth for everyone travelling.</span>';return;}
+    passengers.push({name:pn.trim(),dob:pd});
+  }
+  msg.textContent='One moment\u2026';
+  try{
+    const d=await (await fetch(EP+'/coach/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({trip_id:id,name,mobile,email,seats,passengers,
+        member_no:member&&member.record?member.record.member_no:null,
+        turnstile_token:(window.turnstile&&window._capIds&&window._capIds[id]!==undefined)
+          ? turnstile.getResponse(window._capIds[id]) : ''})})).json();
+    if(!d.ok){msg.innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';return;}
+    $('f'+id).innerHTML='<div class="wldone"><b>You&rsquo;re on the waiting list.</b><br>'+
+      'We&rsquo;ve emailed you to confirm. There&rsquo;s nothing to pay yet &mdash; if another coach goes on or seats come free, '+
+      'we&rsquo;ll send you a payment link, in the order people joined.</div>';
+  }catch(e){msg.innerHTML='<span style="color:var(--red)">Could not join the list just now \u2014 please try again.</span>';}
 }
 
 // Anyone not signed in has to pass a human check before booking.
