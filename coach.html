@@ -111,7 +111,7 @@
     </div>
 
     <div class="panel noprint" id="wlPanel" style="display:none;border-left:5px solid var(--gold)">
-      <h2>Waiting list</h2>
+      <h2>Waiting list and extra coaches</h2>
       <div id="wlSummary"></div>
       <div id="wlBody"></div>
       <div id="wlActions" style="margin-top:14px"></div>
@@ -152,6 +152,9 @@ async function loadWlCounts(){
     (d.counts||[]).forEach(x => { wlCounts[x.trip_id] = x; });
   }catch(e){}
 }
+function coachChip(t){
+  return (t.coaches||1) > 1 ? ' \u00b7 <b>'+t.coaches+' coaches</b>' : '';
+}
 function waitChip(t){
   const x = wlCounts[t.id];
   return x ? ' \u00b7 <b style="color:#8A4B00">'+x.people+' waiting ('+x.seats+' seat'+(x.seats===1?'':'s')+')</b>' : '';
@@ -172,18 +175,21 @@ function ago(t){
 }
 function drawWaitlist(){
   const list = (wl && wl.entries) || [];
-  const panel = $('wlPanel');
-  if(!list.length){ panel.style.display='none'; return; }     // nobody waiting: stay out of the way
-  panel.style.display = 'block';
+  $('wlPanel').style.display = 'block';          // always there once a trip is open
   const waiting = list.filter(e => e.status==='waiting');
   const want = waiting.reduce((a,e) => a+e.seats, 0);
+  const coaches = wl.coaches || 1;
   $('wlSummary').innerHTML =
-    '<div class="tot"><b>'+waiting.length+'</b> waiting, wanting <b>'+want+'</b> seat'+(want===1?'':'s')+
-    ' \u00b7 <b>'+wl.remaining+'</b> seat'+(wl.remaining===1?'':'s')+' free on the coach now</div>'+
-    (waiting.length ? '<p style="font-size:13.5px;color:#46536B;margin:10px 0 0"><b>To put an extra coach on:</b> press <b>Edit</b> on the trip above and raise '+
-      '<b>Seats on the coach</b> by the size of the extra coach, then send the links. They go out in the order people joined, and a seat is held for each person until they pay or you cancel it.</p>' : '');
+    '<div class="tot"><b>'+coaches+'</b> coach'+(coaches===1?'':'es')+' \u00b7 <b>'+wl.seats+'</b> seats \u00b7 <b>'+wl.remaining+'</b> free now'+
+    (waiting.length ? ' \u00b7 <b style="color:#8A4B00">'+waiting.length+' waiting, wanting '+want+' seat'+(want===1?'':'s')+'</b>' : '')+'</div>'+
+    '<p style="font-size:13.5px;color:#46536B;margin:10px 0 0">'+
+    (waiting.length
+      ? '<b>Add extra coach</b> adds the seats and emails a payment link to everyone waiting, in the order they joined, whatever size of group. Do it once the coach is booked with the coach company. Press it again for another coach.'
+      : 'Nobody is waiting. When a coach is full, people can join the waiting list from the travel page and will appear here. <b>Add extra coach</b> also works on a popular game before it fills, just to add seats.')+'</p>';
+
   const when = t => new Date(String(t).replace(' ','T')+'Z').toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-  $('wlBody').innerHTML = '<table style="margin-top:12px"><tr><th>Name</th><th>Seats</th><th>Contact</th><th>Joined</th><th>Where it is</th><th class="noprint"></th></tr>'+
+  $('wlBody').innerHTML = !list.length ? '' :
+    '<table style="margin-top:12px"><tr><th>Name</th><th>Seats</th><th>Contact</th><th>Joined</th><th>Where it is</th><th class="noprint"></th></tr>'+
     list.map(e => {
       let pax = '';
       try{
@@ -205,35 +211,92 @@ function drawWaitlist(){
         '<td style="font-size:13px">'+esc(e.mobile||'')+'<br><small style="color:#7A8AA5">'+esc(e.email)+'</small></td>'+
         '<td style="font-size:13px">'+when(e.created_at)+'</td><td>'+state+'</td><td class="noprint" style="white-space:nowrap">'+act+'</td></tr>';
     }).join('')+'</table>';
-  $('wlActions').innerHTML = waiting.length
-    ? '<button class="green" onclick="offerWl()">Send payment links to everyone who fits</button>' : '';
+
+  $('wlActions').innerHTML =
+    '<button class="green" onclick="addCoach()">Add extra coach</button>'+
+    (waiting.length && wl.remaining > 0
+      ? ' <button class="ghost" onclick="offerWl()">Send payment links to everyone who fits</button>' : '');
 }
-async function offerWl(id){
-  const msg = $('wlMsg');
-  if(wl && wl.remaining===0){ msg.style.color='var(--red)'; msg.textContent='There are no seats free yet. Raise the seats on the trip first (Edit), then send the links.'; return; }
-  const who = id ? 'this person' : 'everyone on the list who fits in the seats free';
-  if(!confirm('Email a payment link to '+who+'?\n\nThey are emailed straight away. A seat is held for each of them until they pay or you cancel it.')) return;
-  let sent = 0, failed = 0, skip = [];
-  msg.style.color = 'var(--body)'; msg.textContent = 'Sending\u2026';
+
+// Asks the server to send the links, again and again until it has dealt with everyone.
+// One request can only make so many calls, so a long list takes several.
+async function sendLinks(id){
+  let sent = 0, failed = 0, skip = [], broke = false, error = '';
   for(let guard = 0; guard < 25; guard++){
     let d;
     try{
       d = await (await fetch(EP+'/coach/waitlist/offer',{method:'POST',headers:H(),
         body:JSON.stringify({trip_id:current.id, id:id||undefined, skip})})).json();
-    }catch(e){ msg.style.color='var(--red)'; msg.textContent='Lost the connection after '+sent+' \u2014 check the list before pressing again.'; break; }
-    if(!d.ok){ msg.style.color='var(--red)'; msg.textContent=d.error; break; }
+    }catch(e){ broke = true; break; }
+    if(!d.ok){ error = d.error || 'Something went wrong'; break; }
     sent += d.sent; failed += d.failed; skip = skip.concat(d.noRoom||[]);
-    msg.textContent = 'Sent '+sent+'\u2026';
+    $('wlMsg').textContent = 'Sent '+sent+'\u2026';
     if(!d.more) break;
   }
-  const parts = [];
-  parts.push(sent ? 'Sent '+sent+' payment link'+(sent===1?'':'s')+'.' : 'No links sent.');
-  if(skip.length) parts.push(skip.length+' did not fit in the seats left, so '+(skip.length===1?'is':'are')+' still waiting.');
-  if(failed) parts.push(failed+' could not be sent \u2014 they are still waiting, so try again.');
-  msg.style.color = (failed || (!sent && skip.length)) ? 'var(--red)' : 'var(--green)';
-  msg.textContent = parts.join(' ');
+  return { sent, failed, skip, broke, error };
+}
+function linkSummary(r){
+  const parts = [r.sent ? 'Sent '+r.sent+' payment link'+(r.sent===1?'':'s')+'.' : 'No links sent.'];
+  if(r.skip.length) parts.push(r.skip.length+' did not fit in the seats left, so '+(r.skip.length===1?'is':'are')+' still waiting. Add another coach to fit them.');
+  if(r.failed) parts.push(r.failed+' could not be sent \u2014 they are still waiting, so try again.');
+  return parts.join(' ');
+}
+
+async function offerWl(id){
+  const msg = $('wlMsg');
+  if(wl && wl.remaining===0){ msg.style.color='var(--red)'; msg.textContent='There are no seats free yet. Use Add extra coach, then the links go out.'; return; }
+  const who = id ? 'this person' : 'everyone on the list who fits in the seats free';
+  if(!confirm('Email a payment link to '+who+'?\n\nThey are emailed straight away. A seat is held for each of them until they pay or you cancel it.')) return;
+  msg.style.color = 'var(--body)'; msg.textContent = 'Sending\u2026';
+  const r = await sendLinks(id);
   await load(current.id);
-  $('wlMsg').textContent = parts.join(' ');
+  if(r.broke || r.error){
+    $('wlMsg').style.color = 'var(--red)';
+    $('wlMsg').textContent = (r.error || 'Lost the connection') + ' \u2014 sent '+r.sent+' before it stopped. Check the list before pressing again.';
+    return;
+  }
+  $('wlMsg').style.color = (r.failed || (!r.sent && r.skip.length)) ? 'var(--red)' : 'var(--green)';
+  $('wlMsg').textContent = linkSummary(r);
+}
+
+async function addCoach(){
+  const msg = $('wlMsg');
+  const answer = prompt('How many seats are on the extra coach?', '50');
+  if(answer === null) return;
+  const n = parseInt(answer, 10);
+  if(!(n >= 1 && n <= 100)){ msg.style.color='var(--red)'; msg.textContent='Put in a number of seats between 1 and 100.'; return; }
+  const waiting = ((wl && wl.entries) || []).filter(e => e.status==='waiting');
+  const want = waiting.reduce((a,e) => a+e.seats, 0);
+  if(!confirm('Add an extra coach of '+n+' seats to '+current.opponent+'?\n\n'+
+      'Only do this once the coach is booked with the coach company.\n\n'+
+      (waiting.length
+        ? waiting.length+' '+(waiting.length===1?'person is':'people are')+' waiting ('+want+' seat'+(want===1?'':'s')+'). They will be emailed a payment link straight away, in the order they joined.'
+        : 'Nobody is waiting, so this just adds the seats.'))) return;
+
+  msg.style.color = 'var(--body)'; msg.textContent = 'Adding the coach\u2026';
+  let d;
+  try{
+    d = await (await fetch(EP+'/coach/addcoach',{method:'POST',headers:H(),body:JSON.stringify({trip_id:current.id, seats:n})})).json();
+  }catch(e){ msg.style.color='var(--red)'; msg.textContent='Could not reach the server. Check the seat count before trying again.'; return; }
+  if(!d.ok){ msg.style.color='var(--red)'; msg.textContent=d.error; return; }
+
+  const added = 'Extra coach added: '+d.seats+' seats on '+d.coaches+' coaches now.';
+  if(!waiting.length){
+    await load(current.id);
+    $('wlMsg').style.color = 'var(--green)'; $('wlMsg').textContent = added;
+    return;
+  }
+  msg.textContent = added+' Sending the payment links\u2026';
+  const r = await sendLinks();
+  await load(current.id);
+  if(r.broke || r.error){
+    $('wlMsg').style.color = 'var(--red)';
+    $('wlMsg').textContent = added+' But sending stopped after '+r.sent+' ('+(r.error||'lost the connection')+'). '+
+      'Press Send payment links to carry on. Do not press Add extra coach again, or it will add another coach.';
+    return;
+  }
+  $('wlMsg').style.color = (r.failed || (!r.sent && r.skip.length)) ? 'var(--red)' : 'var(--green)';
+  $('wlMsg').textContent = added+' '+linkSummary(r);
 }
 async function removeWl(id){
   const e = ((wl && wl.entries) || []).find(x => x.id===id);
@@ -278,7 +341,7 @@ function drawTrips(){
       '<div class="seats"><b>'+t.remaining+'</b><span>seats left</span></div>'+
       '<b>'+esc(t.opponent)+'</b>'+
       '<small>'+dfmt(t.match_date)+' \u00b7 departs '+esc(t.depart_time)+' from '+esc(t.depart_from)+' \u00b7 '+money(t.price)+' a seat</small>'+
-      '<small>'+t.taken+' of '+t.seats+' seats taken'+waitChip(t)+
+      '<small>'+t.taken+' of '+t.seats+' seats taken'+coachChip(t)+waitChip(t)+
       (t.status==='closed'||t.status==='cancelled'?' \u00b7 <b style="color:#C0392B">'+t.status+'</b>':'')+'</small>'+
       '<label class="liveswitch'+(live?' on':'')+'" onclick="event.stopPropagation()">'+
         '<input type="checkbox"'+(live?' checked':'')+' onchange="setLive('+t.id+',this.checked)">'+
