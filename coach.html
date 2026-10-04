@@ -245,11 +245,11 @@ function linkSummary(r){
   return parts.join(' ');
 }
 
-async function offerWl(id){
+async function offerWl(id, noConfirm){
   const msg = $('wlMsg');
   if(wl && wl.remaining===0){ msg.style.color='var(--red)'; msg.textContent='There are no seats free yet. Use Add extra coach, then the links go out.'; return; }
   const who = id ? 'this person' : 'everyone on the list who fits in the seats free';
-  if(!confirm('Email a payment link to '+who+'?\n\nThey are emailed straight away. A seat is held for each of them until they pay or you cancel it.')) return;
+  if(!noConfirm && !confirm('Email a payment link to '+who+'?\n\nThey are emailed straight away. A seat is held for each of them until they pay or you cancel it.')) return;
   msg.style.color = 'var(--body)'; msg.textContent = 'Sending\u2026';
   const r = await sendLinks(id);
   await load(current.id);
@@ -590,7 +590,34 @@ async function mark(id,status){
     if(why.trim()) body.reason=why.trim();
   }
   await fetch(EP+'/coach/booking',{method:'POST',headers:H(),body:JSON.stringify(body)});
-  load(current.id);
+  await load(current.id);
+  if(status==='cancelled') await offerFreedSeat();
+}
+
+// Seats wanted by people on the waiting list are held back from the public page, so a seat that
+// comes free and is then forgotten would sit empty. Ask straight away whether to offer it.
+async function offerFreedSeat(){
+  await loadWaitlist();
+  if(!wl) return;
+  const waiting = (wl.entries||[]).filter(e => e.status==='waiting');
+  if(!waiting.length || wl.remaining < 1) return;
+  const next = waiting.find(e => e.seats <= wl.remaining);       // first in the queue who fits
+  const msg = $('wlMsg');
+  if(!next){
+    msg.style.color = 'var(--body)';
+    msg.textContent = 'A seat has come free, but nobody waiting fits in it yet. Add an extra coach, or use Send link when a group that fits comes up.';
+    return;
+  }
+  const skipped = waiting.filter(e => e.id!==next.id && waiting.indexOf(e) < waiting.indexOf(next)).length;
+  if(!confirm('A seat has come free, and '+waiting.length+' '+(waiting.length===1?'person is':'people are')+' waiting.\n\n'+
+      next.name+' is next ('+next.seats+' seat'+(next.seats===1?'':'s')+')'+
+      (skipped ? ', after '+skipped+' earlier '+(skipped===1?'group who does':'groups who do')+' not fit in the seats free' : '')+
+      '.\n\nEmail them a payment link now?')){
+    msg.style.color = 'var(--body)';
+    msg.textContent = 'The free seat is being held for the waiting list. Use Send link on a row when you are ready.';
+    return;
+  }
+  await offerWl(next.id, true);
 }
 
 // One row per person travelling, with somewhere to tick them on and off.
