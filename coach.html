@@ -217,6 +217,7 @@ function drawWaitlist(){
 
   $('wlActions').innerHTML =
     '<button class="green" onclick="addCoach()">Add extra coach</button>'+
+    ' <button class="ghost" onclick="addWl()">Add someone to the list</button>'+
     (waiting.length && wl.remaining > 0
       ? ' <button class="ghost" onclick="offerWl()">Send payment links to everyone who fits</button>' : '');
 }
@@ -301,12 +302,20 @@ async function addCoach(){
   $('wlMsg').style.color = (r.failed || (!r.sent && r.skip.length)) ? 'var(--red)' : 'var(--green)';
   $('wlMsg').textContent = added+' '+linkSummary(r);
 }
-// ---- changing somebody's details on the list ----
+// ---- adding somebody to the list, or changing their details ----
 function wlRead(){
   if(!$('we_name')) return;
   window._wlForm = { name:$('we_name').value, mobile:$('we_mobile').value, email:$('we_email').value };
+  if($('we_notify')) window._wlNotify = $('we_notify').checked;
   const dobs = document.querySelectorAll('#wlEditPanel .wlpd');
   window._wlPax = [...document.querySelectorAll('#wlEditPanel .wlpn')].map((el,i) => ({ name: el.value, dob: (dobs[i]||{}).value || '' }));
+}
+function addWl(){
+  window._wlEditId = null; window._wlNotify = true;
+  window._wlForm = { name:'', mobile:'', email:'' };
+  window._wlPax = [{ name:'', dob:'' }];
+  drawWlEdit();
+  $('wlEdit').scrollIntoView({behavior:'smooth', block:'center'});
 }
 function editWl(id){
   const e = ((wl && wl.entries) || []).find(x => x.id===id); if(!e) return;
@@ -319,18 +328,22 @@ function editWl(id){
   $('wlEdit').scrollIntoView({behavior:'smooth', block:'center'});
 }
 function drawWlEdit(){
+  const adding = !window._wlEditId;
   const f = window._wlForm, rows = window._wlPax.map((p,i) =>
-    '<div class="g2" style="margin-bottom:8px"><div><label>Passenger '+(i+1)+'</label><input class="wlpn" value="'+esc(p.name)+'"></div>'+
+    '<div class="g2" style="margin-bottom:8px"><div><label>Passenger '+(i+1)+(i===0&&adding?' (the person asking)':'')+'</label><input class="wlpn" value="'+esc(p.name)+'"></div>'+
     '<div><label>Date of birth</label><input class="wlpd" type="date" value="'+esc(p.dob)+'"></div></div>').join('');
   $('wlEdit').innerHTML = '<div id="wlEditPanel" style="border:1.5px solid var(--line);border-radius:12px;padding:16px;margin-top:14px;background:#FAFCFE">'+
-    '<b>Change the details</b><p style="font-size:13px;color:#7A8AA5;margin:4px 0 10px">They keep their place in the queue.</p>'+
+    '<b>'+(adding?'Add someone to the waiting list':'Change the details')+'</b>'+
+    '<p style="font-size:13px;color:#7A8AA5;margin:4px 0 10px">'+(adding?'They join at the back of the queue.':'They keep their place in the queue.')+'</p>'+
     '<div class="g2"><div><label>Name</label><input id="we_name" value="'+esc(f.name)+'"></div>'+
     '<div><label>Mobile</label><input id="we_mobile" value="'+esc(f.mobile)+'"></div></div>'+
     '<label>Email (the payment link goes here)</label><input id="we_email" value="'+esc(f.email)+'">'+
     '<label style="margin-top:14px">Who is travelling</label>'+rows+
     '<button type="button" class="ghost sm" onclick="wlPaxAdd()">Add a passenger</button> '+
     '<button type="button" class="ghost sm" onclick="wlPaxDrop()">Remove the last one</button>'+
-    '<div style="margin-top:14px"><button type="button" class="green" onclick="saveWl()">Save the changes</button> '+
+    (adding ? '<label style="display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-size:13.5px;font-weight:500;margin-top:14px">'+
+      '<input type="checkbox" id="we_notify" style="width:auto"'+(window._wlNotify!==false?' checked':'')+'> Email them to confirm they are on the list</label>' : '')+
+    '<div style="margin-top:14px"><button type="button" class="green" onclick="saveWl()">'+(adding?'Add to the waiting list':'Save the changes')+'</button> '+
     '<button type="button" class="ghost" onclick="document.getElementById(\'wlEdit\').innerHTML=\'\'">Cancel</button></div>'+
     '<p class="msg" id="we_msg"></p></div>';
 }
@@ -338,17 +351,24 @@ function wlPaxAdd(){ wlRead(); if(window._wlPax.length>=6) return; window._wlPax
 function wlPaxDrop(){ wlRead(); if(window._wlPax.length>1) window._wlPax.pop(); drawWlEdit(); }
 async function saveWl(){
   wlRead();
+  const adding = !window._wlEditId;
+  // the person asking is the first passenger, so save them typing the name twice
+  if(adding && window._wlPax[0] && !window._wlPax[0].name.trim()) window._wlPax[0].name = window._wlForm.name.trim();
   const m = $('we_msg'); m.style.color = 'var(--body)'; m.textContent = 'Saving\u2026';
+  const body = { name: window._wlForm.name, mobile: window._wlForm.mobile, email: window._wlForm.email,
+                 passengers: window._wlPax.filter(p => p.name.trim()) };
+  if(adding){ body.trip_id = current.id; body.notify = window._wlNotify !== false; } else { body.id = window._wlEditId; }
   let d;
   try{
-    d = await (await fetch(EP+'/coach/waitlist/edit',{method:'POST',headers:H(),body:JSON.stringify({
-      id: window._wlEditId, name: window._wlForm.name, mobile: window._wlForm.mobile, email: window._wlForm.email,
-      passengers: window._wlPax.filter(p => p.name.trim()) })})).json();
+    d = await (await fetch(EP+(adding?'/coach/waitlist/add':'/coach/waitlist/edit'),{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
   }catch(e){ m.style.color='var(--red)'; m.textContent='Could not reach the server \u2014 try again.'; return; }
   if(!d.ok){ m.style.color='var(--red)'; m.textContent=d.error; return; }
   $('wlEdit').innerHTML = '';
   await load(current.id);
-  $('wlMsg').style.color = 'var(--green)'; $('wlMsg').textContent = 'Details changed. They keep their place in the queue.';
+  $('wlMsg').style.color = 'var(--green)';
+  $('wlMsg').textContent = adding
+    ? 'Added to the waiting list'+(d.emailed?' and emailed to confirm':'')+'. They are at the back of the queue.'
+    : 'Details changed. They keep their place in the queue.';
 }
 
 async function removeWl(id){
