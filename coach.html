@@ -530,8 +530,9 @@ function drawBookings(){
         })()+
         (b.notes?'<br><small style="color:#7A8AA5">'+esc(b.notes)+'</small>':'')+'</td>'+
       '<td>'+esc(b.mobile||'—')+'</td><td>'+b.seats+'</td>'+
-      (multi?'<td>'+(b.payment_status==='cancelled'?'':
-        '<select class="noprint" onchange="setCoach('+b.id+',this.value)" style="padding:4px 6px">'+
+      (multi?'<td style="white-space:nowrap;min-width:110px">'+(b.payment_status==='cancelled'?'':
+        '<select class="noprint" onchange="setCoach('+b.id+',this.value)" style="width:auto;min-width:104px;padding:4px 24px 4px 8px">'+
+        (b.coach_no?'':'<option value="" selected disabled>Not set</option>')+
         Array.from({length:current.coaches},(_,i)=>i+1).map(c=>'<option value="'+c+'"'+(b.coach_no===c?' selected':'')+'>Coach '+c+'</option>').join('')+
         '</select><span class="printonly">Coach '+(b.coach_no||'')+'</span>')+'</td>':'')+
       '<td><span class="pill '+b.payment_status+'">'+b.payment_status+'</span></td>'+
