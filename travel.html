@@ -139,12 +139,26 @@ async function load(){
           '<div><label>How many seats?</label><select id="s'+t.id+'" onchange="paxFields('+t.id+')">'+
             [1,2,3,4,5,6].filter(n=>t.remaining===0||n<=t.remaining).map(n=>'<option>'+n+'</option>').join('')+'</select></div></div>'+
           '<div id="pax'+t.id+'"></div>'+
+          (member ? '' :
+            '<div class="consent" style="margin-top:16px;padding:12px 14px;background:#F3F7FB;border-radius:9px;font-size:14px;line-height:1.55">'+
+            '<p style="margin:0 0 8px">We will email you about this booking, and about future Dale Trust coaches. You can change your mind at any time.</p>'+
+            '<label style="display:flex;gap:9px;align-items:flex-start;font-weight:400;text-transform:none;letter-spacing:0;font-size:14px;color:inherit;margin:6px 0"><input type="checkbox" id="co'+t.id+'" style="margin-top:4px;width:auto">'+
+            '<span>Please <b>don&rsquo;t</b> email me about future coaches.</span></label>'+
+            '<label style="display:flex;gap:9px;align-items:flex-start;font-weight:400;text-transform:none;letter-spacing:0;font-size:14px;color:inherit;margin:6px 0"><input type="checkbox" id="jo'+t.id+'" style="margin-top:4px;width:auto">'+
+            '<span>Yes, keep me updated about the Trust and how to join.</span></label>'+
+            '</div>')+
           (member ? '' : '<div class="cap" id="cap'+t.id+'" style="margin-top:14px"></div>')+
           '<div style="margin-top:14px"><button class="green" onclick="'+(t.remaining===0?'joinList':'book')+'('+t.id+')">'+(t.remaining===0?'Join the waiting list':'Book and pay')+' &rarr;</button></div>'+
           '<p class="msg" id="m'+t.id+'"></p>'+
         '</div></div>';
     }).join('');
   }catch(e){$('list').textContent='Could not reach the server — please try again.';}
+}
+
+function consentOf(id){
+  if(member) return {};
+  const co=document.getElementById('co'+id), jo=document.getElementById('jo'+id);
+  return {consent_shown:true, coach_optout:!!(co&&co.checked), join_optin:!!(jo&&jo.checked)};
 }
 
 function paxFields(id){
@@ -182,7 +196,7 @@ async function book(id){
   msg.textContent='One moment…';
   try{
     const d=await (await fetch(EP+'/coach/book',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({trip_id:id,name,mobile,email,seats,passengers,
+      body:JSON.stringify({trip_id:id,name,mobile,email,seats,passengers,...consentOf(id),
         member_no:member&&member.record?member.record.member_no:null,
         turnstile_token:(window.turnstile&&window._capIds&&window._capIds[id]!==undefined)
           ? turnstile.getResponse(window._capIds[id]) : ''})})).json();
@@ -211,7 +225,7 @@ async function joinList(id){
   msg.textContent='One moment\u2026';
   try{
     const d=await (await fetch(EP+'/coach/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({trip_id:id,name,mobile,email,seats,passengers,
+      body:JSON.stringify({trip_id:id,name,mobile,email,seats,passengers,...consentOf(id),
         member_no:member&&member.record?member.record.member_no:null,
         turnstile_token:(window.turnstile&&window._capIds&&window._capIds[id]!==undefined)
           ? turnstile.getResponse(window._capIds[id]) : ''})})).json();
