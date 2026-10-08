@@ -45,10 +45,10 @@
   th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
   th{font-size:11px;text-transform:uppercase;color:#7A8AA5}
   .pill{font-size:10.5px;font-weight:700;text-transform:uppercase;padding:3px 9px;border-radius:100px;color:#fff}
-  .paid{background:var(--green)}.pending{background:var(--gold);color:#3a2c00}.cash{background:var(--royal)}.free{background:#5B6472}.cancelled{background:#C0392B}
+  .paid{background:var(--green)}.pending{background:var(--gold);color:#3a2c00}.cash{background:var(--royal)}.sumup{background:var(--royal)}.transfer{background:var(--royal)}.half{background:var(--royal)}.oncoach{background:var(--gold);color:#3a2c00}.free{background:#5B6472}.cancelled{background:#C0392B}
   .msg{font-size:13.5px;font-weight:600;margin-top:10px}
   .tot{background:var(--wash);border-radius:9px;padding:12px 14px;margin-top:10px;font-size:14px}
-  @media print{.back,.top,.noprint{display:none}.panel{border:0;padding:0}body{background:#fff}}
+  @media print{.back,.top,.noprint{display:none}.printonly{display:inline!important}.panel{border:0;padding:0}body{background:#fff}}
   .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   @media(max-width:700px){.g2{grid-template-columns:1fr}}
   #editPanel label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;
@@ -56,6 +56,7 @@
   #editPanel input{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit}
   #wlEditPanel label{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:10px 0 4px}
   #wlEditPanel input{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fff}
+.printonly{display:none}
 </style>
 </head>
 <body>
@@ -89,6 +90,7 @@
         A date of birth is needed for anyone under 16 &mdash; they cannot travel without an adult.</p>
       <div class="g3" style="margin-top:12px">
         <div><label>Payment</label><select id="m_status" onchange="manualAmount()">
+          <option value="">Choose how they paid&hellip;</option>
           <option value="cash">Paid &mdash; cash</option>
           <option value="sumup">Paid &mdash; SumUp</option>
           <option value="transfer">Paid &mdash; bank transfer</option>
@@ -108,7 +110,8 @@
       <div id="bookings"></div>
       <div style="margin-top:14px" class="noprint">
         <button class="ghost" onclick="window.print()">Print the bookings</button>
-        <button class="ghost" onclick="paxList()">Passenger list for the day</button>
+        <button class="ghost" id="paxAllBtn" onclick="paxList()">Passenger list for the day</button>
+        <span id="coachPrintBtns"></span>
       </div>
     </div>
 
@@ -474,17 +477,45 @@ function openTrip(id){
   $('detail').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
+const PAID=['paid','cash','sumup','transfer','half'];
+
+function coachCap(){ const n=Math.max(1,(current&&current.coaches)||1); return Math.ceil(((current&&current.seats)||0)/n); }
+
+async function setCoach(id,n){
+  const d=await (await fetch(EP+'/coach/booking',{method:'POST',headers:H(),body:JSON.stringify({id,coach_no:Number(n)})})).json();
+  if(!d.ok) alert(d.error||'Could not move that booking');
+  await load(current.id);
+}
+
 function drawBookings(){
   drawTrips();
   const live=bookings.filter(b=>b.payment_status!=='cancelled');
   const seats=live.reduce((a,b)=>a+b.seats,0);
-  const paid=live.filter(b=>b.payment_status==='paid'||b.payment_status==='cash').reduce((a,b)=>a+b.amount,0);
+  (function(){
+    const n=(current&&current.coaches)||1, box=$('coachPrintBtns'); if(!box) return;
+    const ab=$('paxAllBtn'); if(ab) ab.textContent = n<2 ? 'Passenger list for the day' : 'Passenger list for the day (both coaches, a page each)';
+    box.innerHTML = n<2 ? '' : Array.from({length:n},(_,i)=>i+1).map(c=>
+      '<button class="ghost" onclick="paxList('+c+')">Print Coach '+c+' only</button>').join(' ');
+  })();
+  const paid=live.filter(b=>PAID.includes(b.payment_status)).reduce((a,b)=>a+b.amount,0);
   const owed=live.filter(b=>b.payment_status==='pending').reduce((a,b)=>a+b.amount,0);
   $('totals').innerHTML='<div class="tot"><b>'+seats+'</b> seats booked · <b>'+money(paid)+'</b> taken'+
     (owed>0?' · <b style="color:#C0392B">'+money(owed)+'</b> still to pay':'')+
-    ' · <b>'+(current.seats-seats)+'</b> seats left</div>';
+    ' · <b>'+(current.seats-seats)+'</b> seats left</div>'+
+    (function(){
+      const n=(current&&current.coaches)||1; if(n<2) return '';
+      const cap=coachCap(); let out='<div class="tot" style="margin-top:6px">';
+      for(let c=1;c<=n;c++){
+        const s=live.filter(b=>b.coach_no===c).reduce((a,b)=>a+b.seats,0);
+        out+=(c>1?' · ':'')+'<b>Coach '+c+':</b> <span style="'+(s>cap?'color:#C0392B;font-weight:700':'')+'">'+s+'/'+cap+'</span>';
+      }
+      const un=live.filter(b=>!(b.coach_no>=1&&b.coach_no<=n)).reduce((a,b)=>a+b.seats,0);
+      if(un) out+=' · <b style="color:#C0392B">'+un+' not on a coach yet</b>';
+      return out+'</div>';
+    })();
   if(!bookings.length){$('bookings').innerHTML='<p style="color:#7A8AA5;margin-top:10px">Nobody booked yet.</p>';return;}
-  $('bookings').innerHTML='<table><tr><th>Name</th><th>Mobile</th><th>Seats</th><th>Paid</th><th class="noprint">Ref</th><th class="noprint"></th></tr>'+
+  const multi=((current&&current.coaches)||1)>1;
+  $('bookings').innerHTML='<table><tr><th>Name</th><th>Mobile</th><th>Seats</th>'+(multi?'<th>Coach</th>':'')+'<th>Paid</th><th class="noprint">Ref</th><th class="noprint"></th></tr>'+
     bookings.map(b=>'<tr'+(b.payment_status==='cancelled'?' style="opacity:.45"':'')+'>'+
       '<td><b>'+esc(b.name)+'</b>'+
         (function(){
@@ -499,10 +530,14 @@ function drawBookings(){
         })()+
         (b.notes?'<br><small style="color:#7A8AA5">'+esc(b.notes)+'</small>':'')+'</td>'+
       '<td>'+esc(b.mobile||'—')+'</td><td>'+b.seats+'</td>'+
+      (multi?'<td>'+(b.payment_status==='cancelled'?'':
+        '<select class="noprint" onchange="setCoach('+b.id+',this.value)" style="padding:4px 6px">'+
+        Array.from({length:current.coaches},(_,i)=>i+1).map(c=>'<option value="'+c+'"'+(b.coach_no===c?' selected':'')+'>Coach '+c+'</option>').join('')+
+        '</select><span class="printonly">Coach '+(b.coach_no||'')+'</span>')+'</td>':'')+
       '<td><span class="pill '+b.payment_status+'">'+b.payment_status+'</span></td>'+
       '<td class="noprint"><small>'+esc(b.booking_ref)+'</small></td>'+
       '<td class="noprint"><button class="ghost sm" onclick="editBooking('+b.id+')">Change</button> '+
-      (b.payment_status==='pending'?'<button class="green sm" onclick="mark('+b.id+',&quot;cash&quot;)">Mark paid</button> ':'')+
+      (b.payment_status==='pending'?'<button class="green sm" onclick="mark('+b.id+',&quot;cash&quot;)">Paid cash</button> <button class="green sm" onclick="mark('+b.id+',&quot;sumup&quot;)">Paid SumUp</button> ':'')+
       (b.payment_status!=='pending'&&b.payment_status!=='cancelled'&&b.email?'<button class="ghost sm" onclick="resend('+b.id+')">Send confirmation</button> ':'')+
       (b.payment_status!=='cancelled'?'<button class="ghost sm" onclick="mark('+b.id+',&quot;cancelled&quot;)">Cancel</button>':'')+'</td></tr>').join('')+'</table>';
 }
@@ -601,7 +636,7 @@ async function mark(id,status){
   const body={id,payment_status:status};
   if(status==='cancelled'){
     const b=(bookings||[]).find(x=>x.id===id)||{};
-    const paid=['paid','cash'].includes(b.payment_status);
+    const paid=PAID.includes(b.payment_status);
     if(!confirm('Cancel '+(b.name||'this booking')+'?'+
       (b.email?'\n\nThey will be emailed to let them know'+(paid?', and told we will be in touch about their refund.':'.'):
                '\n\nThere is no email address on this booking, so you will need to tell them yourself.')))return;
@@ -642,29 +677,32 @@ async function offerFreedSeat(){
 
 // One row per person travelling, with somewhere to tick them on and off.
 // The same columns as the sheet Emma has always used.
-function paxList(){
+function paxList(only){
   const t=(trips||[]).find(x=>x.id===shownTrip) || (trips||[])[0];
   const live=(bookings||[]).filter(b=>b.payment_status!=='cancelled');
+  const nCoaches=Math.max(1,(t&&t.coaches)||1);
 
   const rows=[];
   live.forEach(b=>{
     let pax=[];
     try{ pax=JSON.parse(b.passengers||'[]'); }catch(e){}
+    const coach=(b.coach_no>=1&&b.coach_no<=nCoaches)?b.coach_no:0;
     if(!pax.length){
       // no passenger names on the booking. For a single seat the booker is the passenger,
       // so that is not a missing name. For several, the others are genuinely unknown.
       rows.push({ name: b.name, age: null, mobile: b.mobile||'', notes: b.notes||'',
-        paid: b.payment_status, ref: b.booking_ref });
+        paid: b.payment_status, ref: b.booking_ref, coach, amount: Number(b.amount||0), first: true });
       for(let i=1;i<b.seats;i++) rows.push({
         name: 'Travelling with '+b.name, age: null, mobile: '', notes: b.notes||'',
-        paid: b.payment_status, ref: b.booking_ref, unknown: true });
+        paid: b.payment_status, ref: b.booking_ref, unknown: true, coach, amount: 0 });
     } else {
       pax.forEach((p,i)=>{
         let age=null;
         if(p.dob){ age=Math.floor((Date.now()-new Date(p.dob))/31557600000); }
         else if(p.age!==undefined) age=p.age;
         rows.push({ name:p.name, age, mobile: i===0?(b.mobile||''):'',
-          notes: b.notes||'', paid: b.payment_status, ref: b.booking_ref });
+          notes: b.notes||'', paid: b.payment_status, ref: b.booking_ref, coach,
+          amount: i===0?Number(b.amount||0):0, first: i===0 });
       });
     }
   });
@@ -678,12 +716,22 @@ function paxList(){
     return s !== 0 ? s : String(a.name).localeCompare(String(b.name));
   });
 
-  const owed = live.filter(b=>b.payment_status==='pending'||b.payment_status==='oncoach')
-                   .reduce((s,b)=>s+Number(b.amount||0),0);
-
   const when = t && t.match_date
     ? new Date(t.match_date+'T12:00:00').toLocaleDateString('en-GB',
         {weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '';
+
+  // one page (or more) per coach. A single coach is just one group, as before.
+  const groups=[];
+  if(nCoaches<2){
+    groups.push({ label:'', rows });
+  } else {
+    for(let c=1;c<=nCoaches;c++){
+      if(only && only!==c) continue;
+      groups.push({ label:'Coach '+c+' of '+nCoaches, rows: rows.filter(r=>r.coach===c) });
+    }
+    const loose=rows.filter(r=>!r.coach);
+    if(!only && loose.length) groups.push({ label:'Not yet on a coach', rows: loose });
+  }
 
   const w=window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+
@@ -701,32 +749,41 @@ function paxList(){
     '.owe{color:#8A4B00;font-weight:700}'+
     '.foot{margin-top:16px;font-size:11px;color:#444;border-top:1px solid #ccc;padding-top:10px}'+
     '.sign{margin-top:26px;font-size:11px}'+
+    '.cn{display:inline-block;background:#0E1F3D;color:#fff;padding:2px 10px;border-radius:5px;margin-left:8px;font-size:15px}'+
+    '.sheet{page-break-after:always}.sheet:last-child{page-break-after:auto}'+
+    '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
     '@page{size:A4;margin:12mm}'+
     '</style></head><body>');
-  w.document.write('<h1>'+esc(t?t.opponent:'Coach')+'</h1>'+
-    '<h2>'+esc(when)+(t&&t.depart_time?' &middot; leaving '+esc(t.depart_time)+
-      ' from '+esc(t.depart_from||'the Crown Oil Arena'):'')+
-    ' &middot; '+rows.length+' travelling'+
-    (owed>0?' &middot; <span class="owe">\u00a3'+owed.toFixed(2)+' to collect</span>':'')+'</h2>');
-  w.document.write('<table><tr><th>Name</th><th>Under 18</th><th>Contact number</th>'+
-    '<th class="tick">Out</th><th class="tick">Ret</th><th>Notes</th></tr>'+
-    rows.map(r=>'<tr>'+
-      '<td>'+(r.unknown
-        ? '<span style="color:#8A4B00">'+esc(r.name)+'</span>'
-        : '<b>'+esc(r.name)+'</b>')+'</td>'+
-      '<td>'+(r.age!==null&&r.age<18?'<span class="u18">'+r.age+'</span>':'')+'</td>'+
-      '<td>'+esc(r.mobile||'')+'</td>'+
-      '<td class="tick"><span class="box"></span></td>'+
-      '<td class="tick"><span class="box"></span></td>'+
-      '<td>'+esc(r.notes||'')+
-        (r.paid==='pending'?'<span class="owe">to pay</span>':'')+
-        (r.paid==='oncoach'?'<span class="owe">paying on the coach</span>':'')+
-      '</td></tr>').join('')+'</table>');
-  w.document.write('<div class="foot"><b>Anyone under 18 must be with a responsible adult.</b> '+
-    'Seats do not include a match ticket. Please be at the pick-up ten minutes before we leave.<br>'+
-    'Any problems on the day: travel@daletrust.uk</div>'+
-    '<div class="sign">Driver ______________________  Coach ______________  '+
-    'Left ______:______  Returned ______:______</div>');
+  groups.forEach(g=>{
+    const owed = live.filter(b=>(b.payment_status==='pending'||b.payment_status==='oncoach') &&
+        (nCoaches<2 || g.rows.some(r=>r.ref===b.booking_ref)))
+      .reduce((s,b)=>s+Number(b.amount||0),0);
+    w.document.write('<div class="sheet">'+
+      '<h1>'+esc(t?t.opponent:'Coach')+(g.label?'<span class="cn">'+esc(g.label)+'</span>':'')+'</h1>'+
+      '<h2>'+esc(when)+(t&&t.depart_time?' &middot; leaving '+esc(t.depart_time)+
+        ' from '+esc(t.depart_from||'the Crown Oil Arena'):'')+
+      ' &middot; '+g.rows.length+' travelling'+
+      (owed>0?' &middot; <span class="owe">£'+owed.toFixed(2)+' to collect</span>':'')+'</h2>'+
+      '<table><tr><th>Name</th><th>Under 18</th><th>Contact number</th>'+
+      '<th class="tick">Out</th><th class="tick">Ret</th><th>Notes</th></tr>'+
+      g.rows.map(r=>'<tr>'+
+        '<td>'+(r.unknown
+          ? '<span style="color:#8A4B00">'+esc(r.name)+'</span>'
+          : '<b>'+esc(r.name)+'</b>')+'</td>'+
+        '<td>'+(r.age!==null&&r.age<18?'<span class="u18">'+r.age+'</span>':'')+'</td>'+
+        '<td>'+esc(r.mobile||'')+'</td>'+
+        '<td class="tick"><span class="box"></span></td>'+
+        '<td class="tick"><span class="box"></span></td>'+
+        '<td>'+esc(r.notes||'')+
+          (r.paid==='pending'?'<span class="owe">to pay</span>':'')+
+          (r.paid==='oncoach'?'<span class="owe">paying on the coach</span>':'')+
+        '</td></tr>').join('')+'</table>'+
+      '<div class="foot"><b>Anyone under 18 must be with a responsible adult.</b> '+
+      'Seats do not include a match ticket. Please be at the pick-up ten minutes before we leave.<br>'+
+      'Any problems on the day: travel@daletrust.uk</div>'+
+      '<div class="sign">Driver ______________________  '+(g.label?esc(g.label):'Coach')+'  ______________  '+
+      'Left ______:______  Returned ______:______</div></div>');
+  });
   w.document.write('</body></html>');
   w.document.close();
   setTimeout(()=>w.print(), 400);
@@ -772,10 +829,11 @@ async function addManual(){
       dob:r.querySelector('.mpxd').value })).filter(p=>p.name),
     notes:$('m_notes').value.trim()};
   if(!body.name){$('mmsg').innerHTML='<span style="color:var(--red)">A name is needed.</span>';return;}
+  if(!body.payment_status){$('mmsg').innerHTML='<span style="color:var(--red)">Choose how they paid &mdash; cash, SumUp, bank transfer, or not paid yet.</span>';return;}
   const d=await (await fetch(EP+'/coach/manual',{method:'POST',headers:H(),body:JSON.stringify(body)})).json();
   if(d.ok){
     $('mmsg').innerHTML='<span style="color:var(--green)">Added — '+esc(d.booking_ref)+'</span>';
-    ['m_name','m_mobile','m_email','m_notes'].forEach(i=>$(i).value=''); $('m_seats').value='1';
+    ['m_name','m_mobile','m_email','m_notes'].forEach(i=>$(i).value=''); $('m_seats').value='1'; $('m_status').value='';
     load(current.id);
   } else $('mmsg').innerHTML='<span style="color:var(--red)">'+esc(d.error)+'</span>';
 }
