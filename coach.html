@@ -536,9 +536,9 @@ function drawBookings(){
         Array.from({length:current.coaches},(_,i)=>i+1).map(c=>'<option value="'+c+'"'+(b.coach_no===c?' selected':'')+'>Coach '+c+'</option>').join('')+
         '</select><span class="printonly">Coach '+(b.coach_no||'')+'</span>')+'</td>':'')+
       '<td><span class="pill '+b.payment_status+'">'+b.payment_status+'</span></td>'+
-      '<td class="noprint"><small>'+esc(b.booking_ref)+'</small></td>'+
+      '<td class="noprint" style="white-space:nowrap"><small>'+esc(b.booking_ref)+'</small></td>'+
       '<td class="noprint"><button class="ghost sm" onclick="editBooking('+b.id+')">Change</button> '+
-      (b.payment_status==='pending'?'<button class="green sm" onclick="mark('+b.id+',&quot;cash&quot;)">Paid cash</button> <button class="green sm" onclick="mark('+b.id+',&quot;sumup&quot;)">Paid SumUp</button> ':'')+
+      (b.payment_status==='pending'?'<button class="green sm" onclick="mark('+b.id+',&quot;cash&quot;)">Paid cash</button> <button class="green sm" onclick="mark('+b.id+',&quot;sumup&quot;)">Paid SumUp</button> <button class="green sm" onclick="mark('+b.id+',&quot;transfer&quot;)">Paid transfer</button> ':'')+
       (b.payment_status!=='pending'&&b.payment_status!=='cancelled'&&b.email?'<button class="ghost sm" onclick="resend('+b.id+')">Send confirmation</button> ':'')+
       (b.payment_status!=='cancelled'?'<button class="ghost sm" onclick="mark('+b.id+',&quot;cancelled&quot;)">Cancel</button>':'')+'</td></tr>').join('')+'</table>';
 }
