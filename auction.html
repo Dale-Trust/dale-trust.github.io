@@ -57,6 +57,15 @@
   .msg{margin-top:12px;font-size:14.5px;font-weight:600}
   .won{background:#EAF7F0;border:1px solid #B7E0CB;border-left:5px solid var(--green);border-radius:0 14px 14px 0;padding:20px}
   footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:22px}
+  .rules{background:#fff;border:2px solid var(--gold);border-radius:14px;padding:18px 20px;margin-bottom:16px;font-size:14.5px}
+  .rules h2{font-size:17px;margin-bottom:8px}
+  .rules ul{margin:8px 0 0 20px}.rules li{margin-bottom:5px}
+  .rules .when{background:#FFF9E8;border-radius:9px;padding:10px 14px;margin-bottom:10px}
+  .rules .when b{color:var(--ink)}
+  .rules .ext{color:#8A4B00}
+  .flash{position:sticky;top:0;z-index:50;display:none;background:var(--navy);color:#fff;border-radius:12px;padding:13px 18px;margin-bottom:14px;font-weight:600;box-shadow:0 6px 20px rgba(4,30,66,.25)}
+  .flash.warn{background:#7A1F16}.flash.good{background:var(--green)}
+  .live{font-size:12px;color:#7A8AA5;text-align:center;margin:-6px 0 14px}
   .lb{position:fixed;inset:0;background:rgba(4,12,30,.92);display:none;align-items:center;justify-content:center;padding:20px;z-index:99}
   .lb img{max-width:100%;max-height:92vh;border-radius:10px}
 </style>
@@ -69,7 +78,7 @@
   <p id="subtitle"></p>
 </div></div>
 
-<div class="wrap" id="out"><div class="card">Loading&hellip;</div></div>
+<div class="wrap"><div class="flash" id="flash" role="status" aria-live="polite"></div><div id="out"><div class="card">Loading&hellip;</div></div></div>
 <div class="lb" id="lb" onclick="this.style.display='none'"><img id="lbimg" alt=""></div>
 
 <footer>Dale Trust is the trading name of Rochdale Supporters Club Limited, a registered society (29690R).</footer>
@@ -78,7 +87,10 @@ const EP='https://join.daletrust.uk';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 const money=n=>'\u00a3'+Number(n||0).toFixed(2);
-let A=null, ME=null, TICK=null, SESSION=null, WON=null, KNOWN=null;
+let A=null, ME=null, TICK=null, SESSION=null, WON=null, KNOWN=null, SKEW=0, SIG='', POLL=null;
+const nowMs=()=>Date.now()+SKEW;   // the server's clock, not the phone's
+const endMs=iso=>new Date(iso.replace(' ','T')+'Z').getTime();
+const londonTime=iso=>new Date(endMs(iso)).toLocaleString('en-GB',{timeZone:'Europe/London',weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 try{ SESSION=localStorage.getItem('dt_bidder'); }catch(e){}
 
 // arriving from the email link
@@ -97,7 +109,7 @@ function H(){ return SESSION ? {'Content-Type':'application/json','Authorization
                              : {'Content-Type':'application/json'}; }
 
 function left(toIso){
-  const ms=new Date(toIso.replace(' ','T')+'Z')-new Date();
+  const ms=endMs(toIso)-nowMs();
   if(ms<=0) return null;
   const s=Math.floor(ms/1000), d=Math.floor(s/86400), hh=Math.floor(s%86400/3600),
         mm=Math.floor(s%3600/60), ss=s%60;
@@ -112,9 +124,9 @@ function startClock(){
     if(!A||!A.auction.closes_at) return;
     const el=$('clock'); if(!el) return;
     const t=left(A.auction.closes_at);
-    if(!t){ clearInterval(TICK); load(); return; }
+    if(!t){ el.querySelector('b').textContent='Checking for last bids\u2026'; refresh(true); return; }
     el.querySelector('b').textContent=t;
-    const ms=new Date(A.auction.closes_at.replace(' ','T')+'Z')-new Date();
+    const ms=endMs(A.auction.closes_at)-nowMs();
     el.className='clock'+(ms<15*60000?' soon':'');
   },1000);
 }
@@ -187,7 +199,8 @@ async function load(){
       '<p style="margin-top:8px">There is no shirt up for bidding just now. Keep an eye on '+
       '<a href="news.html">the news</a> — the next one will be announced there.</p></div>';
       $('title').textContent='Shirts in Fans Hands'; return; }
-    A=d; ME=d.me;
+    A=d; ME=d.me; if(d.serverTime) SKEW=new Date(d.serverTime).getTime()-Date.now();
+    SIG=sig(d);
     if(ME) await checkWon();
     $('title').textContent=A.auction.title;
     $('subtitle').textContent=A.auction.subtitle||'';
@@ -196,8 +209,81 @@ async function load(){
   }catch(e){ $('out').innerHTML='<div class="card">Could not load just now. Please try again shortly.</div>'; }
 }
 
+function rulesBox(a){
+  const n=a.extend_minutes||5;
+  const planned=a.planned_close||a.closes_at;
+  let when;
+  if(a.extensions){
+    when='<div class="when"><b>Advertised close:</b> '+londonTime(planned)+'<br>'+
+      '<span class="ext"><b>Now closing:</b> '+londonTime(a.closes_at)+' \u2014 pushed back '+a.extensions+
+      ' time'+(a.extensions===1?'':'s')+' by late bids.</span></div>';
+  } else {
+    when='<div class="when"><b>Closes:</b> '+londonTime(a.closes_at)+', unless somebody bids in the last '+n+' minutes (see below).</div>';
+  }
+  return '<div class="rules"><h2>How the closing time works</h2>'+when+
+    '<ul>'+
+    '<li>If anybody bids in the <b>last '+n+' minutes</b>, the clock <b>restarts at '+n+' minutes from that bid</b>.</li>'+
+    '<li>The auction <b>only ends when '+n+' minutes go by with no new bid</b>. So it can run past the time first advertised, even by a long way if people keep bidding.</li>'+
+    '<li>Nobody can win it in the final seconds, and anyone who is outbid always gets '+n+' minutes to answer.</li>'+
+    '<li>Example: the clock says 7:00pm. Somebody bids at 6:57pm, so it now closes at 7:02pm. Somebody else bids at 7:01pm, so it now closes at 7:06pm. If nobody bids after that, it ends at 7:06pm.</li>'+
+    '<li>If you are outbid we email you straight away, and this page shows it without you refreshing.</li>'+
+    '</ul></div>';
+}
+
+function sig(d){
+  return [d.auction.status,d.auction.closes_at,d.auction.extensions,d.top&&d.top.amount,d.top&&d.top.mine,d.bidCount,d.nextBid,d.me&&d.me.email].join('|');
+}
+function flash(t,cls){
+  const f=$('flash'); f.className='flash '+(cls||''); f.textContent=t; f.style.display='block';
+  clearTimeout(flash.t); flash.t=setTimeout(()=>{f.style.display='none';},12000);
+}
+// redraw without wiping what somebody is typing
+function drawKeep(){
+  const keep={}; const act=document.activeElement&&document.activeElement.id;
+  ['amt','bname','bemail'].forEach(id=>{ const el=$(id); if(el) keep[id]=el.value; });
+  const prevNext=A&&A.prevNext;
+  const msg=$('msg')?{t:$('msg').textContent,c:$('msg').style.color}:null;
+  draw();
+  ['bname','bemail'].forEach(id=>{ if($(id)&&keep[id]) $(id).value=keep[id]; });
+  // keep a bid they typed themselves, unless it is now too low
+  if($('amt')&&keep.amt!==undefined&&keep.amt!==''&&Number(keep.amt)>=A.nextBid&&keep.amt!==Number(prevNext||0).toFixed(2)) $('amt').value=keep.amt;
+  if(msg&&msg.t&&$('msg')){ $('msg').textContent=msg.t; $('msg').style.color=msg.c; }
+  if(act&&$(act)) $(act).focus();
+}
+async function refresh(force){
+  if(refresh.busy) return; refresh.busy=true;
+  try{
+    const d=await (await fetch(EP+'/auction',{headers:H()})).json();
+    if(!d.ok) return;
+    if(d.serverTime) SKEW=new Date(d.serverTime).getTime()-Date.now();
+    const s2=sig(d);
+    if(s2===SIG && !force){ A.serverTime=d.serverTime; return; }
+    const old=A, wasMine=old&&old.top&&old.top.mine;
+    d.prevNext=old&&old.nextBid;
+    A=d; ME=d.me; SIG=s2;
+    if(old){
+      if(d.auction.status!=='live'&&old.auction.status==='live') flash('Bidding has closed.');
+      else if(wasMine&&!(d.top&&d.top.mine)) flash('You have been outbid. The next bid is '+money(d.nextBid)+' or more.','warn');
+      else if(d.bidCount>old.bidCount) flash('New bid: '+money(d.top.amount)+'. The next bid is '+money(d.nextBid)+' or more.');
+      if(d.auction.closes_at!==old.auction.closes_at&&d.auction.status==='live')
+        flash('Late bid: the clock has restarted. Now closing '+londonTime(d.auction.closes_at)+'.','warn');
+    }
+    drawKeep(); startClock();
+  }catch(e){} finally{ refresh.busy=false; }
+}
+function schedulePoll(){
+  clearTimeout(POLL);
+  let gap=10000;
+  if(A&&A.auction.closes_at&&A.auction.status==='live'){
+    const ms=endMs(A.auction.closes_at)-nowMs();
+    gap = ms<20*60000 ? 3000 : ms<3*3600000 ? 6000 : 10000;
+  }
+  POLL=setTimeout(async()=>{ if(!document.hidden&&A&&A.auction.status==='live') await refresh(); schedulePoll(); },gap);
+}
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&A) refresh(); });
+
 function draw(){
-  const a=A.auction, closed=a.status!=='live' || !left(a.closes_at||'');
+  const a=A.auction, closed=a.status!=='live' || (a.closes_at && A.serverTime && endMs(a.closes_at)<=new Date(A.serverTime).getTime());
   let html='';
   // only worth showing when the winner still has something to do
   const needs = WON && !WON.sent && (!WON.given || !WON.paid);
@@ -210,7 +296,9 @@ function draw(){
   }
 
   if(!closed){
-    html+='<div class="clock" id="clock"><span>Bidding closes in</span><b>'+(left(a.closes_at)||'\u2014')+'</b></div>';
+    html+='<div class="clock" id="clock"><span>'+(a.extensions?'Extended \u2014 bidding closes in':'Bidding closes in')+'</span><b>'+(left(a.closes_at)||'\u2014')+'</b></div>';
+    html+=rulesBox(a);
+    html+='<p class="live">This page updates by itself. There is no need to refresh.</p>';
   } else {
     html+='<div class="clock over"><span>Bidding has closed</span><b>'+
       (A.top?money(A.top.amount):'No bids')+'</b></div>';
@@ -255,10 +343,8 @@ function draw(){
   }
 
   html+='<div class="card"><h2 style="font-size:18px;margin-bottom:6px">How it works</h2>'+
-    '<div class="note">Bids go up in steps of '+money(a.increment)+'. '+
-    '<b>There will always be at least '+a.extend_minutes+' minutes left after the last bid.</b> '+
-    'If somebody bids inside the final '+a.extend_minutes+' minutes, the clock resets to '+a.extend_minutes+
-    ' minutes from that bid — so nothing is won in the closing seconds, and everyone gets a chance to answer.</div>'+
+    '<div class="note">Bids go up in steps of '+money(a.increment)+'. Bidding closes on a <b>soft close</b>: a bid in the last '+
+    a.extend_minutes+' minutes restarts the clock. The full rule is in the yellow box near the top.</div>'+
     '<div class="note gold" style="margin-top:10px">The winner is emailed a payment link and has <b>48 hours</b> to pay. '+
     'After that it passes to the next highest bidder.</div>'+
     (a.charity_note?'<div class="note" style="margin-top:10px">'+esc(a.charity_note)+'</div>':'')+
@@ -300,17 +386,18 @@ async function signin(){
 async function bid(){
   const amount=Number($('amt').value);
   if(!(amount>=A.nextBid)){ say('The next bid has to be at least '+money(A.nextBid)+'.',true); return; }
-  if(!confirm('Bid '+money(amount)+' on '+A.auction.title+'?\n\nBids cannot be withdrawn.')) return;
+  if(!confirm('Bid '+money(amount)+' on '+A.auction.title+'?\n\nBids cannot be withdrawn. A bid in the last '+A.auction.extend_minutes+' minutes restarts the clock at '+A.auction.extend_minutes+' minutes.')) return;
   say('Placing your bid\u2026');
   const d=await (await fetch(EP+'/auction/bid',{method:'POST',headers:H(),
     body:JSON.stringify({slug:A.auction.slug, amount})})).json();
   if(!d.ok){ say(d.error||'Could not place that bid.',true); load(); return; }
-  say(d.extended ? 'Bid placed — and the clock has been extended.' : 'Bid placed. You are the highest bidder.');
-  setTimeout(load,700);
+  say(d.extended ? 'Bid placed. It was in the last '+A.auction.extend_minutes+' minutes, so the clock has restarted: now closing '+londonTime(d.closes_at)+'.' : 'Bid placed. You are the highest bidder.');
+  if(d.closes_at) A.auction.closes_at=d.closes_at;
+  setTimeout(()=>refresh(true),500);
 }
 
 if(!location.hash.includes('in=')) load();
-setInterval(()=>{ if(A && A.auction.status==='live') load(); }, 20000);
+schedulePoll();
 </script>
 </body>
 </html>
