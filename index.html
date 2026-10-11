@@ -1246,8 +1246,12 @@ async function loadAuction(){
     if(!d.ok || !d.auction) return;
     const a = d.auction;
     const money = n => '\u00a3' + Number(n||0).toFixed(2);
+    const skew = d.serverTime ? new Date(d.serverTime) - new Date() : 0;
+    const now = () => new Date(Date.now() + skew);
     const ends = a.closes_at ? new Date(a.closes_at.replace(' ','T')+'Z') : null;
-    const ms = ends ? ends - new Date() : 0;
+    const ms = ends ? ends - now() : 0;
+    const opens = a.opens_at ? new Date(a.opens_at.replace(' ','T')+'Z') : null;
+    const toOpen = opens ? opens - now() : 0;     // positive while it has not opened yet
 
     // An auction that has just closed is still worth showing — it takes a few minutes
     // to settle, and the result is the most interesting thing about the whole week.
@@ -1267,6 +1271,18 @@ async function loadAuction(){
         : (d.top ? 'Finished at <strong>'+money(d.top.amount)+'</strong> \u00b7 settling now'
                  : 'Bidding has closed');
       if(go) go.textContent = 'See the result \u2192';
+    } else if (toOpen > 0) {
+      // announced but not open: say so, rather than inviting bids that would be refused
+      const wd = opens.toLocaleString('en-GB',{timeZone:'Europe/London',weekday:'long'});
+      const hm = opens.toLocaleString('en-GB',{timeZone:'Europe/London',hour:'numeric',minute:'2-digit',hour12:true}).replace(/:00/,'').replace(/\s/g,'');
+      const when = wd+' at '+hm;
+      const h2 = Math.floor(toOpen/3600000), m2 = Math.floor(toOpen%3600000/60000);
+      const in_ = toOpen >= 2*86400000 ? 'in '+Math.floor(toOpen/86400000)+' days'
+                : h2 > 0 ? 'in '+h2+'h '+m2+'m' : 'in '+Math.max(m2,1)+' minutes';
+      if(kick) kick.textContent = 'Coming up';
+      document.getElementById('aucBid').innerHTML = 'Bidding opens <strong>'+when+'</strong> ('+in_+') \u00b7 opening bid <strong>'+money(a.start_bid)+'</strong>';
+      if(go) go.textContent = 'See the shirt \u2192';
+      if(toOpen < 20*60000) setTimeout(loadAuction, 30000);
     } else {
       const hrs = Math.floor(ms/3600000), mins = Math.floor(ms%3600000/60000);
       const left = ms > 86400000 ? Math.floor(ms/86400000)+' days left'
