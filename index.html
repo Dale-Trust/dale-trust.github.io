@@ -1276,13 +1276,19 @@ async function loadAuction(){
       const wd = opens.toLocaleString('en-GB',{timeZone:'Europe/London',weekday:'long'});
       const hm = opens.toLocaleString('en-GB',{timeZone:'Europe/London',hour:'numeric',minute:'2-digit',hour12:true}).replace(/:00/,'').replace(/\s/g,'');
       const when = wd+' at '+hm;
-      const h2 = Math.floor(toOpen/3600000), m2 = Math.floor(toOpen%3600000/60000);
-      const in_ = toOpen >= 2*86400000 ? 'in '+Math.floor(toOpen/86400000)+' days'
-                : h2 > 0 ? 'in '+h2+'h '+m2+'m' : 'in '+Math.max(m2,1)+' minutes';
       if(kick) kick.textContent = 'Coming up';
-      document.getElementById('aucBid').innerHTML = 'Bidding opens <strong>'+when+'</strong> ('+in_+') \u00b7 opening bid <strong>'+money(a.start_bid)+'</strong>';
+      // a live countdown to opening, so nobody has to guess
+      const tick = () => {
+        const t = opens - now();
+        if (t <= 0) { clearInterval(window._aucTick); loadAuction(); return; }
+        const dd = Math.floor(t/86400000), hh = Math.floor(t%86400000/3600000),
+              mm = Math.floor(t%3600000/60000), ss = Math.floor(t%60000/1000);
+        const p = n => String(n).padStart(2,'0');
+        const txt = (dd>0 ? dd+'d ' : '') + p(hh)+'h '+p(mm)+'m '+p(ss)+'s';
+        document.getElementById('aucBid').innerHTML = 'Bidding opens '+when+' \u00b7 <strong>opens in '+txt+'</strong> \u00b7 opening bid <strong>'+money(a.start_bid)+'</strong>';
+      };
+      clearInterval(window._aucTick); tick(); window._aucTick = setInterval(tick, 1000);
       if(go) go.textContent = 'See the shirt \u2192';
-      if(toOpen < 20*60000) setTimeout(loadAuction, 30000);
     } else {
       const hrs = Math.floor(ms/3600000), mins = Math.floor(ms%3600000/60000);
       const left = ms > 86400000 ? Math.floor(ms/86400000)+' days left'
