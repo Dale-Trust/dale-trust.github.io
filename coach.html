@@ -200,7 +200,7 @@ function drawWaitlist(){
       let pax = '';
       try{
         const p = JSON.parse(e.passengers||'[]');
-        if(p.length) pax = '<br><small style="color:#46536B">'+p.map(x => esc(x.name)+(x.age!==undefined&&x.age<=15?' <b style="color:#C0392B">('+x.age+')</b>':'')).join(', ')+'</small>';
+        if(p.length) pax = '<br><small style="color:#46536B">'+p.map(x => esc(x.name)+(x.age!=null&&x.age<=15?' <b style="color:#C0392B">('+x.age+')</b>':'')).join(', ')+'</small>';
       }catch(_){}
       let state, act = '';
       if(e.status==='waiting'){
@@ -214,7 +214,7 @@ function drawWaitlist(){
         state = '<span style="color:var(--green);font-weight:600">Paid</span>';
       }
       return '<tr><td><b>'+esc(e.name)+'</b>'+pax+'</td><td>'+e.seats+'</td>'+
-        '<td style="font-size:13px">'+esc(e.mobile||'')+'<br><small style="color:#7A8AA5">'+esc(e.email)+'</small></td>'+
+        '<td style="font-size:13px">'+esc(e.mobile||'')+'<br>'+(e.email?'<small style="color:#7A8AA5">'+esc(e.email)+'</small>':'<small style="color:#C0392B;font-weight:600">No email yet</small>')+'</td>'+
         '<td style="font-size:13px">'+when(e.created_at)+'</td><td>'+state+'</td><td class="noprint" style="white-space:nowrap">'+act+'</td></tr>';
     }).join('')+'</table>';
 
@@ -228,7 +228,7 @@ function drawWaitlist(){
 // Asks the server to send the links, again and again until it has dealt with everyone.
 // One request can only make so many calls, so a long list takes several.
 async function sendLinks(id){
-  let sent = 0, failed = 0, skip = [], broke = false, error = '';
+  let sent = 0, failed = 0, skip = [], noEmail = 0, broke = false, error = '';
   for(let guard = 0; guard < 25; guard++){
     let d;
     try{
@@ -236,15 +236,17 @@ async function sendLinks(id){
         body:JSON.stringify({trip_id:current.id, id:id||undefined, skip})})).json();
     }catch(e){ broke = true; break; }
     if(!d.ok){ error = d.error || 'Something went wrong'; break; }
-    sent += d.sent; failed += d.failed; skip = skip.concat(d.noRoom||[]);
+    sent += d.sent; failed += d.failed; skip = skip.concat(d.noRoom||[]).concat(d.noEmail||[]); noEmail += (d.noEmail||[]).length;
     $('wlMsg').textContent = 'Sent '+sent+'\u2026';
     if(!d.more) break;
   }
-  return { sent, failed, skip, broke, error };
+  return { sent, failed, skip, noEmail, broke, error };
 }
 function linkSummary(r){
   const parts = [r.sent ? 'Sent '+r.sent+' payment link'+(r.sent===1?'':'s')+'.' : 'No links sent.'];
-  if(r.skip.length) parts.push(r.skip.length+' did not fit in the seats left, so '+(r.skip.length===1?'is':'are')+' still waiting. Add another coach to fit them.');
+  const fit = r.skip.length - r.noEmail;
+  if(r.noEmail) parts.push(r.noEmail+' '+(r.noEmail===1?'has':'have')+' no email address yet, so no link could go. Press Edit, add one, then Send link.');
+  if(fit>0) parts.push(fit+' did not fit in the seats left, so '+(fit===1?'is':'are')+' still waiting. Add another coach to fit them.');
   if(r.failed) parts.push(r.failed+' could not be sent \u2014 they are still waiting, so try again.');
   return parts.join(' ');
 }
@@ -334,18 +336,18 @@ function drawWlEdit(){
   const adding = !window._wlEditId;
   const f = window._wlForm, rows = window._wlPax.map((p,i) =>
     '<div class="g2" style="margin-bottom:8px"><div><label>Passenger '+(i+1)+(i===0&&adding?' (the person asking)':'')+'</label><input class="wlpn" value="'+esc(p.name)+'"></div>'+
-    '<div><label>Date of birth</label><input class="wlpd" type="date" value="'+esc(p.dob)+'"></div></div>').join('');
+    '<div><label>Date of birth (optional)</label><input class="wlpd" type="date" value="'+esc(p.dob)+'"></div></div>').join('');
   $('wlEdit').innerHTML = '<div id="wlEditPanel" style="border:1.5px solid var(--line);border-radius:12px;padding:16px;margin-top:14px;background:#FAFCFE">'+
     '<b>'+(adding?'Add someone to the waiting list':'Change the details')+'</b>'+
-    '<p style="font-size:13px;color:#7A8AA5;margin:4px 0 10px">'+(adding?'They join at the back of the queue.':'They keep their place in the queue.')+'</p>'+
+    '<p style="font-size:13px;color:#7A8AA5;margin:4px 0 10px">'+(adding?'Only the name is needed. Add the rest when you have it. They join at the back of the queue.':'They keep their place in the queue.')+'</p>'+
     '<div class="g2"><div><label>Name</label><input id="we_name" value="'+esc(f.name)+'"></div>'+
-    '<div><label>Mobile</label><input id="we_mobile" value="'+esc(f.mobile)+'"></div></div>'+
-    '<label>Email (the payment link goes here)</label><input id="we_email" value="'+esc(f.email)+'">'+
+    '<div><label>Mobile (optional)</label><input id="we_mobile" value="'+esc(f.mobile)+'"></div></div>'+
+    '<label>Email (optional for now, but the payment link goes here)</label><input id="we_email" value="'+esc(f.email)+'">'+
     '<label style="margin-top:14px">Who is travelling</label>'+rows+
     '<button type="button" class="ghost sm" onclick="wlPaxAdd()">Add a passenger</button> '+
     '<button type="button" class="ghost sm" onclick="wlPaxDrop()">Remove the last one</button>'+
     (adding ? '<label style="display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-size:13.5px;font-weight:500;margin-top:14px">'+
-      '<input type="checkbox" id="we_notify" style="width:auto"'+(window._wlNotify!==false?' checked':'')+'> Email them to confirm they are on the list</label>' : '')+
+      '<input type="checkbox" id="we_notify" style="width:auto"'+(window._wlNotify!==false?' checked':'')+'> Email them to confirm they are on the list (only sent if you give an email)</label>' : '')+
     '<div style="margin-top:14px"><button type="button" class="green" onclick="saveWl()">'+(adding?'Add to the waiting list':'Save the changes')+'</button> '+
     '<button type="button" class="ghost" onclick="document.getElementById(\'wlEdit\').innerHTML=\'\'">Cancel</button></div>'+
     '<p class="msg" id="we_msg"></p></div>';
@@ -524,7 +526,7 @@ function drawBookings(){
             const p=JSON.parse(b.passengers);
             if(!p.length) return '';
             return '<br><small style="color:#46536B">'+p.map(x=>
-              esc(x.name)+(x.age!==undefined&&x.age<=15?' <b style="color:#C0392B">('+x.age+')</b>':'')
+              esc(x.name)+(x.age!=null&&x.age<=15?' <b style="color:#C0392B">('+x.age+')</b>':'')
             ).join(', ')+'</small>';
           }catch(e){ return ''; }
         })()+
