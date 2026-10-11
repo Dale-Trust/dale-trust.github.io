@@ -123,6 +123,11 @@ function startClock(){
   TICK=setInterval(()=>{
     if(!A||!A.auction.closes_at) return;
     const el=$('clock'); if(!el) return;
+    if(el.dataset.open){
+      const o=left(A.auction.opens_at);
+      if(!o){ el.querySelector('b').textContent='Opening\u2026'; refresh(true); return; }
+      el.querySelector('b').textContent=o; return;
+    }
     const t=left(A.auction.closes_at);
     if(!t){ el.querySelector('b').textContent='Checking for last bids\u2026'; refresh(true); return; }
     el.querySelector('b').textContent=t;
@@ -275,7 +280,8 @@ function schedulePoll(){
   clearTimeout(POLL);
   let gap=10000;
   if(A&&A.auction.closes_at&&A.auction.status==='live'){
-    const ms=endMs(A.auction.closes_at)-nowMs();
+    const op=A.auction.opens_at?endMs(A.auction.opens_at)-nowMs():0;
+    const ms=op>0?op:endMs(A.auction.closes_at)-nowMs();
     gap = ms<20*60000 ? 3000 : ms<3*3600000 ? 6000 : 10000;
   }
   POLL=setTimeout(async()=>{ if(!document.hidden&&A&&A.auction.status==='live') await refresh(); schedulePoll(); },gap);
@@ -284,6 +290,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&A) refre
 
 function draw(){
   const a=A.auction, closed=a.status!=='live' || (a.closes_at && A.serverTime && endMs(a.closes_at)<=new Date(A.serverTime).getTime());
+  const notOpen=!closed && a.opens_at && endMs(a.opens_at)>nowMs();
   let html='';
   // only worth showing when the winner still has something to do
   const needs = WON && !WON.sent && (!WON.given || !WON.paid);
@@ -296,7 +303,9 @@ function draw(){
   }
 
   if(!closed){
-    html+='<div class="clock" id="clock"><span>'+(a.extensions?'Extended \u2014 bidding closes in':'Bidding closes in')+'</span><b>'+(left(a.closes_at)||'\u2014')+'</b></div>';
+    html+= notOpen
+      ? '<div class="clock" id="clock" data-open="1"><span>Bidding opens in</span><b>'+(left(a.opens_at)||'\u2014')+'</b></div>'
+      : '<div class="clock" id="clock"><span>'+(a.extensions?'Extended \u2014 bidding closes in':'Bidding closes in')+'</span><b>'+(left(a.closes_at)||'\u2014')+'</b></div>';
     html+=rulesBox(a);
     html+='<p class="live">This page updates by itself. There is no need to refresh.</p>';
   } else {
@@ -312,7 +321,10 @@ function draw(){
     '</div><div style="text-align:right"><div class="who">'+A.bidCount+' bid'+(A.bidCount===1?'':'s')+
     ' from '+A.bidders+' '+(A.bidders===1?'person':'people')+'</div></div></div>';
 
-  if(closed){
+  if(notOpen){
+    html+='<div class="note gold" style="margin-top:0"><b>Bidding opens '+londonTime(a.opens_at)+'.</b> You can look at the shirt and read the rules now. '+
+      'The bid box appears here the moment it opens, and you do not need to refresh.</div>';
+  } else if(closed){
     if(a.winner_amount){
       html+='<div class="won"><b style="font-family:Oswald;text-transform:uppercase;font-size:19px;color:var(--ink);display:block">Sold for '+
         money(a.winner_amount)+'</b><p style="margin-top:6px">The winner has been emailed. Thank you to everyone who bid.</p></div>';
