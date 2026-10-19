@@ -161,6 +161,18 @@ async function loadWlCounts(){
 function coachChip(t){
   return (t.coaches||1) > 1 ? ' \u00b7 <b>'+t.coaches+' coaches</b>' : '';
 }
+// members-first window: stored in UTC as 'YYYY-MM-DD HH:MM:SS'
+const untilMs = s => s ? Date.parse(String(s).replace(' ','T')+'Z') : 0;
+const untilTxt = s => new Date(untilMs(s)).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
+function memberChip(t){
+  return (t.status==='open' && untilMs(t.members_only_until) > Date.now())
+    ? ' \u00b7 <span style="font-weight:700;color:#8A4B00">members only until '+untilTxt(t.members_only_until)+'</span>' : '';
+}
+async function setLive(id,on){
+  const d=await (await fetch(EP+'/coach/live',{method:'POST',headers:H(),body:JSON.stringify({id,live:on})})).json();
+  if(!d.ok) alert(d.error||'Could not change that coach');
+  await load(current?current.id:null);
+}
 function waitChip(t){
   const x = wlCounts[t.id];
   return x ? ' \u00b7 <b style="color:#8A4B00">'+x.people+' waiting ('+x.seats+' seat'+(x.seats===1?'':'s')+')</b>' : '';
@@ -404,6 +416,11 @@ function tripFields(p, t){
     '<div class="grid2">'+
     '<div><label>Status</label>'+sel('status',['draft|Not shown yet','open|On the website','closed|Closed','cancelled|Cancelled'], t?t.status:'draft')+'</div>'+
     '<div><label>Notes (shown to passengers)</label><input id="'+p+'_notes" value="'+v('notes')+'"></div></div>'+
+    '<div style="margin-top:14px;padding:12px 14px;background:#F3F7FB;border-radius:9px">'+
+    '<label style="display:flex;gap:9px;align-items:center;margin:0;font-weight:600;text-transform:none;letter-spacing:0;font-size:14px"><input type="checkbox" id="'+p+'_mf" style="width:auto;margin:0"'+((!t||t.members_first)?' checked':'')+'> Members first for 48 hours</label>'+
+    '<p style="font-size:12.5px;color:#7A8AA5;margin:6px 0 0;line-height:1.5">When this coach goes on the website, only signed-in Trust members can book it, or join its waiting list, for 48 hours. Untick to open it to everyone straight away. Ticking this on a coach that is already on the website starts a fresh 48 hours from now.</p>'+
+    ((t&&t.status==='open'&&untilMs(t.members_only_until)>Date.now())?'<p style="font-size:13px;margin:6px 0 0;color:#8A4B00"><b>Members only until '+untilTxt(t.members_only_until)+'.</b></p>':'')+
+    '</div>'+
     '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">'+
     '<button class="green sm" onclick="saveTrip(\''+p+'\','+(t?t.id:'null')+')">Save</button>'+
     '<button class="ghost sm" onclick="closeTrip(\''+p+'\')">Cancel</button></div>'+
@@ -419,7 +436,7 @@ function drawTrips(){
       '<div class="seats"><b>'+t.remaining+'</b><span>seats left</span></div>'+
       '<b>'+esc(t.opponent)+'</b>'+
       '<small>'+dfmt(t.match_date)+' \u00b7 departs '+esc(t.depart_time)+' from '+esc(t.depart_from)+' \u00b7 '+money(t.price)+' a seat</small>'+
-      '<small>'+t.taken+' of '+t.seats+' seats taken'+coachChip(t)+waitChip(t)+
+      '<small>'+t.taken+' of '+t.seats+' seats taken'+coachChip(t)+memberChip(t)+waitChip(t)+
       (t.status==='closed'||t.status==='cancelled'?' \u00b7 <b style="color:#C0392B">'+t.status+'</b>':'')+'</small>'+
       '<label class="liveswitch'+(live?' on':'')+'" onclick="event.stopPropagation()">'+
         '<input type="checkbox"'+(live?' checked':'')+' onchange="setLive('+t.id+',this.checked)">'+
@@ -462,7 +479,8 @@ async function saveTrip(p, id){
   const g=f=>{const el=$(p+'_'+f);return el?el.value.trim():'';};
   const body={id:id, opponent:g('opp'), venue:g('venue'), match_date:g('date'),
     kickoff:g('ko'), depart_time:g('dep'), depart_from:g('from'),
-    price:g('price'), seats:g('seats'), status:g('status'), notes:g('notes')};
+    price:g('price'), seats:g('seats'), status:g('status'), notes:g('notes'),
+    members_first: !!($(p+'_mf') && $(p+'_mf').checked)};
   const msg=$(p+'_msg');
   if(!body.opponent||!body.match_date||!body.depart_time){
     msg.innerHTML='<span style="color:var(--red)">Opponent, date and departure time are needed.</span>';return;

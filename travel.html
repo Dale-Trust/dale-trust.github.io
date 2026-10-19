@@ -60,6 +60,15 @@
   .cap{min-height:0}
   .cap:empty{display:none}
   .wlnote{background:#FFF9E8;border-left:4px solid #E8B84B;border-radius:0 10px 10px 0;padding:12px 14px;font-size:14px;margin:0 0 14px;color:#46536B}
+  .gate{background:#FFF9E8;border:1px solid #F0DFA8;border-left:5px solid var(--gold);border-radius:0 12px 12px 0;padding:16px 18px;margin-top:14px}
+  .gate>b{font-family:'Oswald';text-transform:uppercase;letter-spacing:.06em;font-size:15px;color:var(--ink)}
+  .gate p{font-size:14.5px;margin:6px 0 0;color:var(--body)}
+  .gatebtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .gatebtn{display:inline-block;background:#fff;color:var(--royal);border:1.5px solid var(--royal);border-radius:10px;padding:11px 22px;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;text-decoration:none}
+  .gatebtn:hover{background:#E8F1FC}
+  .sibox{display:none;margin-top:12px;border-top:1px solid #F0DFA8;padding-top:10px}
+  .gatedtrip .book,.gatedtrip .form{display:none!important}
+  .mwnote{background:#E8F1FC;border-left:4px solid var(--royal);border-radius:0 10px 10px 0;padding:10px 14px;font-size:14px;margin-top:12px;color:var(--ink)}
   .wldone{background:#EAF6EF;border-left:4px solid #4CAF7A;border-radius:0 10px 10px 0;padding:14px 16px;font-size:14.5px;color:#1E6B45}
 </style>
 </head>
@@ -67,7 +76,7 @@
 <div class="hero"><div class="wrap">
   <p class="kicker">Coach travel</p>
   <h1>Get on the coach</h1>
-  <p>The official Rochdale AFC supporters' coach, run by the Dale Trust. Open to every Dale fan &mdash; you don't have to be a member to travel.</p>
+  <p>The official Rochdale AFC supporters' coach, run by the Dale Trust. Open to every Dale fan &mdash; you don't have to be a member to travel. Trust members get first call on seats: a new coach is usually open to members for 48 hours before everyone else.</p>
   <a class="back" href="index.html">&larr; Back to the Trust</a>
 </div></div>
 
@@ -93,7 +102,7 @@
 <script>
 const EP='https://join.daletrust.uk';
 const $=id=>document.getElementById(id);
-let trips=[], member=null;
+let trips=[], member=null, sess=null, isMem=false;
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 const money=n=>'£'+Number(n||0).toFixed(2);
 const dfmt=d=>new Date(d+'T12:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
@@ -103,7 +112,7 @@ const dfmt=d=>new Date(d+'T12:00:00').toLocaleDateString('en-GB',{weekday:'long'
   if(s){
     try{
       const d=await (await fetch(EP+'/member/me',{headers:{'Authorization':'Bearer '+s}})).json();
-      if(d.ok&&d.people&&d.people.length) member=d.people[0];
+      if(d.ok&&d.people&&d.people.length){ member=d.people[0]; sess=s; isMem=!!member.isMember; }
     }catch(e){}
   }
   load();
@@ -111,14 +120,15 @@ const dfmt=d=>new Date(d+'T12:00:00').toLocaleDateString('en-GB',{weekday:'long'
 
 async function load(){
   try{
-    const d=await (await fetch(EP+'/coach/trips')).json();
+    const d=await (await fetch(EP+'/coach/trips',{headers:sess?{'Authorization':'Bearer '+sess}:{}})).json();
     if(!d.ok){$('list').textContent='Could not load the coaches just now.';return;}
     trips=d.trips;
     if(!trips.length){$('list').innerHTML='<p>No coaches are open for booking at the moment. Keep an eye here, or email <a href="mailto:travel@daletrust.uk">travel@daletrust.uk</a>.</p>';return;}
     $('list').innerHTML=trips.map(t=>{
+      const gated=!!(t.members_window&&!isMem);
       const cls=t.remaining===0?'none':(t.remaining<=6?'low':'');
       const left=t.remaining===0?'Fully booked':(t.remaining<=6?'Only '+t.remaining+' seats left':t.remaining+' seats available');
-      return '<div class="trip">'+
+      return '<div class="trip'+(gated?' gatedtrip':'')+'">'+
         '<div class="top"><div><h2>'+esc(t.opponent)+' (A)</h2>'+
         '<p class="when">'+dfmt(t.match_date)+(t.kickoff?' · '+esc(t.kickoff)+' kick-off':'')+(t.venue?' · '+esc(t.venue):'')+'</p></div>'+
         '<div class="price"><b>'+money(t.price)+'</b><span>per seat</span></div></div>'+
@@ -128,6 +138,8 @@ async function load(){
         '</div>'+
         (t.notes?'<p style="font-size:14px;color:#7A8AA5">'+esc(t.notes)+'</p>':'')+
         '<div><span class="seatsleft '+cls+'">'+left+'</span></div>'+
+        (gated?gateHtml(t):'')+
+        (t.members_window&&isMem?'<p class="mwnote"><b>Members first.</b> You&rsquo;re booking in the members&rsquo; window. This coach opens to everyone on '+fmtUntil(t.members_until)+'.</p>':'')+
         '<div class="book">'+(t.remaining===0
           ? '<button onclick="openForm('+t.id+')">Join the waiting list &rarr;</button>'
           : '<button onclick="openForm('+t.id+')">Book a seat &rarr;</button>')+'</div>'+
@@ -139,7 +151,7 @@ async function load(){
           '<div><label>How many seats?</label><select id="s'+t.id+'" onchange="paxFields('+t.id+')">'+
             [1,2,3,4,5,6].filter(n=>t.remaining===0||n<=t.remaining).map(n=>'<option>'+n+'</option>').join('')+'</select></div></div>'+
           '<div id="pax'+t.id+'"></div>'+
-          (member ? '' :
+          (isMem ? '' :
             '<div class="consent" style="margin-top:16px;padding:12px 14px;background:#F3F7FB;border-radius:9px;font-size:14px;line-height:1.55">'+
             '<p style="margin:0 0 8px">We will email you about this booking, and about future Dale Trust coaches. You can change your mind at any time.</p>'+
             '<label style="display:flex;gap:9px;align-items:flex-start;font-weight:400;text-transform:none;letter-spacing:0;font-size:14px;color:inherit;margin:6px 0"><input type="checkbox" id="co'+t.id+'" style="margin-top:4px;width:auto">'+
@@ -147,7 +159,7 @@ async function load(){
             '<label style="display:flex;gap:9px;align-items:flex-start;font-weight:400;text-transform:none;letter-spacing:0;font-size:14px;color:inherit;margin:6px 0"><input type="checkbox" id="jo'+t.id+'" style="margin-top:4px;width:auto">'+
             '<span>Yes, keep me updated about the Trust and how to join.</span></label>'+
             '</div>')+
-          (member ? '' : '<div class="cap" id="cap'+t.id+'" style="margin-top:14px"></div>')+
+          (isMem ? '' : '<div class="cap" id="cap'+t.id+'" style="margin-top:14px"></div>')+
           '<div style="margin-top:14px"><button class="green" onclick="'+(t.remaining===0?'joinList':'book')+'('+t.id+')">'+(t.remaining===0?'Join the waiting list':'Book and pay')+' &rarr;</button></div>'+
           '<p class="msg" id="m'+t.id+'"></p>'+
         '</div></div>';
@@ -155,8 +167,37 @@ async function load(){
   }catch(e){$('list').textContent='Could not reach the server — please try again.';}
 }
 
+const fmtUntil=iso=>new Date(iso).toLocaleString('en-GB',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
+const authH=()=>{const h={'Content-Type':'application/json'}; if(sess) h['Authorization']='Bearer '+sess; return h;};
+
+function gateHtml(t){
+  const when=fmtUntil(t.members_until);
+  const signedInNotMember=!!(sess&&member&&!isMem);
+  return '<div class="gate"><b>Members first</b>'+
+    '<p>Trust members can book this coach until <b>'+when+'</b>. It opens to everyone after that.</p>'+
+    (signedInNotMember?'<p>You&rsquo;re signed in, but we don&rsquo;t have a current 2026/27 membership for you. You can renew from your member area, or join as a new member.</p>':'')+
+    '<div class="gatebtns">'+
+      (sess?'<a class="gatebtn" href="members.html">Renew in my member area</a>':'<button onclick="showSignIn('+t.id+')">I&rsquo;m a member: sign in</button>')+
+      '<a class="gatebtn" href="join.html?src=coach-window">Join for &pound;7.50</a></div>'+
+    (sess?'':'<div class="sibox" id="si'+t.id+'"><label>The email address you joined with</label>'+
+      '<input id="sie'+t.id+'" type="email" autocomplete="email" placeholder="you@example.com">'+
+      '<div style="margin-top:10px"><button onclick="sendLink('+t.id+')">Email me a sign-in link</button></div>'+
+      '<p class="msg" id="sim'+t.id+'"></p></div>')+
+    '</div>';
+}
+function showSignIn(id){ const b=$('si'+id); b.style.display='block'; $('sie'+id).focus(); }
+async function sendLink(id){
+  const email=$('sie'+id).value.trim(), msg=$('sim'+id);
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){msg.innerHTML='<span style="color:var(--red)">Please enter your email address.</span>';return;}
+  msg.textContent='One moment\u2026';
+  try{
+    await fetch(EP+'/member/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,next:'travel.html'})});
+    msg.innerHTML='<span style="color:var(--green)">Check your email.</span> If we hold that address for a member, a sign-in link is on its way. Tap the button in it and you will come straight back here, signed in. Nothing in your inbox? Look in junk, or try the email you joined with.';
+  }catch(e){msg.innerHTML='<span style="color:var(--red)">Could not send just now. Please try again.</span>';}
+}
+
 function consentOf(id){
-  if(member) return {};
+  if(isMem) return {};
   const co=document.getElementById('co'+id), jo=document.getElementById('jo'+id);
   return {consent_shown:true, coach_optout:!!(co&&co.checked), join_optin:!!(jo&&jo.checked)};
 }
@@ -195,7 +236,7 @@ async function book(id){
   }
   msg.textContent='One moment…';
   try{
-    const d=await (await fetch(EP+'/coach/book',{method:'POST',headers:{'Content-Type':'application/json'},
+    const d=await (await fetch(EP+'/coach/book',{method:'POST',headers:authH(),
       body:JSON.stringify({trip_id:id,name,mobile,email,seats,passengers,...consentOf(id),
         member_no:member&&member.record?member.record.member_no:null,
         turnstile_token:(window.turnstile&&window._capIds&&window._capIds[id]!==undefined)
@@ -224,7 +265,7 @@ async function joinList(id){
   }
   msg.textContent='One moment\u2026';
   try{
-    const d=await (await fetch(EP+'/coach/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},
+    const d=await (await fetch(EP+'/coach/waitlist',{method:'POST',headers:authH(),
       body:JSON.stringify({trip_id:id,name,mobile,email,seats,passengers,...consentOf(id),
         member_no:member&&member.record?member.record.member_no:null,
         turnstile_token:(window.turnstile&&window._capIds&&window._capIds[id]!==undefined)
