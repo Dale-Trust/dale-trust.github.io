@@ -271,6 +271,16 @@
   .tsk .btn{margin-top:10px}
   @media (max-width:820px){.tsk{padding:36px 0}.tsk-grid{grid-template-columns:1fr;gap:26px}}
 
+  /* League table (screenshot, shown only once img/league-table.png exists) */
+  .lt{background:var(--wash);padding:48px 0;border-bottom:1px solid var(--line)}
+  .lt-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:44px;align-items:center}
+  .lt h2{font-size:clamp(28px,3.6vw,40px);margin:10px 0 12px}
+  .lt p{font-size:16.5px;line-height:1.6;color:var(--body);margin:0 0 12px}
+  .lt .src{font-size:13px;color:#7A8AA5}
+  .lt-pic{border-top:5px solid var(--royal);background:#fff;box-shadow:0 18px 44px rgba(4,30,66,.16)}
+  .lt-pic img{display:block;width:100%;height:auto}
+  @media (max-width:820px){.lt{padding:34px 0}.lt-grid{grid-template-columns:1fr;gap:22px}}
+
   /* Fixtures strip */
   .fx-strip{background:var(--navy);color:#fff;padding:0}
   .fx-inner{display:grid;grid-template-columns:auto 1fr;gap:0;align-items:stretch}
@@ -680,6 +690,18 @@
   </div>
 </div>
 
+<section class="lt" id="league-table" style="display:none">
+  <div class="wrap lt-grid">
+    <div>
+      <p class="kicker">League Two</p>
+      <h2>Where the Dale stand</h2>
+      <p>The latest Sky Bet League Two table, updated regularly through the season.</p>
+      <p class="src">Table: Telescore.</p>
+    </div>
+    <div class="lt-pic"><img src="img/league-table.png" alt="The latest Sky Bet League Two table" onload="document.getElementById('league-table').style.display=''" onerror="this.parentElement.parentElement.parentElement.style.display='none'"></div>
+  </div>
+</section>
+
 <section class="tsk" id="charlie-tasker">
   <div class="wrap tsk-grid">
     <div class="tsk-pic"><img src="img/photos/charlie.png" alt="Charlie Tasker, the player sponsored by the Dale Supporters Trust" loading="lazy"></div>
@@ -755,22 +777,22 @@
     <div class="ptn-wrap">
       <p class="ptn-cat">Services</p>
       <div class="ptn-grid">
-        <a class="ptn" href="partners.html">
+        <a class="ptn" href="partners.html#culshaw-consulting">
         <span class="lg"><img src="img/partners/Culshaw Consulting Logo.png" alt="Culshaw Consulting" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'"></span>
         <span class="mono">CC</span>
         <span><b>Culshaw Consulting</b><span>Free digital health check &middot; 30% off websites</span></span>
       </a>
-        <a class="ptn" href="partners.html">
+        <a class="ptn" href="partners.html#dale-afc-school-of-motoring">
         <span class="lg"><img src="img/partners/dale-motoring.jpg" alt="Dale School of Motoring" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'"></span>
         <span class="mono">DSM</span>
         <span><b>Dale AFC School of Motoring</b><span>&pound;2 off driving lessons</span></span>
       </a>
-        <a class="ptn" href="partners.html">
+        <a class="ptn" href="partners.html#distinctive-holidays">
         <span class="lg"><img src="img/partners/distinctive.png" alt="Distinctive Holidays" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'"></span>
         <span class="mono">DH</span>
         <span><b>Distinctive Holidays</b><span>Holiday discounts &mdash; ask for Andy</span></span>
       </a>
-        <a class="ptn" href="partners.html">
+        <a class="ptn" href="partners.html#bottomleys-print">
         <span class="lg"><img src="img/partners/Bottomleys.jpeg" alt="Bottomley's Print Services" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'"></span>
         <span class="mono">BP</span>
         <span><b>Bottomley&rsquo;s Print</b><span>10% off &middot; ask for Dave</span></span>
@@ -779,47 +801,47 @@
 
       <p class="ptn-cat">Food &amp; drink</p>
       <div class="ptn-grid">
-        <a class="ptn" href="partners.html">
+        <a class="ptn" href="partners.html#rochdale-cricket-club">
         <span class="lg"><img src="img/partners/cricket-club.jpg" alt="Rochdale Cricket Club" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'"></span>
         <span class="mono">RCC</span>
         <span><b>Rochdale Cricket Club</b><span>15% off beer on matchdays &middot; free parking</span></span>
       </a>
-        <a class="ptn" href="partners.html">
+        <a class="ptn" href="partners.html#twisted-mule">
         <span class="lg"><img src="img/partners/mule.jpg" alt="Twisted Mule" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'"></span>
         <span class="mono">TM</span>
         <span><b>Twisted Mule</b><span>10% off beer &middot; monthly promo nights</span></span>
       </a>
-        <a class="ptn" href="partners.html">
+        <a class="ptn" href="partners.html#moody-blue">
         <span class="lg"><img src="img/partners/moody.jpg" alt="Moody Blue" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'"></span>
         <span class="mono">MB</span>
         <span><b>Moody Blue</b><span>10% off beer sales</span></span>
       </a>
-        <a class="ptn" href="partners.html">
+        <a class="ptn" href="partners.html#cemetery-hotel">
         <span class="lg"><img src="img/partners/cemetery.jpg" alt="The Cemetery" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'"></span>
         <span class="mono">CH</span>
         <span><b>Cemetery Hotel</b><span>10% off all beer sales</span></span>
       </a>
-        <a class="ptn" href="partners.html">
+        <a class="ptn" href="partners.html#cap-and-whippet">
         <span class="lg"><img src="img/partners/cap.jpg" alt="Cap & Whippet" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'"></span>
         <span class="mono">CW</span>
         <span><b>Cap &amp; Whippet</b><span>10% off beer sales</span></span>
       </a>
-        <a class="ptn" href="partners.html">
+        <a class="ptn" href="partners.html#the-moorcock">
         <span class="lg"><img src="img/partners/moorcock.webp" alt="The Moorcock" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'"></span>
         <span class="mono">TM</span>
         <span><b>The Moorcock</b><span>Second meal half price (Mon&ndash;Thu; Fri/Sat to 5pm)</span></span>
       </a>
-        <a class="ptn" href="partners.html">
+        <a class="ptn" href="partners.html#the-flying-horse">
         <span class="lg"><img src="img/partners/horse.png" alt="The Flying Horse" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'"></span>
         <span class="mono">FH</span>
         <span><b>The Flying Horse</b><span>10% off food and drinks</span></span>
       </a>
-        <a class="ptn" href="partners.html">
+        <a class="ptn" href="partners.html#hare-on-the-hill">
         <span class="lg"><img src="img/partners/hare.png" alt="Hare on the Hill" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'"></span>
         <span class="mono">HH</span>
         <span><b>Hare on the Hill</b><span>10% off food and drinks</span></span>
       </a>
-        <a class="ptn" href="partners.html">
+        <a class="ptn" href="partners.html#mill-about">
         <span class="lg"><img src="img/partners/mill.jpg" alt="Mill About" onerror="this.parentElement.style.display='none';this.parentElement.nextElementSibling.style.display='flex'"></span>
         <span class="mono">MA</span>
         <span><b>Mill About</b><span>10% off food &amp; drinks</span></span>
