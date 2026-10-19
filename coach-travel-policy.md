@@ -1,16 +1,25 @@
 # Dale Trust coach travel — policy
 
-*Draft for Emma's review, August 2026. Anything in **[square brackets]** needs her answer before this goes live.*
+*Draft for Emma's review, August 2026. Anything in **[square brackets]** needs her answer before this goes live. The "Who can travel" section was updated on 19 October 2026 to describe the members' window.*
 
 ---
 
 ## Who can travel
 
-Dale Trust coaches are open to **all Rochdale AFC supporters** — you do not need to be a Trust member to book.
-
-Trust members get **priority booking**: seats open to members first, and to everyone else **[how long after? e.g. 5 days before departure, or once seats are running short]**.
+Dale Trust coaches are open to **all Rochdale AFC supporters**. You do not need to be a Trust member to travel.
 
 The Trust runs the official supporters' coach, and it is the only coach promoted by Rochdale AFC.
+
+### Members book first
+
+**Trust members get first call on seats.** When a coach goes on the website, it is open to members only for **48 hours**. After that it opens to everyone, for as long as seats remain.
+
+- **How to book in the members' window:** sign in to your member area on daletrust.uk. We will email you a sign-in link, which takes a minute, and the travel page brings you straight back to the coach you wanted. You need a current membership for the season.
+- **There is no limit on the number of seats a member can book**, and you can book for friends and family who are not members. Everyone travelling must still be named, with a date of birth.
+- **The waiting list works the same way.** During the members' window only members can join it.
+- **Not a member yet?** Membership is £7.50 for the season (free for under 16s) and takes two minutes at daletrust.uk/join. Once your payment has gone through you can sign in and book straight away.
+- **It is first call, not a reserved seat.** Nothing is held for anyone until it has been booked and paid for.
+- **The Trust may open a particular coach to everyone straight away**, for example one added at short notice. When it does, the travel page will not show a members' window.
 
 ## Booking and payment
 
@@ -77,6 +86,8 @@ Coach travel is coordinated by **Emma Loynd** — email **travel@daletrust.co.uk
 ---
 
 ## Notes for the board (not for publication)
+
+**Members' window.** Members book first for 48 hours on every coach, with no limit on seats, and Emma can switch it off for an individual coach. This answers the open question in the first draft. It should be recorded in the minutes, and the join page's "coach travel priority" line is now accurate.
 
 **Underwriting.** Emma has said she has always covered the costs personally when a coach has not filled, and has always run it. That is a generous arrangement but it is an undocumented liability sitting with one volunteer. The board should decide whether the Trust formally underwrites coach travel, and note it in the minutes either way.
 
