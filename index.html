@@ -283,6 +283,9 @@
   .lt-alt:hover{text-decoration:underline}
   .lt-pic{border-top:5px solid var(--royal);background:#000;box-shadow:0 18px 44px rgba(4,30,66,.16);width:100%;max-width:380px;justify-self:center}
   .lt-pic img{display:block;width:100%;height:auto}
+  .lt-imgwrap{position:relative}
+  #ltHi{position:absolute;box-sizing:border-box;border:3px solid #FFD400;background:rgba(255,212,0,.14);border-radius:6px;pointer-events:none}
+  #ltHi[hidden]{display:none}
   @media (max-width:820px){.lt{padding:34px 0}.lt-grid{grid-template-columns:1fr;gap:22px}.lt-pic{max-width:340px}}
 
   /* Fixtures strip */
@@ -707,7 +710,7 @@
         <a class="lt-alt" href="https://rochdaleafc.co.uk/fixtures-results-2026-2027/" target="_blank" rel="noopener">All fixtures 26/27 &rarr;</a>
       </div>
     </div>
-    <div class="lt-pic"><img src="img/league-table.png" alt="The latest Sky Bet League Two table" onload="document.getElementById('league-table').style.display=''" onerror="this.parentElement.parentElement.parentElement.style.display='none'"></div>
+    <div class="lt-pic"><div class="lt-imgwrap"><img id="ltImg" src="img/league-table.png" alt="The latest Sky Bet League Two table, with Rochdale outlined" onload="document.getElementById('league-table').style.display=''" onerror="document.getElementById('league-table').style.display='none'"><div id="ltHi" hidden aria-hidden="true"></div></div></div>
   </div>
 </section>
 
@@ -1424,6 +1427,55 @@ loadAuction();
         ' Dale supporters are already doing it, shopping as they normally would';
     }
   }catch(e){}
+})();
+</script>
+<script>
+/* Outline Rochdale on the league-table screenshot. Looks for the word "Rochdale" in the image
+   (client side, no libraries). If it cannot find it, nothing is shown and the table is unchanged. */
+(function(){
+  var TPL='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALcAAAAbCAAAAAAb20HWAAABCUlEQVR42tVYyxIDIQgjzv7/L6eHznR9gGLdauHUaVPEGIK7oBQB+Sro+6sHRlchSTYHnklT101KiEgSM67i6CgixNmKcGvczTcQhe+oOoms74GTNu5F3dh88GF2XzHJ/HVm5Jzmm1Y9VGk1yerApQ/3kEOBXPa5h9Q3iz3wwwntrRVjQIdzAO/SXRRT+0nh4Juox8N+guzTVPdPwgWcuUZCeM957le234iUfV3HOotL8HTqDru4VorANu2+fLcSd2m844//ru81s0yVc+cap678yTb4TdOk3y/5UBY20oEqO+sFhXqvqu2fVhrr68F1uBkvYfSdbQhN3fmAtoY15g7egK9mifqc9gKPiVk6Y8NkwAAAAABJRU5ErkJggg==';
+  var REFW=1008, TX=93, TY=933, ROWH=54, PAD=14;
+  var img=document.getElementById('ltImg'), hi=document.getElementById('ltHi');
+  if(!img||!hi) return;
+  function bin(data,n){var b=new Uint8Array(n);for(var i=0;i<n;i++){var o=i*4;b[i]=((data[o]*299+data[o+1]*587+data[o+2]*114)/1000)>110?1:0;}return b;}
+  function find(){
+    var w=img.naturalWidth,h=img.naturalHeight; if(!w||!h) return;
+    var s=REFW/w, cw=REFW, ch=Math.round(h*s);
+    var t=new Image();
+    t.onload=function(){
+      try{
+        var tw=t.naturalWidth, th=t.naturalHeight;
+        var c=document.createElement('canvas'); c.width=cw; c.height=ch;
+        var g=c.getContext('2d',{willReadFrequently:true}); g.drawImage(img,0,0,cw,ch);
+        var B=bin(g.getImageData(0,0,cw,ch).data,cw*ch);
+        var c2=document.createElement('canvas'); c2.width=tw; c2.height=th;
+        var g2=c2.getContext('2d',{willReadFrequently:true}); g2.drawImage(t,0,0);
+        var T=bin(g2.getImageData(0,0,tw,th).data,tw*th);
+        var sample=[]; for(var k=0;k<tw*th;k+=3) sample.push(k);
+        var best=0,bx=0,by=0;
+        for(var y=0;y<=ch-th;y++){
+          for(var x=TX-10;x<=TX+10;x++){
+            var m=0,n=sample.length,need=Math.floor(n*0.2);
+            for(var q=0;q<n;q++){
+              var k2=sample[q], px=k2%tw, py=(k2-px)/tw;
+              if(B[(y+py)*cw+x+px]===T[k2]) m++; else if(q-m>need) break;
+            }
+            if(m/n>0.9){
+              var full=0; for(var p=0;p<tw*th;p++){var pp=p%tw, pr=(p-pp)/tw; if(B[(y+pr)*cw+x+pp]===T[p]) full++;}
+              var sc=full/(tw*th); if(sc>best){best=sc;bx=x;by=y;}
+            }
+          }
+        }
+        if(best<0.95) return;
+        var top=(by-PAD)/ch*100, hgt=ROWH/ch*100;
+        hi.style.top=top+'%'; hi.style.height=hgt+'%';
+        hi.style.left=(6/REFW*100)+'%'; hi.style.width=((REFW-12)/REFW*100)+'%';
+        hi.hidden=false;
+      }catch(e){}
+    };
+    t.src=TPL;
+  }
+  if(img.complete&&img.naturalWidth) find(); else img.addEventListener('load',find);
 })();
 </script>
 </body>
