@@ -710,7 +710,8 @@
         <a class="lt-alt" href="https://rochdaleafc.co.uk/fixtures-results-2026-2027/" target="_blank" rel="noopener">All fixtures 26/27 &rarr;</a>
       </div>
     </div>
-    <div class="lt-pic"><div class="lt-imgwrap"><img id="ltImg" src="img/league-table.png" alt="The latest Sky Bet League Two table, with Rochdale outlined" onload="document.getElementById('league-table').style.display=''" onerror="document.getElementById('league-table').style.display='none'"><div id="ltHi" hidden aria-hidden="true"></div></div></div>
+    <div class="lt-pic"><div class="lt-imgwrap"><img id="ltImg" alt="The latest Sky Bet League Two table, with Rochdale outlined" onload="document.getElementById('league-table').style.display=''" onerror="document.getElementById('league-table').style.display='none'"><div id="ltHi" hidden aria-hidden="true"></div></div></div>
+    <script>/* the picture is replaced in place each week, so ask for a fresh copy every ten minutes instead of trusting the browser's saved one */document.getElementById('ltImg').src='img/league-table.png?v='+Math.floor(Date.now()/600000);</script>
   </div>
 </section>
 
