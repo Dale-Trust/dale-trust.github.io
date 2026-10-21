@@ -1319,6 +1319,7 @@ async function loadAuction(){
     // to settle, and the result is the most interesting thing about the whole week.
     const closed = a.status !== 'live' || (ends && ms <= 0);
     if (closed && ends && (new Date() - ends) > 3 * 86400000) return;   // let it go after three days
+    if (closed && !a.winner_amount && !d.top) return;                    // closed with no bids: nothing to celebrate, hide it now
 
     document.getElementById('aucTitle').textContent = a.title;
     if(a.images && a.images[0]) document.getElementById('aucPic').style.backgroundImage = "url('"+a.images[0]+"')";
