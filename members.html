@@ -101,6 +101,8 @@
   .mybook span{font-size:13.5px;color:#C7D6EC;display:block;margin-top:2px}
   .mybook .st{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 10px;border-radius:100px;margin-top:7px}
   .st.paid{background:#1E8E5A;color:#fff}.st.pending{background:#E8B84B;color:#3a2c00}
+  .mybook .paynow{margin-left:8px;border:0;border-radius:100px;background:#fff;color:#0E1F3D;font:600 12.5px 'Oswald';text-transform:uppercase;letter-spacing:.06em;padding:6px 16px;cursor:pointer}
+  .mybook .paynow:disabled{opacity:.6;cursor:default}
   .st.cash{background:#0057A7;color:#fff}.st.free{background:rgba(255,255,255,.25);color:#fff}
   .pbtn{background:#fff;border:1.5px solid var(--line);border-radius:100px;padding:10px 18px;font:600 14px 'Montserrat';color:var(--body);cursor:pointer;width:auto}
   .pbtn.on{background:var(--royal);border-color:var(--royal);color:#fff}
@@ -530,6 +532,18 @@ async function drawVotes(){
   }catch(e){}
 }
 
+// Lost the payment link? This makes a fresh one (the old one stops working) and goes straight to it.
+async function payNow(ref,btn){
+  const was=btn.textContent; btn.disabled=true; btn.textContent='One moment\u2026';
+  try{
+    const d=await (await fetch(EP+'/coach/paylink',{method:'POST',headers:H(),body:JSON.stringify({booking_ref:ref})})).json();
+    if(d.ok&&d.pay_url){ window.location.href=d.pay_url; return; }
+    if(d.ok&&d.already){ alert('That seat is already paid for.'); await load(); return; }
+    alert(d.error||'Something went wrong. Please try again, or email travel@daletrust.uk.');
+  }catch(e){ alert('We could not reach the Trust just now. Please try again, or email travel@daletrust.uk.'); }
+  btn.disabled=false; btn.textContent=was;
+}
+
 function drawBookings(){
   const box=$('myBookings'); if(!box) return;
   const list=(data.coach||[]);
@@ -542,7 +556,8 @@ function drawBookings(){
     return '<div class="mybook"><b>'+esc(b.opponent)+' (A)</b>'+
       '<span>'+when+' \u00b7 departs '+esc(b.depart_time)+' from '+esc(b.depart_from)+'</span>'+
       '<span>'+b.seats+' seat'+(b.seats>1?'s':'')+' \u00b7 \u00a3'+Number(b.amount).toFixed(2)+' \u00b7 ref '+esc(b.booking_ref)+'</span>'+
-      '<span class="st '+b.payment_status+'">'+label+'</span></div>';
+      '<span class="st '+b.payment_status+'">'+label+'</span>'+
+      (b.payment_status==='pending'?' <button class="paynow" onclick="payNow(\''+esc(b.booking_ref)+'\',this)">Pay now</button>':'')+'</div>';
   }).join('');
 }
 

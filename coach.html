@@ -558,7 +558,7 @@ function drawBookings(){
       '<td><span class="pill '+b.payment_status+'">'+b.payment_status+'</span></td>'+
       '<td class="noprint" style="white-space:nowrap"><small>'+esc(b.booking_ref)+'</small></td>'+
       '<td class="noprint"><button class="ghost sm" onclick="editBooking('+b.id+')">Change</button> '+
-      (b.payment_status==='pending'?'<button class="green sm" onclick="mark('+b.id+',&quot;cash&quot;)">Paid cash</button> <button class="green sm" onclick="mark('+b.id+',&quot;sumup&quot;)">Paid SumUp</button> <button class="green sm" onclick="mark('+b.id+',&quot;transfer&quot;)">Paid transfer</button> ':'')+
+      (b.payment_status==='pending'?'<button class="ghost sm" onclick="payLink('+b.id+')">Send link again</button> <button class="green sm" onclick="mark('+b.id+',&quot;cash&quot;)">Paid cash</button> <button class="green sm" onclick="mark('+b.id+',&quot;sumup&quot;)">Paid SumUp</button> <button class="green sm" onclick="mark('+b.id+',&quot;transfer&quot;)">Paid transfer</button> ':'')+
       (b.payment_status!=='pending'&&b.payment_status!=='cancelled'&&b.email?'<button class="ghost sm" onclick="resend('+b.id+')">Send confirmation</button> ':'')+
       (b.payment_status!=='cancelled'?'<button class="ghost sm" onclick="mark('+b.id+',&quot;cancelled&quot;)">Cancel</button>':'')+'</td></tr>').join('')+'</table>';
 }
@@ -651,6 +651,22 @@ async function resend(id){
   const d=await (await fetch(EP+'/coach/confirm',{method:'POST',headers:H(),body:JSON.stringify({id})})).json();
   if(!d.ok){ alert(d.error); return; }
   alert('Sent to '+d.sentTo+'.');
+}
+
+// A fresh payment link for someone who has lost theirs. The old link is closed first, so they cannot pay twice.
+async function payLink(id){
+  const b=(bookings||[]).find(x=>x.id===id)||{};
+  const who=b.name||'this person';
+  if(!confirm('Make a fresh payment link for '+who+'?\n\n'+
+    (b.email?'It is emailed to '+b.email+'.':'There is no email on this booking, so the link is shown here for you to send yourself.')+
+    '\n\nThe old link stops working, so they cannot pay twice.')) return;
+  let d;
+  try{ d=await (await fetch(EP+'/coach/booking/paylink',{method:'POST',headers:H(),body:JSON.stringify({id})})).json(); }
+  catch(e){ alert('Could not reach the server. Nothing was sent.'); return; }
+  if(!d.ok){ alert(d.error||'Something went wrong. Nothing was sent.'); if(d.notPending) await load(current.id); return; }
+  if(d.already){ alert(who+' had already paid, so the booking is now marked as paid.'); await load(current.id); return; }
+  if(d.sent){ alert('Sent to '+d.sentTo+'.'); }
+  else { prompt('No email went out. Copy this link and send it to '+who+':', d.pay_url); }
 }
 
 async function mark(id,status){
