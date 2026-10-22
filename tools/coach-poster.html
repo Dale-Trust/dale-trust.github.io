@@ -73,6 +73,12 @@
     <input id="price" inputmode="decimal">
     <p class="hint">Just the number &mdash; the &pound; sign is added for you.</p>
 
+    <label style="display:flex;gap:9px;align-items:flex-start;font-weight:600;cursor:pointer">
+      <input type="checkbox" id="supplier" checked style="width:auto;margin-top:3px">
+      <span>Show &ldquo;Official coach suppliers to the Trust&rdquo; with the Atlantic Executive Travel badge</span>
+    </label>
+    <p class="hint">Tick it for coaches Atlantic Executive Travel are running. Untick it if another firm provides the coach.</p>
+
     <button id="dl">Download the poster</button>
   </div>
 
@@ -106,6 +112,9 @@ sel.add(new Option('Upload a different badge\u2026', '__upload'));
 // ---------- the template and the badge ----------
 const tmpl = new Image(); tmpl.src = 'coach-template-portrait.png';
 let badge = null;
+const supplierLogo = new Image();
+supplierLogo.onload = () => render();
+supplierLogo.src = '../img/partners/atlantic-executive-travel.png';
 function loadBadge(src){
   const im = new Image();
   im.onload = () => { badge = im; render(); };
@@ -188,8 +197,20 @@ function render(){
   x.font = `500 ${20 / r}px Oswald`;
   x.fillStyle = NAVY; x.textBaseline = 'alphabetic'; x.textAlign = 'left';
   x.fillText('travel@daletrust.uk', 190, 1320);
+
+  // the coach supplier, in the clear space between the Trust crest and the strapline
+  if ($('supplier').checked && supplierLogo.complete && supplierLogo.naturalWidth){
+    const cx = 598, size = 146, top = 30;
+    x.drawImage(supplierLogo, cx - size / 2, top, size, size * supplierLogo.naturalHeight / supplierLogo.naturalWidth);
+    x.fillStyle = NAVY; x.textBaseline = 'alphabetic'; x.textAlign = 'center';
+    x.font = '700 24px Oswald';
+    x.fillText('OFFICIAL COACH SUPPLIERS', cx, 214);
+    x.fillText('TO THE TRUST', cx, 242);
+    x.textAlign = 'left';
+  }
 }
 ['team','date','dep','ko','from','venue','venue2','price'].forEach(id => $(id).addEventListener('input', render));
+$('supplier').addEventListener('change', render);
 
 // ---------- the trips ----------
 let trips = [];
