@@ -33,6 +33,9 @@
   button{background:var(--royal);color:#fff;border:0;border-radius:10px;padding:11px 18px;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
   .flag{color:var(--red);font-weight:600}
   .note{font-size:13px;color:var(--body);margin-top:10px}
+  label.f{display:block;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:12px 0 4px}
+  input,textarea{width:100%;padding:10px;border:1.5px solid var(--line);border-radius:10px;font:inherit;font-size:14px;background:#FAFBFD;color:var(--ink)}
+  textarea{line-height:1.5}
   @media print{.back,button{display:none}}
 </style>
 </head>
@@ -42,6 +45,8 @@
 <div class="wrap">
   <div id="msg" class="panel">Loading&hellip;</div>
   <div id="dash" hidden>
+
+    <div class="panel" id="noticePanel"><h2>Notice email and post</h2><p>The draft notice email (formatted as members will see it) and the social post are in the Board preview: <a href="agm.html?m=agm-boardpreview">agm.html?m=agm-boardpreview</a></p></div>
     <div id="state"></div>
     <div class="kpis" id="kpis" style="margin-top:16px"></div>
     <div id="results"></div>
@@ -55,6 +60,13 @@ let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
 const H={'Authorization':'Bearer '+session};
 const utc=s=>Date.parse(String(s).replace(' ','T')+'Z');
 let RES=null;
+function cp(id,btn){
+  const el=document.getElementById(id); el.select();
+  const done=()=>{const w=btn.textContent;btn.textContent='Copied';setTimeout(()=>btn.textContent=w,1400);};
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(el.value).then(done,()=>{document.execCommand('copy');done();});
+  else {document.execCommand('copy');done();}
+}
+
 
 function say(t){ $('msg').hidden=false; $('dash').hidden=true; $('msg').textContent=t; }
 

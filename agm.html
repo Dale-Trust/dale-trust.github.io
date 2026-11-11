@@ -112,10 +112,15 @@
 
     <div class="panel" id="noticePanel" hidden>
       <h2>Board preview: notice email and post</h2>
-      <p class="note" style="margin:0 0 10px">Draft for the Board to review. Not yet sent to members.</p>
+      <p class="note" style="margin:0 0 10px">Draft for the Board to review. Not yet sent to members. Send to <b>all members and all Board members by Friday 13 November</b> and attach <b>AGM_2026_Proxy_Vote_Form.pdf</b>.</p>
       <label class="f">Email subject</label><input id="nSubject" type="text" readonly>
-      <label class="f">Email body</label><textarea id="nBody" readonly rows="18"></textarea>
-      <div class="row" style="margin-top:10px"><button type="button" class="ghost" onclick="cp('nSubject',this)">Copy subject</button><button type="button" class="ghost" onclick="cp('nBody',this)">Copy body</button></div>
+      <div class="row" style="margin:8px 0 14px"><button type="button" class="ghost" onclick="cp('nSubject',this)">Copy subject</button></div>
+      <label class="f">The email, as members will see it</label>
+      <iframe id="nFrame" title="Email preview" sandbox="allow-same-origin" style="width:100%;height:760px;border:1.5px solid var(--line);border-radius:10px;background:#EEF2F7"></iframe>
+      <div class="row" style="margin-top:10px"><button type="button" onclick="copyRich(this)">Copy formatted email</button><button type="button" class="ghost" onclick="dlHtml()">Download as .html</button><button type="button" class="ghost" onclick="copyHtmlSrc(this)">Copy HTML code</button></div>
+      <details style="margin-top:14px"><summary style="cursor:pointer;font-weight:600;color:var(--ink)">Plain-text version (for mail tools without formatting)</summary>
+        <textarea id="nBody" readonly rows="16" style="margin-top:8px"></textarea>
+        <div class="row" style="margin-top:8px"><button type="button" class="ghost" onclick="cp('nBody',this)">Copy plain text</button></div></details>
       <label class="f" style="margin-top:16px">Facebook / Instagram post</label><textarea id="nPost" readonly rows="10"></textarea>
       <div class="row" style="margin-top:10px"><button type="button" class="ghost" onclick="cp('nPost',this)">Copy post</button></div>
     </div>
@@ -210,8 +215,10 @@ function render(){
   renderBanner();
   const nd={}; S.docs.filter(d=>/^NOTICE:/.test(d.title)).forEach(d=>{nd[d.title.slice(7)]=d.note||'';});
   S.docs=S.docs.filter(d=>!/^NOTICE:/.test(d.title));
-  $('noticePanel').hidden=!(nd.body);
-  if(nd.body){ $('nSubject').value=nd.subject||''; $('nBody').value=nd.body; $('nPost').value=nd.post||''; }
+  $('noticePanel').hidden=!(nd.body||nd.html);
+  if(nd.body||nd.html){ $('nSubject').value=nd.subject||''; $('nBody').value=nd.body||''; $('nPost').value=nd.post||'';
+    NOTICE_HTML=nd.html||'';
+    const fr=$('nFrame'); fr.onload=()=>{try{fr.style.height=(fr.contentDocument.documentElement.scrollHeight+4)+'px';}catch(e){}}; fr.srcdoc='<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_blank"></head><body style="margin:0">'+NOTICE_HTML+'</body></html>'; }
   $('docs').innerHTML=S.docs.length?S.docs.map(d=>'<li><a href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.title)+'</a>'+(d.note?'<small>'+esc(d.note)+'</small>':'')+'</li>').join(''):'<li>The papers will appear here as soon as they are ready.</li>';
   $('docsNote').textContent=S.docs.length?'Please read the papers before you vote.':'';
   renderWho(); renderVote(); renderAttend();
@@ -221,6 +228,28 @@ function renderWho(){
   if(S.people.length<2){ $('whoBox').innerHTML=''; return; }
   $('whoBox').innerHTML='<p class="note" style="margin:0 0 8px">More than one member uses this email address. Choose who you are voting for. Each member gives their own instruction.</p><div class="who">'+
     S.people.map(p=>'<button type="button" class="'+(p.member_id===who?'on':'')+'" onclick="pick('+p.member_id+')">'+esc(p.name)+'<small>'+(p.can_vote?(p.submission&&!p.submission.withdrawn?'Instruction saved':'Can vote'):esc(p.reason||'Cannot vote'))+'</small></button>').join('')+'</div>';
+}
+let NOTICE_HTML='';
+function flash(btn){const w=btn.textContent;btn.textContent='Copied';setTimeout(()=>btn.textContent=w,1400);}
+async function copyRich(btn){
+  try{
+    const doc='<!DOCTYPE html><html><body>'+NOTICE_HTML+'</body></html>';
+    await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([doc],{type:'text/html'}),'text/plain':new Blob([$('nBody').value],{type:'text/plain'})})]);
+    flash(btn);
+  }catch(e){
+    // fallback: select the preview and copy it
+    const d=$('nFrame').contentDocument; const r=d.createRange(); r.selectNodeContents(d.body);
+    const sel=d.defaultView.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    try{ d.execCommand('copy'); flash(btn); }catch(e2){ alert('Copy did not work in this browser. Use Download as .html instead.'); }
+  }
+}
+function copyHtmlSrc(btn){
+  const ta=document.createElement('textarea'); ta.value=NOTICE_HTML; document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); flash(btn); }catch(e){} ta.remove();
+}
+function dlHtml(){
+  const doc='<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><title>'+esc($('nSubject').value)+'</title></head><body style="margin:0">'+NOTICE_HTML+'</body></html>';
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([doc],{type:'text/html'})); a.download='AGM-2026-notice-email.html'; a.click();
 }
 function cp(id,btn){
   const el=document.getElementById(id); el.select();
