@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>AGM online votes | Dale Trust Board</title>
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--gold:#E8B84B;--green:#1E8E5A;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:15px;line-height:1.55}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:20px;color:#fff}.top small{color:#8FC1FF;font-size:12px;display:block}
+  .wrap{max-width:1050px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{font-size:17px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;border-left:4px solid var(--royal)}
+  .kpi span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#7A8AA5;display:block}
+  .kpi b{font-family:'Oswald';font-size:30px;color:var(--ink);line-height:1.1}
+  .lock{background:#FFF7E0;border:1px solid #F1DDA0;color:#6B5200;border-radius:12px;padding:14px 16px;font-weight:600}
+  .open{background:#EAF7F0;border:1px solid #B7E0CB;color:#14573A;border-radius:12px;padding:14px 16px;font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#7A8AA5;padding:6px 8px;border-bottom:2px solid var(--line)}
+  td{padding:8px;border-top:1px solid var(--line);vertical-align:top}
+  td.n,th.n{text-align:right;white-space:nowrap}
+  .scroll{overflow-x:auto}
+  button{background:var(--royal);color:#fff;border:0;border-radius:10px;padding:11px 18px;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+  .flag{color:var(--red);font-weight:600}
+  .note{font-size:13px;color:var(--body);margin-top:10px}
+  @media print{.back,button{display:none}}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Admin</a></div>
+<div class="top"><h1>AGM 2026 &middot; online voting instructions</h1><small id="sub">Board only</small></div>
+<div class="wrap">
+  <div id="msg" class="panel">Loading&hellip;</div>
+  <div id="dash" hidden>
+    <div id="state"></div>
+    <div class="kpis" id="kpis" style="margin-top:16px"></div>
+    <div id="results"></div>
+  </div>
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+const H={'Authorization':'Bearer '+session};
+const utc=s=>Date.parse(String(s).replace(' ','T')+'Z');
+let RES=null;
+
+function say(t){ $('msg').hidden=false; $('dash').hidden=true; $('msg').textContent=t; }
+
+async function load(){
+  if(!session){ say('Please sign in on the admin page first, then come back here.'); return; }
+  let r;
+  try{ r=await fetch(EP+'/agm/admin/summary',{headers:H}); }catch(e){ say('Could not reach the Trust. Please refresh.'); return; }
+  if(r.status===401||r.status===403){ say('Please sign in on the admin page with a Board account, then come back here.'); return; }
+  const d=await r.json();
+  if(!d.ok){ say(d.error||'Something went wrong.'); return; }
+  $('msg').hidden=true; $('dash').hidden=false;
+  const closes=new Date(utc(d.closes_at)).toLocaleString('en-GB',{timeZone:'Europe/London',weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+  $('kpis').innerHTML=
+    '<div class="kpi"><span>Members who can vote</span><b>'+d.eligible_members+'</b></div>'+
+    '<div class="kpi"><span>Instructions in</span><b>'+d.instructions+'</b></div>'+
+    '<div class="kpi"><span>Withdrawn</span><b>'+d.withdrawn+'</b></div>'+
+    '<div class="kpi"><span>Plan to attend</span><b>'+d.plan_to_attend+'</b></div>';
+  if(d.phase==='closed'){
+    $('state').innerHTML='<div class="open">Voting closed at '+esc(closes)+'. The tally and register are below.</div>';
+    await loadResults();
+  } else {
+    $('state').innerHTML='<div class="lock">'+(d.phase==='upcoming'?'Voting has not opened yet. ':'Voting is open. ')+'The tally and register stay locked until it closes at '+esc(closes)+'. Nobody on the Board can see how members have voted before then.</div>';
+    $('results').innerHTML='';
+  }
+}
+
+async function loadResults(){
+  const r=await fetch(EP+'/agm/admin/results',{headers:H}); const d=await r.json();
+  if(!d.ok){ $('results').innerHTML='<div class="panel">'+esc(d.error)+'</div>'; return; }
+  RES=d;
+  const rows=d.items.map((i,k)=>{
+    const t=d.tally[i.id];
+    return '<tr><td>'+(k+1)+'</td><td>'+esc(i.kind==='director'?'Elect '+i.label:i.label)+'</td><td class="n">'+t.for+'</td><td class="n">'+t.against+'</td><td class="n">'+t.withhold+'</td><td class="n">'+t.none+'</td></tr>';
+  }).join('');
+  const flagged=d.register.filter(x=>!x.counts);
+  const reg=d.register.map(x=>'<tr><td>'+esc(x.member_no)+'</td><td>'+esc(x.name)+'</td><td>'+(x.counts?'Counted':'<span class="flag">Not counted: '+esc(x.flag)+'</span>')+'</td></tr>').join('');
+  $('results').innerHTML=
+    '<div class="panel"><h2>Proxy instructions to the Chair</h2><div class="scroll"><table><tr><th>#</th><th>Item</th><th class="n">For</th><th class="n">Against</th><th class="n">Withhold</th><th class="n">No instruction</th></tr>'+rows+'</table></div>'+
+    '<p class="note">'+d.counted+' instruction'+(d.counted===1?'':'s')+' counted. Each is one member, one vote (rule 46). Where a member has given no instruction the Chair decides how to vote. A member who attends and votes in person replaces their proxy: check the register against the meeting attendance list before declaring any result.</p></div>'+
+    '<div class="panel"><h2>Register of proxies ('+d.register.length+')</h2>'+(flagged.length?'<p class="note flag" style="margin:0 0 8px">'+flagged.length+' not counted. Check these before the meeting.</p>':'')+'<div class="scroll"><table><tr><th>Member no.</th><th>Name</th><th>Status</th></tr>'+reg+'</table></div>'+
+    '<p style="margin-top:14px"><button onclick="csv()">Download register (CSV)</button></p></div>';
+}
+
+function csv(){
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const head=['Member no','Name','Counted','Flag','Submitted','Last changed'].concat(RES.items.map((i,k)=>(k+1)+'. '+i.label));
+  const lines=[head.map(q).join(',')];
+  RES.register.forEach(x=>lines.push([x.member_no,x.name,x.counts?'Yes':'No',x.flag,x.submitted_at,x.updated_at].concat(RES.items.map(i=>x.choices[i.id]||'')).map(q).join(',')));
+  const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='agm-2026-proxy-register.csv'; a.click();
+}
+load();
+</script>
+</body>
+</html>

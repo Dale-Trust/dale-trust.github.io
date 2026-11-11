@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>AGM 2026 | Dale Supporters Trust</title>
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--bright:#1173D4;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--green:#1E8E5A;--gold:#E8B84B;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:15.5px;line-height:1.65}
+  h1,h2,h3{font-family:'Oswald';text-transform:uppercase;color:var(--ink);line-height:1.15}
+  a{color:var(--royal)}
+  .hero{background:linear-gradient(120deg,var(--navy),#16305C 58%,#00417E);color:#fff;padding:38px 24px 34px;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:0;bottom:0;right:-12%;width:42%;background:var(--royal);transform:skewX(-14deg);opacity:.35}
+  .wrap{max-width:720px;margin:0 auto;padding:0 16px}
+  .hero .wrap{position:relative;padding:0}
+  .kicker{font-size:12.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#8FC1FF;margin-bottom:8px}
+  .hero h1{color:#fff;font-size:clamp(28px,6vw,44px)}
+  .hero p{color:#C7D6EC;margin-top:8px}
+  .back{display:inline-block;margin-top:12px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.07em;color:#8FC1FF;text-decoration:none}
+  main{padding:22px 0 56px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 18px;margin-bottom:16px}
+  .panel h2{font-size:18px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  .panel h3{font-size:15px;margin:18px 0 6px}
+  .banner{border-radius:12px;padding:14px 16px;margin-bottom:16px;font-weight:600;font-size:14.5px}
+  .banner.open{background:#EAF7F0;border:1px solid #B7E0CB;color:#14573A}
+  .banner.wait{background:#FFF7E0;border:1px solid #F1DDA0;color:#6B5200}
+  .banner.shut{background:#F1F3F7;border:1px solid var(--line);color:var(--ink)}
+  .docs{list-style:none}
+  .docs li{border-top:1px solid var(--line);padding:11px 0}
+  .docs li:first-child{border-top:0}
+  .docs a{font-weight:600}
+  .docs small{display:block;color:var(--body);font-size:13px}
+  label.f{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:12px 0 4px}
+  input[type=email]{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font:inherit}
+  button{background:var(--royal);color:#fff;border:0;border-radius:10px;padding:14px 22px;font:600 15px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer;width:100%}
+  button:hover{background:var(--bright)}
+  button:disabled{opacity:.55;cursor:default}
+  button.ghost{background:#fff;color:var(--royal);border:1.5px solid var(--royal)}
+  button.ghost:hover{background:#F0F6FD}
+  button.red{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row>button{flex:1 1 180px;width:auto}
+  .msg{font-size:14.5px;font-weight:600;margin-top:12px}
+  .ok{color:var(--green)} .bad{color:var(--red)}
+  .who{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .who button{flex:1 1 150px;width:auto;background:#fff;color:var(--ink);border:1.5px solid var(--line);text-transform:none;font-family:'Montserrat';font-weight:600;font-size:14px;letter-spacing:0;text-align:left;padding:10px 14px}
+  .who button.on{border-color:var(--royal);background:#E8F1FC}
+  .who small{display:block;font-weight:500;color:var(--body);font-size:12px}
+  .item{border-top:1px solid var(--line);padding:14px 0}
+  .item:first-of-type{border-top:0}
+  .item .t{color:var(--ink);font-weight:600;font-size:15px;margin-bottom:8px}
+  .item .n{display:inline-block;min-width:22px;color:var(--royal);font-family:'Oswald'}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chips label{flex:1 1 90px;position:relative}
+  .chips input{position:absolute;opacity:0;pointer-events:none}
+  .chips span{display:block;text-align:center;border:1.5px solid var(--line);border-radius:10px;padding:9px 8px;font-weight:600;font-size:14px;cursor:pointer;background:#fff;color:var(--ink)}
+  .chips input:checked+span.for{background:#EAF7F0;border-color:var(--green);color:#14573A}
+  .chips input:checked+span.against{background:#FCECEA;border-color:var(--red);color:#8A241A}
+  .chips input:checked+span.withhold{background:#EEF1F6;border-color:#8793A8;color:var(--ink)}
+  .chips input:focus-visible+span{outline:3px solid #9CC5F5}
+  .dirs .item{padding:10px 0}
+  .dirs .t{margin-bottom:6px}
+  .check{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:14px}
+  .check input{margin-top:4px;width:18px;height:18px;flex-shrink:0}
+  .note{font-size:13.5px;color:var(--body);margin-top:8px}
+  .sum{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0 4px}
+  .sum td{padding:7px 8px 7px 0;border-top:1px solid var(--line);vertical-align:top}
+  .sum td:last-child{white-space:nowrap;font-weight:700;color:var(--ink)}
+  .pill{display:inline-block;padding:3px 10px;border-radius:100px;font-size:12.5px;font-weight:700}
+  .pill.g{background:#EAF7F0;color:#14573A} .pill.b{background:#E8F1FC;color:var(--royal)} .pill.x{background:#F1F3F7;color:var(--body)}
+  footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:22px}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="hero"><div class="wrap">
+  <p class="kicker">Rochdale Supporters Club Limited</p>
+  <h1 id="title">Annual General Meeting</h1>
+  <p id="when"></p>
+  <a class="back" href="members.html">&larr; Members area</a>
+</div></div>
+
+<main><div class="wrap">
+
+  <div id="loading" class="panel">Loading&hellip;</div>
+
+  <!-- not signed in -->
+  <div id="signin" class="panel" hidden>
+    <h2>Sign in to see the papers and vote</h2>
+    <p>The AGM area is for members. Enter the email address the Trust has for you and we&rsquo;ll send you a link. There&rsquo;s no password to remember.</p>
+    <label class="f" for="email">Your email address</label>
+    <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
+    <div style="margin-top:14px"><button onclick="requestLink()">Email me a sign-in link</button></div>
+    <p class="msg" id="simsg"></p>
+    <p class="note">Not getting the email, or think we hold the wrong address? Write to <a href="mailto:info@daletrust.uk">info@daletrust.uk</a> and we&rsquo;ll sort it, or use the paper proxy form.</p>
+  </div>
+
+  <!-- signed in -->
+  <div id="area" hidden>
+    <div id="banner"></div>
+
+    <div class="panel" id="docsPanel">
+      <h2>1. Read the papers</h2>
+      <ul class="docs" id="docs"></ul>
+      <p class="note" id="docsNote"></p>
+    </div>
+
+    <div class="panel" id="votePanel">
+      <h2>2. Your voting instruction</h2>
+      <div id="whoBox"></div>
+      <div id="voteBox"></div>
+    </div>
+
+    <div class="panel" id="attendPanel">
+      <h2>3. Coming along? (optional)</h2>
+      <p>Let us know if you plan to be at the Dale Bar on the day. It helps us plan the room. It isn&rsquo;t binding, and every member is welcome whether they tell us or not.</p>
+      <div id="attendBox" style="margin-top:12px"></div>
+    </div>
+
+    <p class="note">Questions about the AGM, or a problem with the form? Email <a href="mailto:info@daletrust.uk">info@daletrust.uk</a>. Prefer paper? Use the proxy form above and post or email it before 5pm on Tuesday 24 November.</p>
+  </div>
+</div></main>
+<footer>Dale Trust is the trading name of Rochdale Supporters Club Limited, a registered society (29690R).</footer>
+
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let session=null; try{session=localStorage.getItem('dt_member');}catch(e){}
+const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
+let S=null, skew=0, who=null, FM={}, step='edit', busy=false, timer=null;
+const LABEL={for:'For',against:'Against',withhold:'Withhold',none:'No instruction'};
+
+const utc=s=>Date.parse(String(s).replace(' ','T')+'Z');
+const fmt=(s,o)=>new Date(utc(s)).toLocaleString('en-GB',Object.assign({timeZone:'Europe/London'},o));
+const now=()=>Date.now()+skew;
+
+function showOnly(which){
+  $('loading').hidden=which!=='loading'; $('signin').hidden=which!=='signin'; $('area').hidden=which!=='area';
+}
+
+async function requestLink(){
+  const email=$('email').value.trim();
+  if(!email){$('simsg').className='msg bad';$('simsg').textContent='Please enter your email address.';return;}
+  try{
+    await fetch(EP+'/member/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,next:'agm.html'})});
+    $('simsg').className='msg ok';
+    $('simsg').textContent='Check your email. If we hold that address for a member, a sign-in link is on its way. It brings you straight back here.';
+  }catch(e){$('simsg').className='msg bad';$('simsg').textContent='We could not reach the Trust just now. Please try again.';}
+}
+
+async function load(keepWho){
+  if(!session){showOnly('signin');return;}
+  let r;
+  try{ r=await fetch(EP+'/agm/state',{headers:H()}); }
+  catch(e){ showOnly('loading'); $('loading').textContent='We could not reach the Trust just now. Please refresh in a moment.'; return; }
+  if(r.status===401){ try{localStorage.removeItem('dt_member');}catch(e){} session=null; showOnly('signin'); return; }
+  const d=await r.json();
+  if(!d.ok){ showOnly('loading'); $('loading').textContent=d.error||'Something went wrong.'; return; }
+  S=d; skew=Date.parse(d.server_time)-Date.now();
+  if(!keepWho || !S.people.find(p=>p.member_id===who)){
+    const first=S.people.find(p=>p.can_vote)||S.people[0]; who=first?first.member_id:null;
+  }
+  FM={}; step='edit';
+  S.people.forEach(p=>{
+    const ch={}; S.items.forEach(i=>{ ch[i.id]=(p.submission&&p.submission.choices&&p.submission.choices[i.id]&&p.submission.choices[i.id]!=='none')?p.submission.choices[i.id]:''; });
+    FM[p.member_id]={choices:ch,declared:false,authority:false};
+  });
+  render(); showOnly('area');
+  clearInterval(timer); timer=setInterval(renderBanner,30000);
+}
+
+function renderBanner(){
+  if(!S) return;
+  const m=S.meeting; const t=now();
+  let html='';
+  const opens=utc(m.opens_at), closes=utc(m.closes_at);
+  if(t<opens) html='<div class="banner wait">Online voting opens on '+esc(fmt(m.opens_at,{weekday:'long',day:'numeric',month:'long'}))+'. You can read the papers now.</div>';
+  else if(t<closes){
+    const left=closes-t, days=Math.floor(left/864e5), hrs=Math.floor(left%864e5/36e5), mins=Math.floor(left%36e5/6e4);
+    const txt=days>0?days+' day'+(days===1?'':'s')+' '+hrs+'h left':(hrs>0?hrs+'h '+mins+'m left':mins+' minutes left');
+    html='<div class="banner open">Online voting is open and closes at '+esc(fmt(m.closes_at,{hour:'2-digit',minute:'2-digit'}))+' on '+esc(fmt(m.closes_at,{weekday:'long',day:'numeric',month:'long'}))+' ('+txt+').</div>';
+  } else html='<div class="banner shut">Online voting has closed. Results are declared at the meeting.</div>';
+  $('banner').innerHTML=html;
+  if(S.phase==='open' && t>=closes && !busy){ S.phase='closed'; render(); }
+}
+
+function render(){
+  const m=S.meeting;
+  $('title').textContent=m.title;
+  $('when').innerHTML=esc(fmt(m.meeting_at,{weekday:'long',day:'numeric',month:'long',year:'numeric'}))+', '+esc(fmt(m.meeting_at,{hour:'numeric',minute:'2-digit',hour12:true}).replace(' ',''))+' &middot; '+esc(m.venue||'');
+  renderBanner();
+  $('docs').innerHTML=S.docs.length?S.docs.map(d=>'<li><a href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.title)+'</a>'+(d.note?'<small>'+esc(d.note)+'</small>':'')+'</li>').join(''):'<li>The papers will appear here as soon as they are ready.</li>';
+  $('docsNote').textContent=S.docs.length?'Please read the papers before you vote.':'';
+  renderWho(); renderVote(); renderAttend();
+}
+
+function renderWho(){
+  if(S.people.length<2){ $('whoBox').innerHTML=''; return; }
+  $('whoBox').innerHTML='<p class="note" style="margin:0 0 8px">More than one member uses this email address. Choose who you are voting for. Each member gives their own instruction.</p><div class="who">'+
+    S.people.map(p=>'<button type="button" class="'+(p.member_id===who?'on':'')+'" onclick="pick('+p.member_id+')">'+esc(p.name)+'<small>'+(p.can_vote?(p.submission&&!p.submission.withdrawn?'Instruction saved':'Can vote'):esc(p.reason||'Cannot vote'))+'</small></button>').join('')+'</div>';
+}
+function pick(id){ who=id; step='edit'; renderWho(); renderVote(); renderAttend(); }
+
+function person(){ return S.people.find(p=>p.member_id===who); }
+
+function renderVote(){
+  const box=$('voteBox'), p=person();
+  if(!p){ box.innerHTML='<p>We can&rsquo;t find a current membership on this sign-in. If that looks wrong, email <a href="mailto:info@daletrust.uk">info@daletrust.uk</a>.</p>'; return; }
+  if(!p.can_vote){ box.innerHTML='<p><b>'+esc(p.name)+'</b>: '+esc(p.reason)+'. '+(/Junior|16/.test(p.reason)?'You are still very welcome at the meeting, and you can read the papers above.':'')+'</p>'; return; }
+  if(S.phase==='upcoming'){ box.innerHTML='<p>Online voting opens on '+esc(fmt(S.meeting.opens_at,{weekday:'long',day:'numeric',month:'long'}))+'. Come back then, or use the paper proxy form.</p>'; return; }
+  const sub=p.submission, f=FM[p.member_id];
+  if(S.phase==='closed'){
+    box.innerHTML=sub&&!sub.withdrawn?'<p>Your instruction was recorded on '+esc(fmt(sub.updated_at,{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}))+'. Thank you.</p>':'<p>Online voting has closed. You can still come to the meeting and vote in person.</p>';
+    return;
+  }
+  if(step==='review'){ renderReview(p,f); return; }
+  let h='';
+  if(sub&&!sub.withdrawn) h+='<div class="banner open" style="margin-bottom:12px">Saved on '+esc(fmt(sub.updated_at,{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}))+'. You can change it until voting closes.</div>';
+  else if(sub&&sub.withdrawn) h+='<div class="banner wait" style="margin-bottom:12px">You withdrew your instruction. Nothing will be cast for you unless you save a new one.</div>';
+  h+='<p>You are appointing <b>the Chair of the meeting</b> as your proxy to vote for you at the AGM, as set out below. Leave an item blank and the Chair will decide how to vote on it. If you come to the meeting and vote in person, that replaces what you enter here.</p>';
+  let group=null, n=0, open=false;
+  S.items.forEach(i=>{
+    n++;
+    if(i.kind==='director' && i.group_label!==group){
+      if(open) h+='</div>';
+      group=i.group_label; open=true;
+      h+='<h3>'+(n)+'. '+esc(group)+'</h3><div class="dirs">';
+    }
+    if(i.kind!=='director'&&open){ h+='</div>'; open=false; group=null; }
+    const cur=f.choices[i.id]||'';
+    h+='<div class="item"><div class="t">'+(i.kind==='director'?'':'<span class="n">'+n+'</span>')+esc(i.label)+'</div><div class="chips" role="radiogroup" aria-label="'+esc(i.label)+'">'+
+      ['for','against','withhold'].map(c=>'<label><input type="radio" name="i'+i.id+'" value="'+c+'" '+(cur===c?'checked':'')+' onclick="choose('+i.id+',\''+c+'\',this)"><span class="'+c+'">'+LABEL[c]+'</span></label>').join('')+'</div></div>';
+  });
+  if(open) h+='</div>';
+  h+='<div class="row" style="margin-top:6px"><button type="button" class="ghost" style="flex:0 0 auto;width:auto;padding:8px 14px;font-size:13px" onclick="clearAll()">Clear all choices</button></div>';
+  if(p.needs_declaration) h+='<label class="check"><input type="checkbox" id="dec" '+(f.declared?'checked':'')+' onchange="FM['+p.member_id+'].declared=this.checked"><span>We don&rsquo;t hold a date of birth for you, so please confirm: <b>I am 16 or over.</b></span></label>';
+  h+='<label class="check"><input type="checkbox" id="auth" '+(f.authority?'checked':'')+' onchange="FM['+p.member_id+'].authority=this.checked"><span>I am <b>'+esc(p.name)+'</b> ('+esc(p.member_no)+'), or I am acting with their authority, and I appoint the Chair of the meeting as my proxy to vote as shown above.</span></label>';
+  h+='<div style="margin-top:16px"><button type="button" onclick="toReview()">Review my choices</button></div><p class="msg" id="vmsg"></p>';
+  box.innerHTML=h;
+}
+function choose(id,c,el){ const f=FM[who]; if(f.choices[id]===c){ f.choices[id]=''; el.checked=false; } else f.choices[id]=c; }
+function clearAll(){ const f=FM[who]; Object.keys(f.choices).forEach(k=>f.choices[k]=''); renderVote(); }
+
+function toReview(){
+  const p=person(), f=FM[who], msg=$('vmsg');
+  if(p.needs_declaration&&!f.declared){ msg.className='msg bad'; msg.textContent='Please confirm you are 16 or over.'; return; }
+  if(!f.authority){ msg.className='msg bad'; msg.textContent='Please tick the confirmation box.'; return; }
+  step='review'; renderVote(); window.scrollTo({top:$('votePanel').offsetTop-10,behavior:'smooth'});
+}
+function renderReview(p,f){
+  const rows=S.items.map((i,k)=>'<tr><td>'+(k+1)+'. '+esc(i.kind==='director'?'Elect '+i.label+' as a Director':i.label)+'</td><td>'+LABEL[f.choices[i.id]||'none']+'</td></tr>').join('');
+  $('voteBox').innerHTML='<p>Please check this is what you want. The Chair of the meeting will vote for you as follows.</p><table class="sum">'+rows+'</table>'+
+    '<div class="row" style="margin-top:14px"><button type="button" class="ghost" onclick="step=\'edit\';renderVote()">Go back and change</button><button type="button" id="goBtn" onclick="submitIt()">Confirm and save</button></div><p class="msg" id="vmsg"></p>';
+}
+async function submitIt(){
+  const p=person(), f=FM[who]; busy=true;
+  const btn=$('goBtn'), msg=$('vmsg'); btn.disabled=true; msg.className='msg'; msg.textContent='Saving…';
+  const choices={}; S.items.forEach(i=>{ choices[i.id]=f.choices[i.id]||'none'; });
+  try{
+    const r=await fetch(EP+'/agm/submit',{method:'POST',headers:H(),body:JSON.stringify({member_id:p.member_id,choices,authority:f.authority,declared_16:f.declared})});
+    const d=await r.json(); busy=false;
+    if(!d.ok){ btn.disabled=false; msg.className='msg bad'; msg.textContent=d.error||'Something went wrong. Please try again.'; return; }
+    await load(true);
+    $('voteBox').insertAdjacentHTML('afterbegin','<div class="banner open">Saved. We&rsquo;ve emailed you a confirmation. You can change it until voting closes.</div>');
+  }catch(e){ busy=false; btn.disabled=false; msg.className='msg bad'; msg.textContent='We could not reach the Trust just now. Please try again.'; }
+}
+async function withdrawIt(){
+  const p=person(); if(!confirm('Withdraw your instruction? Nothing will be cast for you unless you save a new one.')) return;
+  const r=await fetch(EP+'/agm/withdraw',{method:'POST',headers:H(),body:JSON.stringify({member_id:p.member_id})});
+  const d=await r.json(); if(d.ok) await load(true);
+}
+
+function renderAttend(){
+  const box=$('attendBox');
+  if(!S.people.length){ box.innerHTML=''; return; }
+  box.innerHTML=S.people.map(p=>'<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-top:1px solid var(--line);padding:10px 0">'+
+    '<div><b style="color:var(--ink)">'+esc(p.name)+'</b> '+(p.attending===true?'<span class="pill g">Plans to attend</span>':p.attending===false?'<span class="pill x">Not coming</span>':'')+'</div>'+
+    '<div class="row" style="flex:0 1 auto;gap:8px"><button type="button" class="'+(p.attending===true?'':'ghost')+'" style="width:auto;padding:8px 14px;font-size:13px" onclick="attend('+p.member_id+',true)">I plan to attend</button>'+
+    '<button type="button" class="ghost" style="width:auto;padding:8px 14px;font-size:13px" onclick="attend('+p.member_id+',false)">Can’t make it</button></div></div>').join('');
+}
+async function attend(id,yes){
+  const r=await fetch(EP+'/agm/attend',{method:'POST',headers:H(),body:JSON.stringify({member_id:id,attending:yes})});
+  const d=await r.json();
+  if(d.ok){ S.people.find(p=>p.member_id===id).attending=yes; renderWho(); renderAttend(); }
+}
+
+// withdraw link under a saved instruction
+const _rv=renderVote;
+renderVote=function(){
+  _rv();
+  const p=person();
+  if(p&&p.can_vote&&S.phase==='open'&&step==='edit'&&p.submission&&!p.submission.withdrawn){
+    $('voteBox').insertAdjacentHTML('beforeend','<div style="margin-top:12px"><button type="button" class="red" onclick="withdrawIt()">Withdraw my instruction</button></div>');
+  }
+};
+load(false);
+</script>
+</body>
+</html>
