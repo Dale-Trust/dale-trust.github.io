@@ -187,7 +187,6 @@
   <!-- MEMBER AREA -->
   <div id="area">
     <div id="checkPanel"></div>
-    <div id="agmPanel"></div>
     <div id="votePanel"></div>
 
     <a class="coach" href="travel.html">
@@ -556,18 +555,6 @@ function drawCheck(){
     '<a class="go" onclick="document.getElementById(\'detailsPanel\').scrollIntoView({behavior:\'smooth\',block:\'start\'})">Check my details &darr;</a></div>';
 }
 
-function drawAgm(){
-  const box=$('agmPanel'); if(!box) return;
-  // shown from now until the day after the meeting (Sat 28 Nov 2026)
-  if(Date.now()>Date.parse('2026-11-29T00:00:00Z')){box.innerHTML='';return;}
-  const opens=Date.parse('2026-11-18T00:00:00Z'), closes=Date.parse('2026-11-24T17:00:00Z'), t=Date.now();
-  const line=t<opens?'Read the papers now. Online voting opens on Wednesday 18 November.'
-    :(t<closes?'Online voting is open until 5pm on Tuesday 24 November.':'Online voting has closed. See you at the Dale Bar.');
-  box.innerHTML='<div class="votecard"><b>Annual General Meeting \u00b7 Saturday 28 November, 11am</b>'+
-    '<p>'+line+' Read the agenda and papers, give your voting instruction, and tell us if you plan to come.</p>'+
-    '<a class="go" href="agm.html">Go to the AGM area \u2192</a></div>';
-}
-
 async function drawVotes(){
   const box=$('votePanel'); if(!box) return;
   try{
@@ -615,7 +602,7 @@ function drawBookings(){
 
 function render(){
   drawCheck();
-  drawAgm(); drawVotes();
+  drawVotes();
   drawBookings();
   drawPeople();
   const p=person(), rec=p.record, cur=p.isMember;
