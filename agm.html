@@ -35,6 +35,7 @@
   .docs a{font-weight:600}
   .docs small{display:block;color:var(--body);font-size:13px}
   label.f{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:12px 0 4px}
+  input[type=text],textarea{width:100%;padding:10px;border:1.5px solid var(--line);border-radius:10px;font:inherit;font-size:14px;background:#FAFBFD;color:var(--ink);line-height:1.5}
   input[type=email]{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font:inherit}
   button{background:var(--royal);color:#fff;border:0;border-radius:10px;padding:14px 22px;font:600 15px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer;width:100%}
   button:hover{background:var(--bright)}
@@ -107,6 +108,16 @@
       <h2>1. Read the papers</h2>
       <ul class="docs" id="docs"></ul>
       <p class="note" id="docsNote"></p>
+    </div>
+
+    <div class="panel" id="noticePanel" hidden>
+      <h2>Board preview: notice email and post</h2>
+      <p class="note" style="margin:0 0 10px">Draft for the Board to review. Not yet sent to members.</p>
+      <label class="f">Email subject</label><input id="nSubject" type="text" readonly>
+      <label class="f">Email body</label><textarea id="nBody" readonly rows="18"></textarea>
+      <div class="row" style="margin-top:10px"><button type="button" class="ghost" onclick="cp('nSubject',this)">Copy subject</button><button type="button" class="ghost" onclick="cp('nBody',this)">Copy body</button></div>
+      <label class="f" style="margin-top:16px">Facebook / Instagram post</label><textarea id="nPost" readonly rows="10"></textarea>
+      <div class="row" style="margin-top:10px"><button type="button" class="ghost" onclick="cp('nPost',this)">Copy post</button></div>
     </div>
 
     <div class="panel" id="votePanel">
@@ -197,6 +208,10 @@ function render(){
   $('title').textContent=m.title;
   $('when').innerHTML=esc(fmt(m.meeting_at,{weekday:'long',day:'numeric',month:'long',year:'numeric'}))+', '+esc(fmt(m.meeting_at,{hour:'numeric',minute:'2-digit',hour12:true}).replace(' ',''))+' &middot; '+esc(m.venue||'');
   renderBanner();
+  const nd={}; S.docs.filter(d=>/^NOTICE:/.test(d.title)).forEach(d=>{nd[d.title.slice(7)]=d.note||'';});
+  S.docs=S.docs.filter(d=>!/^NOTICE:/.test(d.title));
+  $('noticePanel').hidden=!(nd.body);
+  if(nd.body){ $('nSubject').value=nd.subject||''; $('nBody').value=nd.body; $('nPost').value=nd.post||''; }
   $('docs').innerHTML=S.docs.length?S.docs.map(d=>'<li><a href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.title)+'</a>'+(d.note?'<small>'+esc(d.note)+'</small>':'')+'</li>').join(''):'<li>The papers will appear here as soon as they are ready.</li>';
   $('docsNote').textContent=S.docs.length?'Please read the papers before you vote.':'';
   renderWho(); renderVote(); renderAttend();
@@ -206,6 +221,12 @@ function renderWho(){
   if(S.people.length<2){ $('whoBox').innerHTML=''; return; }
   $('whoBox').innerHTML='<p class="note" style="margin:0 0 8px">More than one member uses this email address. Choose who you are voting for. Each member gives their own instruction.</p><div class="who">'+
     S.people.map(p=>'<button type="button" class="'+(p.member_id===who?'on':'')+'" onclick="pick('+p.member_id+')">'+esc(p.name)+'<small>'+(p.can_vote?(p.submission&&!p.submission.withdrawn?'Instruction saved':'Can vote'):esc(p.reason||'Cannot vote'))+'</small></button>').join('')+'</div>';
+}
+function cp(id,btn){
+  const el=document.getElementById(id); el.select();
+  const done=()=>{const w=btn.textContent;btn.textContent='Copied';setTimeout(()=>btn.textContent=w,1400);};
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(el.value).then(done,()=>{document.execCommand('copy');done();});
+  else {document.execCommand('copy');done();}
 }
 function pick(id){ who=id; step='edit'; renderWho(); renderVote(); renderAttend(); }
 
