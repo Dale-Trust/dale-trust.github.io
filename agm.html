@@ -128,6 +128,9 @@
 
 <script>
 const EP='https://join.daletrust.uk';
+const SLUG=(new URLSearchParams(location.search).get('m')||'agm-2026').replace(/[^a-z0-9-]/gi,'');
+const Q='?slug='+encodeURIComponent(SLUG);
+const NEXT='agm.html'+(SLUG!=='agm-2026'?'?m='+SLUG:'');
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 let session=null; try{session=localStorage.getItem('dt_member');}catch(e){}
@@ -147,7 +150,7 @@ async function requestLink(){
   const email=$('email').value.trim();
   if(!email){$('simsg').className='msg bad';$('simsg').textContent='Please enter your email address.';return;}
   try{
-    await fetch(EP+'/member/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,next:'agm.html'})});
+    await fetch(EP+'/member/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,next:NEXT})});
     $('simsg').className='msg ok';
     $('simsg').textContent='Check your email. If we hold that address for a member, a sign-in link is on its way. It brings you straight back here.';
   }catch(e){$('simsg').className='msg bad';$('simsg').textContent='We could not reach the Trust just now. Please try again.';}
@@ -156,7 +159,7 @@ async function requestLink(){
 async function load(keepWho){
   if(!session){showOnly('signin');return;}
   let r;
-  try{ r=await fetch(EP+'/agm/state',{headers:H()}); }
+  try{ r=await fetch(EP+'/agm/state'+Q,{headers:H()}); }
   catch(e){ showOnly('loading'); $('loading').textContent='We could not reach the Trust just now. Please refresh in a moment.'; return; }
   if(r.status===401){ try{localStorage.removeItem('dt_member');}catch(e){} session=null; showOnly('signin'); return; }
   const d=await r.json();
@@ -262,7 +265,7 @@ async function submitIt(){
   const btn=$('goBtn'), msg=$('vmsg'); btn.disabled=true; msg.className='msg'; msg.textContent='Saving…';
   const choices={}; S.items.forEach(i=>{ choices[i.id]=f.choices[i.id]||'none'; });
   try{
-    const r=await fetch(EP+'/agm/submit',{method:'POST',headers:H(),body:JSON.stringify({member_id:p.member_id,choices,authority:f.authority,declared_16:f.declared})});
+    const r=await fetch(EP+'/agm/submit'+Q,{method:'POST',headers:H(),body:JSON.stringify({member_id:p.member_id,choices,authority:f.authority,declared_16:f.declared})});
     const d=await r.json(); busy=false;
     if(!d.ok){ btn.disabled=false; msg.className='msg bad'; msg.textContent=d.error||'Something went wrong. Please try again.'; return; }
     await load(true);
@@ -271,7 +274,7 @@ async function submitIt(){
 }
 async function withdrawIt(){
   const p=person(); if(!confirm('Withdraw your instruction? Nothing will be cast for you unless you save a new one.')) return;
-  const r=await fetch(EP+'/agm/withdraw',{method:'POST',headers:H(),body:JSON.stringify({member_id:p.member_id})});
+  const r=await fetch(EP+'/agm/withdraw'+Q,{method:'POST',headers:H(),body:JSON.stringify({member_id:p.member_id})});
   const d=await r.json(); if(d.ok) await load(true);
 }
 
@@ -284,7 +287,7 @@ function renderAttend(){
     '<button type="button" class="ghost" style="width:auto;padding:8px 14px;font-size:13px" onclick="attend('+p.member_id+',false)">Can’t make it</button></div></div>').join('');
 }
 async function attend(id,yes){
-  const r=await fetch(EP+'/agm/attend',{method:'POST',headers:H(),body:JSON.stringify({member_id:id,attending:yes})});
+  const r=await fetch(EP+'/agm/attend'+Q,{method:'POST',headers:H(),body:JSON.stringify({member_id:id,attending:yes})});
   const d=await r.json();
   if(d.ok){ S.people.find(p=>p.member_id===id).attending=yes; renderWho(); renderAttend(); }
 }
