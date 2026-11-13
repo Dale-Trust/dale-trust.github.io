@@ -97,7 +97,7 @@
     <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
     <div style="margin-top:14px"><button onclick="requestLink()">Email me a sign-in link</button></div>
     <p class="msg" id="simsg"></p>
-    <p class="note">Not getting the email, or think we hold the wrong address? Write to <a href="mailto:info@daletrust.uk">info@daletrust.uk</a> and we&rsquo;ll sort it, or use the paper proxy form.</p>
+    <p class="note">Not getting the email, or think we hold the wrong address? Write to <a href="mailto:info@daletrust.uk">info@daletrust.uk</a> and we&rsquo;ll sort it, or use the paper proxy form attached to your notice email.</p>
   </div>
 
   <!-- signed in -->
@@ -137,7 +137,7 @@
       <div id="attendBox" style="margin-top:12px"></div>
     </div>
 
-    <p class="note">Questions about the AGM, or a problem with the form? Email <a href="mailto:info@daletrust.uk">info@daletrust.uk</a>. Prefer paper? Use the proxy form above and post or email it before 5pm on Tuesday 24 November.</p>
+    <p class="note">Questions about the AGM, or a problem with the form? Email <a href="mailto:info@daletrust.uk">info@daletrust.uk</a>. Prefer paper? Use the proxy form attached to your notice email, and post or scan and email it before 5pm on Tuesday 24 November.</p>
   </div>
 </div></main>
 <footer>Dale Trust is the trading name of Rochdale Supporters Club Limited, a registered society (29690R).</footer>
@@ -265,7 +265,7 @@ function renderVote(){
   const box=$('voteBox'), p=person();
   if(!p){ box.innerHTML='<p>We can&rsquo;t find a current membership on this sign-in. If that looks wrong, email <a href="mailto:info@daletrust.uk">info@daletrust.uk</a>.</p>'; return; }
   if(!p.can_vote){ box.innerHTML='<p><b>'+esc(p.name)+'</b>: '+esc(p.reason)+'. '+(/Junior|16/.test(p.reason)?'You are still very welcome at the meeting, and you can read the papers above.':'')+'</p>'; return; }
-  if(S.phase==='upcoming'){ box.innerHTML='<p>Online voting opens on '+esc(fmt(S.meeting.opens_at,{weekday:'long',day:'numeric',month:'long'}))+'. Come back then, or use the paper proxy form.</p>'; return; }
+  if(S.phase==='upcoming'){ box.innerHTML='<p>Online voting opens on '+esc(fmt(S.meeting.opens_at,{weekday:'long',day:'numeric',month:'long'}))+'. Come back then, or use the paper proxy form attached to your notice email.</p>'; return; }
   const sub=p.submission, f=FM[p.member_id];
   if(S.phase==='closed'){
     box.innerHTML=sub&&!sub.withdrawn?'<p>Your instruction was recorded on '+esc(fmt(sub.updated_at,{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}))+'. Thank you.</p>':'<p>Online voting has closed. You can still come to the meeting and vote in person.</p>';
