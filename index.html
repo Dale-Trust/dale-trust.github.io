@@ -1244,6 +1244,13 @@ loadHub();
 <script>
 // Anything open to vote on
 (async () => {
+  // AGM 2026: until the day after the meeting, this card points at the AGM
+  if (new Date() < new Date('2026-11-29T00:00:00Z')) {
+    document.getElementById('vbTitle').textContent = 'AGM 2026';
+    document.getElementById('vbSub').textContent = 'Saturday 28 November \u00b7 vote online 18\u201324 Nov';
+    document.getElementById('voteCol').setAttribute('href', 'agm.html');
+    return;
+  }
   const none = () => {
     document.getElementById('vbTitle').textContent = 'Have your say';
     document.getElementById('vbSub').textContent = 'Nothing to vote on just now';
