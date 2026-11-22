@@ -193,6 +193,23 @@
       <div><b>Renew automatically each July</b><small>We'll email you 14 days before &mdash; cancel any time. Fixes the "forgot to renew" problem for good.</small></div>
       <label class="switch"><input type="checkbox" id="auto" checked><span class="slider"></span></label>
     </div>
+    <label for="heard">How did you hear about the Trust? <span style="text-transform:none;letter-spacing:0;font-weight:500;color:#7A8AA5">(optional)</span></label>
+    <select id="heard" onchange="heardChange()">
+      <option value="">Prefer not to say</option>
+      <option>Friend or family</option>
+      <option>At a match or the Trust Desk</option>
+      <option>Facebook</option>
+      <option>Instagram</option>
+      <option>X (Twitter)</option>
+      <option>Newsletter or email</option>
+      <option>Club website or Rochdale AFC</option>
+      <option>Poster or flyer</option>
+      <option>Podcast or radio</option>
+      <option>Search engine (Google etc.)</option>
+      <option>Other</option>
+    </select>
+    <input type="text" id="heardOther" maxlength="200" placeholder="Where did you hear about us?" style="display:none;margin-top:8px">
+    <p class="hint">It helps us see what&rsquo;s working, so we can reach more supporters. It doesn&rsquo;t affect your membership.</p>
   </div>
 
   <div class="card">
@@ -315,6 +332,11 @@ let TURNSTILE_SITE_KEY = '';
   }
 })();
 
+function heardChange(){
+  const o=$('heardOther'); const show=$('heard').value==='Other';
+  o.style.display=show?'block':'none'; if(!show) o.value='';
+}
+
 async function pay(method){
   const errs=[];
   const need=(id,name)=>{const v=$(id).value.trim();$(id).classList.toggle('err',!v);if(!v)errs.push(name);return v};
@@ -344,7 +366,9 @@ async function pay(method){
     membership_type:type, donation:don,
     exile_transport_share: type==='Exile' ? (document.querySelector('#shareSeg .sel')?.dataset.v||'No') : null,
     newsletter:$('news').checked, auto_renew:$('auto').checked,
-    gdpr_consent:$('gdpr').checked, turnstile_token:token, method
+    gdpr_consent:$('gdpr').checked, turnstile_token:token, method,
+    heard_about:$('heard').value||null,
+    heard_about_other:$('heard').value==='Other'?($('heardOther').value.trim()||null):null
   };
   try{
     const r=await fetch(PAY_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});

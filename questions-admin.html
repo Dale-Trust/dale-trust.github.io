@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Member questions | Dale Trust Board</title>
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--gold:#E8B84B;--green:#1E8E5A;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:15px;line-height:1.55}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:20px;color:#fff}.top small{color:#8FC1FF;font-size:12px;display:block}
+  .wrap{max-width:900px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{font-size:17px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .tab{background:#fff;color:var(--body);border:1.5px solid var(--line);border-radius:100px;padding:7px 16px;font:600 13px 'Montserrat';cursor:pointer}
+  .tab.on{background:var(--royal);color:#fff;border-color:var(--royal)}
+  .q{border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:0 12px 12px 0;padding:14px 16px;margin-bottom:14px;background:#FAFBFD}
+  .q.answered{border-left-color:var(--green)}
+  .q.closed{border-left-color:#9AA9C2}
+  .q small{display:block;color:#7A8AA5;font-size:12.5px;margin-bottom:6px}
+  .q .text{color:var(--ink);font-size:15px;margin-bottom:10px;white-space:pre-wrap}
+  .pill{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 10px;border-radius:100px;margin-left:6px;text-transform:uppercase;letter-spacing:.04em}
+  .pill.cab{background:#E8F1FC;color:#0057A7}.pill.board{background:#FFF7E0;color:#6B5200}
+  .name-ok{color:#14653F;font-weight:600}.name-no{color:var(--red);font-weight:600}
+  .ans{margin-top:10px;padding:10px 12px;background:#EAF7F0;border-radius:10px;color:#14573A;white-space:pre-wrap}
+  textarea{width:100%;min-height:90px;padding:10px;border:1.5px solid var(--line);border-radius:10px;font:inherit;font-size:14px;background:#fff;color:var(--ink);line-height:1.5}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  button.b{background:var(--royal);color:#fff;border:0;border-radius:10px;padding:9px 16px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+  button.b.g{background:var(--green)}
+  button.b.o{background:#fff;color:var(--body);border:1.5px solid var(--line)}
+  label.chk{font-size:13px;display:flex;gap:6px;align-items:center}
+  .bar{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:14px}
+  .bar .l{width:250px;flex:none;color:var(--ink)}
+  .bar .t{flex:1;background:#EEF2F7;border-radius:6px;height:20px;overflow:hidden}
+  .bar .t i{display:block;height:100%;background:var(--royal)}
+  .bar .n{width:36px;text-align:right;font-weight:700;color:var(--ink)}
+  .note{font-size:13px;color:var(--body);margin-top:10px}
+  @media(max-width:600px){.bar .l{width:130px;font-size:13px}}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Admin</a></div>
+<div class="top"><h1>Member questions</h1><small>Board only &middot; Ask the Board / Ask the CAB, and how new members heard about us</small></div>
+<div class="wrap">
+  <div id="msg" class="panel">Loading&hellip;</div>
+  <div id="dash" hidden>
+    <div class="panel">
+      <h2>Questions from members</h2>
+      <div class="tabs" id="tabs"></div>
+      <div id="list"></div>
+      <p class="note">The Board always sees who asked, so we can reply. If a member has not allowed their name to go further, pass the question to the CAB or the Club without it. Sending an answer emails the member and shows it in their members area.</p>
+    </div>
+    <div class="panel">
+      <h2>How new members heard about us</h2>
+      <div id="heard"></div>
+    </div>
+  </div>
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+const H={'Content-Type':'application/json','Authorization':'Bearer '+session};
+const utc=s=>Date.parse(String(s).replace(' ','T')+'Z');
+const fmt=s=>new Date(utc(s)).toLocaleString('en-GB',{timeZone:'Europe/London',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const TO={board:'the Board',cab:'the CAB'};
+let QS=[], TAB='open';
+
+function say(t){ $('msg').hidden=false; $('dash').hidden=true; $('msg').textContent=t; }
+
+async function load(){
+  if(!session){ say('Please sign in on the admin page first, then come back here.'); return; }
+  let r;
+  try{ r=await fetch(EP+'/admin/questions',{headers:H}); }catch(e){ say('Could not reach the Trust. Please refresh.'); return; }
+  if(r.status===401||r.status===403){ say('Please sign in on the admin page with a Board account, then come back here.'); return; }
+  const d=await r.json();
+  if(!d.ok){ say(d.error||'Something went wrong.'); return; }
+  QS=d.questions; $('msg').hidden=true; $('dash').hidden=false;
+  draw(); loadHeard();
+}
+
+function draw(){
+  const open=QS.filter(q=>q.status==='new'||q.status==='passed_on');
+  const tabs=[['open','Needs an answer ('+open.length+')'],['answered','Answered'],['closed','Closed'],['all','All']];
+  $('tabs').innerHTML=tabs.map(t=>'<button class="tab'+(TAB===t[0]?' on':'')+'" onclick="TAB=\''+t[0]+'\';draw()">'+t[1]+'</button>').join('');
+  const rows=QS.filter(q=>TAB==='all'||(TAB==='open'?(q.status==='new'||q.status==='passed_on'):q.status===TAB));
+  if(!rows.length){ $('list').innerHTML='<p>Nothing here.</p>'; return; }
+  $('list').innerHTML=rows.map(q=>
+    '<div class="q '+esc(q.status)+'" id="q'+q.id+'">'+
+    '<small><b>'+esc(q.name)+'</b> ('+esc(q.member_no)+') &middot; '+fmt(q.created_at)+
+      '<span class="pill '+esc(q.audience)+'">To '+TO[q.audience]+'</span>'+
+      (q.status==='passed_on'?'<span class="pill" style="background:#EEF2F7;color:#46536B">Passed on</span>':'')+'<br>'+
+      (q.share_name?'<span class="name-ok">Name may be shared with the CAB or the Club</span>':'<span class="name-no">Do not give their name to the CAB or the Club</span>')+
+      ' &middot; <a href="mailto:'+esc(q.email)+'" style="color:#0057A7">'+esc(q.email)+'</a></small>'+
+    '<div class="text">'+esc(q.question)+'</div>'+
+    (q.answer?'<div class="ans"><b>Answered by '+esc(q.answered_by)+' ('+fmt(q.answered_at)+'):</b><br>'+esc(q.answer)+'</div>':'')+
+    '<textarea id="a'+q.id+'" placeholder="'+(q.answer?'Edit and resend the answer':'Write the answer')+'"></textarea>'+
+    '<div class="row"><button class="b g" onclick="answer('+q.id+')">'+(q.answer?'Update answer':'Send answer')+'</button>'+
+      '<label class="chk"><input type="checkbox" id="n'+q.id+'" checked> Email the member</label>'+
+      (q.status==='new'?'<button class="b o" onclick="setStatus('+q.id+',\'passed_on\')">Mark as passed on</button>':'')+
+      (q.status!=='closed'?'<button class="b o" onclick="setStatus('+q.id+',\'closed\')">Close without answer</button>':'<button class="b o" onclick="setStatus('+q.id+',\'new\')">Reopen</button>')+
+    '</div></div>').join('');
+}
+
+async function post(body){
+  const r=await fetch(EP+'/admin/questions/update',{method:'POST',headers:H,body:JSON.stringify(body)});
+  return r.json();
+}
+async function answer(id){
+  const a=$('a'+id).value.trim();
+  if(!a){ alert('Please write the answer first.'); return; }
+  const d=await post({id,answer:a,notify:$('n'+id).checked});
+  if(!d.ok){ alert(d.error||'Something went wrong.'); return; }
+  await load();
+}
+async function setStatus(id,status){
+  const d=await post({id,status});
+  if(!d.ok){ alert(d.error||'Something went wrong.'); return; }
+  await load();
+}
+
+async function loadHeard(){
+  try{
+    const d=await (await fetch(EP+'/admin/heard-about',{headers:H})).json();
+    if(!d.ok){ $('heard').innerHTML='<p>'+esc(d.error||'Could not load.')+'</p>'; return; }
+    if(!d.counts.length){ $('heard').innerHTML='<p>No answers yet. The question is on the join form, so figures will build up as people join.</p>'; return; }
+    const total=d.counts.reduce((a,c)=>a+c.n,0), max=Math.max.apply(null,d.counts.map(c=>c.n));
+    $('heard').innerHTML=d.counts.map(c=>
+      '<div class="bar"><span class="l">'+esc(c.k)+'</span><span class="t"><i style="width:'+Math.round(c.n/max*100)+'%"></i></span><span class="n">'+c.n+'</span></div>').join('')+
+      '<p class="note">'+total+' answer'+(total===1?'':'s')+'. '+(d.online_since_launch?d.answered+' of '+d.online_since_launch+' people who joined online since the question went live chose to answer.':'')+'</p>'+
+      (d.others.length?'<p style="margin-top:14px"><b style="color:var(--ink)">&ldquo;Other&rdquo; answers, newest first</b></p><ul style="margin:6px 0 0 18px">'+d.others.map(o=>'<li>'+esc(o.t)+'</li>').join('')+'</ul>':'');
+  }catch(e){ $('heard').innerHTML='<p>Could not load.</p>'; }
+}
+load();
+</script>
+</body>
+</html>

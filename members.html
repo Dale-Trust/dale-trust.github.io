@@ -28,6 +28,14 @@
   button{background:var(--royal);color:#fff;border:0;border-radius:10px;padding:14px 26px;font:600 15px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer;width:100%}
   button:hover{background:var(--bright)}
   button.green{background:var(--green)}
+  textarea{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font:inherit;color:var(--ink);background:#fff;line-height:1.5;min-height:110px}
+  textarea:focus{outline:none;border-color:var(--bright)}
+  .askchk{display:flex;gap:10px;align-items:flex-start;margin:14px 0 4px;font-size:13.5px;text-transform:none;letter-spacing:0;font-weight:500}
+  .askchk input{width:19px;height:19px;margin-top:2px;flex:none;accent-color:var(--royal)}
+  .qitem{border:1px solid var(--line);border-left:4px solid #9AA9C2;border-radius:0 10px 10px 0;padding:12px 14px;margin-top:12px;font-size:14px;background:#FAFBFD}
+  .qitem.done{border-left-color:var(--green)}
+  .qitem small{display:block;color:#7A8AA5;font-size:12px;margin-bottom:4px}
+  .qitem .ans{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);color:var(--ink)}
   button.ghost{background:#fff;color:var(--body);border:1.5px solid var(--line)}
   .hint{font-size:13px;color:#7A8AA5;margin-top:8px}
   .msg{font-size:14px;font-weight:600;margin-top:12px}
@@ -233,6 +241,23 @@
         <button class="cardprint" onclick="printMyCard()">Print my card</button>
         <button class="cardprint" onclick="saveMyCard()">Save as an image</button>
       </div>
+    </div>
+
+    <div class="panel" id="askPanel" style="display:none">
+      <h2>Ask the Board or the CAB</h2>
+      <p style="font-size:14.5px">Something you want to know, or something you think we should be raising? Ask it here. This is for Trust members.</p>
+      <label for="ask_to">Who would you like to ask?</label>
+      <select id="ask_to" onchange="askHint()">
+        <option value="board">The Trust Board</option>
+        <option value="cab">The Club Advisory Board (CAB)</option>
+      </select>
+      <p class="hint" id="askHint"></p>
+      <label for="ask_q">Your question</label>
+      <textarea id="ask_q" maxlength="1500" placeholder="Ask it the way you would across the bar"></textarea>
+      <label class="askchk"><input type="checkbox" id="ask_share"><span>You can give my name to the CAB or the Club when you pass this on. <span style="color:#7A8AA5">If this is unticked we pass the question on without your name. The Board always knows who asked, so we can reply to you.</span></span></label>
+      <div style="margin-top:14px"><button class="green" onclick="sendAsk()" id="askBtn">Send my question</button></div>
+      <p class="msg" id="askmsg"></p>
+      <div id="askList"></div>
     </div>
 
     <div class="panel" id="detailsPanel">
@@ -568,6 +593,50 @@ function drawAgm(){
     '<a class="go" href="agm.html">Go to the AGM area \u2192</a></div>';
 }
 
+// ---- Ask the Board / Ask the CAB ----
+function askHint(){
+  const cab=$('ask_to').value==='cab';
+  $('askHint').textContent=cab
+    ? 'The Trust has two representatives on the Club Advisory Board, the club\u2019s supporter engagement group. We\u2019ll raise your question there and tell you what we hear back.'
+    : 'Your question goes to the Trust Board. We\u2019ll reply by email, and you can see the answer here.';
+}
+async function drawAsk(){
+  const box=$('askPanel'); if(!box) return;
+  const p=person();
+  if(!p||!p.isMember){box.style.display='none';return;}
+  box.style.display='block';
+  askHint();
+  try{
+    const d=await (await fetch(EP+'/member/ask?member_no='+encodeURIComponent(p.record.member_no||''),{headers:H()})).json();
+    if(!d.ok||!d.questions.length){$('askList').innerHTML='';return;}
+    const names={board:'the Board',cab:'the CAB'};
+    $('askList').innerHTML='<p class="bencat" style="margin-top:18px">Your questions</p>'+d.questions.map(q=>
+      '<div class="qitem'+(q.answer?' done':'')+'"><small>To '+names[q.audience]+' \u00b7 '+
+      new Date(String(q.created_at).replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'long'})+
+      (q.answer?'':(q.status==='passed_on'?' \u00b7 passed on':' \u00b7 waiting for an answer'))+'</small>'+
+      esc(q.question).replace(/\n/g,'<br>')+
+      (q.answer?'<div class="ans"><b>Answer:</b><br>'+esc(q.answer).replace(/\n/g,'<br>')+'</div>':'')+'</div>').join('');
+  }catch(e){}
+}
+async function sendAsk(){
+  const p=person(), m=$('askmsg'), b=$('askBtn');
+  const q=$('ask_q').value.trim();
+  m.style.color='#C0392B';
+  if(q.length<10){m.textContent='Please give us a little more to go on.';return;}
+  b.disabled=true; m.style.color='#46536B'; m.textContent='Sending\u2026';
+  try{
+    const d=await (await fetch(EP+'/member/ask',{method:'POST',headers:H(),body:JSON.stringify({
+      member_no:p.record.member_no, audience:$('ask_to').value, question:q, share_name:$('ask_share').checked
+    })})).json();
+    if(d.ok){
+      $('ask_q').value=''; $('ask_share').checked=false;
+      m.style.color='#14653F'; m.textContent='Thank you \u2014 your question has gone to '+($('ask_to').value==='cab'?'us to take to the CAB':'the Board')+'.';
+      drawAsk();
+    }else{ m.style.color='#C0392B'; m.textContent=d.error||'Something went wrong. Please try again.'; }
+  }catch(e){ m.style.color='#C0392B'; m.textContent='We could not reach the Trust just now. Please try again.'; }
+  b.disabled=false;
+}
+
 async function drawVotes(){
   const box=$('votePanel'); if(!box) return;
   try{
@@ -616,6 +685,7 @@ function drawBookings(){
 function render(){
   drawCheck();
   drawAgm(); drawVotes();
+  drawAsk();
   drawBookings();
   drawPeople();
   const p=person(), rec=p.record, cur=p.isMember;
