@@ -72,6 +72,12 @@
   .sum td{padding:7px 8px 7px 0;border-top:1px solid var(--line);vertical-align:top}
   .sum td:last-child{white-space:nowrap;font-weight:700;color:var(--ink)}
   .pill{display:inline-block;padding:3px 10px;border-radius:100px;font-size:12.5px;font-weight:700}
+  .qbox textarea{min-height:110px}
+  .qchk{display:flex;gap:10px;align-items:flex-start;margin:12px 0 4px;font-size:13.5px}
+  .qchk input{width:19px;height:19px;margin-top:2px;flex:none;accent-color:var(--royal)}
+  .qitem{border:1px solid var(--line);border-left:4px solid #9AA9C2;border-radius:0 10px 10px 0;padding:10px 14px;margin-top:10px;font-size:14px;background:#FAFBFD}
+  .qitem.done{border-left-color:#1E8E5A}
+  .qitem .ans{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);color:var(--ink)}
   .pill.g{background:#EAF7F0;color:#14573A} .pill.b{background:#E8F1FC;color:var(--royal)} .pill.x{background:#F1F3F7;color:var(--body)}
   footer{background:var(--navy);color:#8CA2C4;font-size:12.5px;text-align:center;padding:22px}
   [hidden]{display:none!important}
@@ -135,6 +141,20 @@
       <h2>3. Coming along? (optional)</h2>
       <p>Let us know if you plan to be at the Dale Bar on the day. It helps us plan the room. It isn&rsquo;t binding, and every member is welcome whether they tell us or not.</p>
       <div id="attendBox" style="margin-top:12px"></div>
+    </div>
+
+    <div class="panel" id="askPanel" hidden>
+      <h2>4. Got a question for the meeting? (optional)</h2>
+      <p>Ask it here before the AGM and it goes on the list for the Chair. We will cover as many as we can on the day and reply to the rest in writing afterwards. You can also ask on the day.</p>
+      <div id="askWho"></div>
+      <div class="qbox">
+        <label class="f" for="aq">Your question</label>
+        <textarea id="aq" maxlength="1500" placeholder="Ask it the way you would across the bar"></textarea>
+        <label class="qchk"><input type="checkbox" id="aqshare"><span>The Chair may read my name out with my question. <span style="color:var(--body)">If this is unticked, your question is read without it. The Board always knows who asked, so we can reply to you.</span></span></label>
+        <div style="margin-top:12px"><button type="button" id="aqbtn" onclick="sendAgmQ()">Send my question</button></div>
+        <p class="msg" id="aqmsg"></p>
+      </div>
+      <div id="aqlist"></div>
     </div>
 
     <p class="note">Questions about the AGM, or a problem with the form? Email <a href="mailto:info@daletrust.uk">info@daletrust.uk</a>. Prefer paper? Use the proxy form attached to your notice email, and post or scan and email it before 5pm on Tuesday 24 November.</p>
@@ -221,7 +241,7 @@ function render(){
     const fr=$('nFrame'); fr.onload=()=>{try{fr.style.height=(fr.contentDocument.documentElement.scrollHeight+4)+'px';}catch(e){}}; fr.srcdoc='<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_blank"></head><body style="margin:0">'+NOTICE_HTML+'</body></html>'; }
   $('docs').innerHTML=S.docs.length?S.docs.map(d=>'<li><a href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.title)+'</a>'+(d.note?'<small>'+esc(d.note)+'</small>':'')+'</li>').join(''):'<li>The papers will appear here as soon as they are ready.</li>';
   $('docsNote').textContent=S.docs.length?'Please read the papers before you vote.':'';
-  renderWho(); renderVote(); renderAttend();
+  renderWho(); renderVote(); renderAttend(); renderAsk();
 }
 
 function renderWho(){
@@ -340,6 +360,41 @@ async function attend(id,yes){
   const r=await fetch(EP+'/agm/attend'+Q,{method:'POST',headers:H(),body:JSON.stringify({member_id:id,attending:yes})});
   const d=await r.json();
   if(d.ok){ S.people.find(p=>p.member_id===id).attending=yes; renderWho(); renderAttend(); }
+}
+
+// ---- questions for the AGM ----
+let AQ={who:null};
+function aqPerson(){ return S.people.find(p=>p.member_no===AQ.who)||S.people[0]; }
+async function renderAsk(){
+  const box=$('askPanel');
+  // the live meeting only: the Board preview must not send real questions
+  if(!S||!S.people.length||SLUG!=='agm-2026'||now()>=utc(S.meeting.meeting_at)){ box.hidden=true; return; }
+  box.hidden=false;
+  if(!AQ.who||!S.people.find(p=>p.member_no===AQ.who)) AQ.who=S.people[0].member_no;
+  $('askWho').innerHTML=S.people.length>1
+    ? '<label class="f" for="aqwho">Asking as</label><select id="aqwho" onchange="AQ.who=this.value;renderAsk()" style="width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font:inherit">'+
+      S.people.map(p=>'<option value="'+esc(p.member_no)+'"'+(p.member_no===AQ.who?' selected':'')+'>'+esc(p.name)+'</option>').join('')+'</select>'
+    : '';
+  try{
+    const d=await (await fetch(EP+'/member/ask?member_no='+encodeURIComponent(AQ.who),{headers:H()})).json();
+    const mine=(d.ok?d.questions:[]).filter(q=>q.audience==='agm');
+    $('aqlist').innerHTML=mine.length?'<p class="note" style="margin-top:16px;font-weight:700;color:var(--ink)">Your questions for the AGM</p>'+mine.map(q=>
+      '<div class="qitem'+(q.answer?' done':'')+'">'+esc(q.question).replace(/\n/g,'<br>')+
+      (q.answer?'<div class="ans"><b>Answer:</b><br>'+esc(q.answer).replace(/\n/g,'<br>')+'</div>':'')+'</div>').join(''):'';
+  }catch(e){}
+}
+async function sendAgmQ(){
+  const m=$('aqmsg'), b=$('aqbtn'), q=$('aq').value.trim();
+  m.style.color='var(--red)';
+  if(q.length<10){ m.textContent='Please give us a little more to go on.'; return; }
+  b.disabled=true; m.style.color='var(--body)'; m.textContent='Sending…';
+  try{
+    const d=await (await fetch(EP+'/member/ask',{method:'POST',headers:H(),body:JSON.stringify({
+      member_no:AQ.who, audience:'agm', question:q, share_name:$('aqshare').checked})})).json();
+    if(d.ok){ $('aq').value=''; $('aqshare').checked=false; m.style.color='#14653F'; m.textContent='Thank you. Your question is on the list for the AGM.'; renderAsk(); }
+    else { m.style.color='var(--red)'; m.textContent=d.error||'Something went wrong. Please try again.'; }
+  }catch(e){ m.style.color='var(--red)'; m.textContent='We could not reach the Trust just now. Please try again.'; }
+  b.disabled=false;
 }
 
 // withdraw link under a saved instruction

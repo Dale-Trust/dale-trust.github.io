@@ -28,7 +28,8 @@
   .q small{display:block;color:#7A8AA5;font-size:12.5px;margin-bottom:6px}
   .q .text{color:var(--ink);font-size:15px;margin-bottom:10px;white-space:pre-wrap}
   .pill{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 10px;border-radius:100px;margin-left:6px;text-transform:uppercase;letter-spacing:.04em}
-  .pill.cab{background:#E8F1FC;color:#0057A7}.pill.board{background:#FFF7E0;color:#6B5200}
+  .pill.cab{background:#E8F1FC;color:#0057A7}.pill.board{background:#FFF7E0;color:#6B5200}.pill.agm{background:#EAF7F0;color:#14573A}
+  @media print{.back,.top small,.tabs,textarea,.row,#heardPanel,.note,.noprint{display:none!important}.q{break-inside:avoid;background:#fff}body{background:#fff}}
   .name-ok{color:#14653F;font-weight:600}.name-no{color:var(--red);font-weight:600}
   .ans{margin-top:10px;padding:10px 12px;background:#EAF7F0;border-radius:10px;color:#14573A;white-space:pre-wrap}
   textarea{width:100%;min-height:90px;padding:10px;border:1.5px solid var(--line);border-radius:10px;font:inherit;font-size:14px;background:#fff;color:var(--ink);line-height:1.5}
@@ -58,7 +59,7 @@
       <div id="list"></div>
       <p class="note">The Board always sees who asked, so we can reply. If a member has not allowed their name to go further, pass the question to the CAB or the Club without it. Sending an answer emails the member and shows it in their members area.</p>
     </div>
-    <div class="panel">
+    <div class="panel" id="heardPanel">
       <h2>How new members heard about us</h2>
       <div id="heard"></div>
     </div>
@@ -72,7 +73,7 @@ let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
 const H={'Content-Type':'application/json','Authorization':'Bearer '+session};
 const utc=s=>Date.parse(String(s).replace(' ','T')+'Z');
 const fmt=s=>new Date(utc(s)).toLocaleString('en-GB',{timeZone:'Europe/London',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-const TO={board:'the Board',cab:'the CAB'};
+const TO={board:'the Board',cab:'the CAB',agm:'the AGM'};
 let QS=[], TAB='open';
 
 function say(t){ $('msg').hidden=false; $('dash').hidden=true; $('msg').textContent=t; }
@@ -90,16 +91,19 @@ async function load(){
 
 function draw(){
   const open=QS.filter(q=>q.status==='new'||q.status==='passed_on');
-  const tabs=[['open','Needs an answer ('+open.length+')'],['answered','Answered'],['closed','Closed'],['all','All']];
+  const agm=QS.filter(q=>q.audience==='agm');
+  const tabs=[['open','Needs an answer ('+open.length+')'],['agm','AGM questions ('+agm.length+')'],['answered','Answered'],['closed','Closed'],['all','All']];
   $('tabs').innerHTML=tabs.map(t=>'<button class="tab'+(TAB===t[0]?' on':'')+'" onclick="TAB=\''+t[0]+'\';draw()">'+t[1]+'</button>').join('');
-  const rows=QS.filter(q=>TAB==='all'||(TAB==='open'?(q.status==='new'||q.status==='passed_on'):q.status===TAB));
+  const rows=QS.filter(q=>TAB==='all'||(TAB==='agm'?q.audience==='agm':(TAB==='open'?(q.status==='new'||q.status==='passed_on'):q.status===TAB)));
   if(!rows.length){ $('list').innerHTML='<p>Nothing here.</p>'; return; }
-  $('list').innerHTML=rows.map(q=>
+  $('list').innerHTML=(TAB==='agm'?'<p class="noprint" style="margin-bottom:12px"><button class="b" onclick="window.print()">Print the AGM questions for the Chair</button></p>':'')+rows.map(q=>
     '<div class="q '+esc(q.status)+'" id="q'+q.id+'">'+
     '<small><b>'+esc(q.name)+'</b> ('+esc(q.member_no)+') &middot; '+fmt(q.created_at)+
       '<span class="pill '+esc(q.audience)+'">To '+TO[q.audience]+'</span>'+
       (q.status==='passed_on'?'<span class="pill" style="background:#EEF2F7;color:#46536B">Passed on</span>':'')+'<br>'+
-      (q.share_name?'<span class="name-ok">Name may be shared with the CAB or the Club</span>':'<span class="name-no">Do not give their name to the CAB or the Club</span>')+
+      (q.audience==='agm'
+        ? (q.share_name?'<span class="name-ok">The Chair may read their name out</span>':'<span class="name-no">Read the question out without their name</span>')
+        : (q.share_name?'<span class="name-ok">Name may be shared with the CAB or the Club</span>':'<span class="name-no">Do not give their name to the CAB or the Club</span>'))+
       ' &middot; <a href="mailto:'+esc(q.email)+'" style="color:#0057A7">'+esc(q.email)+'</a></small>'+
     '<div class="text">'+esc(q.question)+'</div>'+
     (q.answer?'<div class="ans"><b>Answered by '+esc(q.answered_by)+' ('+fmt(q.answered_at)+'):</b><br>'+esc(q.answer)+'</div>':'')+

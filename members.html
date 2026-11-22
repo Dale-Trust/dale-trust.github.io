@@ -609,7 +609,7 @@ async function drawAsk(){
   try{
     const d=await (await fetch(EP+'/member/ask?member_no='+encodeURIComponent(p.record.member_no||''),{headers:H()})).json();
     if(!d.ok||!d.questions.length){$('askList').innerHTML='';return;}
-    const names={board:'the Board',cab:'the CAB'};
+    const names={board:'the Board',cab:'the CAB',agm:'the AGM'};
     $('askList').innerHTML='<p class="bencat" style="margin-top:18px">Your questions</p>'+d.questions.map(q=>
       '<div class="qitem'+(q.answer?' done':'')+'"><small>To '+names[q.audience]+' \u00b7 '+
       new Date(String(q.created_at).replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'long'})+
