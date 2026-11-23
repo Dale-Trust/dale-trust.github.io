@@ -32,16 +32,21 @@
   .scroll{overflow-x:auto}
   button{background:var(--royal);color:#fff;border:0;border-radius:10px;padding:11px 18px;font:600 14px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
   .flag{color:var(--red);font-weight:600}
+  button.small{padding:6px 12px;font-size:12px}
   .note{font-size:13px;color:var(--body);margin-top:10px}
   label.f{display:block;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin:12px 0 4px}
   input,textarea{width:100%;padding:10px;border:1.5px solid var(--line);border-radius:10px;font:inherit;font-size:14px;background:#FAFBFD;color:var(--ink)}
   textarea{line-height:1.5}
-  @media print{.back,button{display:none}}
+  @media print{.back,button{display:none}
+  body.printing .back,body.printing .top,body.printing #dash>*:not(#printSheet){display:none!important}
+  body.printing #printSheet{display:block!important}
+  #printSheet h1{font-size:22px;margin-bottom:6px;color:#000}#printSheet table{margin:14px 0}#printSheet td,#printSheet th{border:1px solid #999;padding:6px 8px}
+  .sig{display:inline-block;width:46%;border-top:1px solid #000;margin-top:50px;padding-top:4px;font-size:13px}}
 </style>
 </head>
 <body>
 <div class="back"><a href="admin.html">&larr; Admin</a></div>
-<div class="top"><h1>AGM 2026 &middot; online voting instructions</h1><small id="sub">Board only</small></div>
+<div class="top"><h1>AGM 2026 &middot; online voting instructions</h1><small id="sub">Board &middot; secret ballot</small></div>
 <div class="wrap">
   <div id="msg" class="panel">Loading&hellip;</div>
   <div id="dash" hidden>
@@ -49,7 +54,11 @@
     <div class="panel" id="noticePanel"><h2>Notice email and post</h2><p>The draft notice email (formatted as members will see it) and the social post are in the Board preview: <a href="agm.html?m=agm-boardpreview">agm.html?m=agm-boardpreview</a></p></div>
     <div id="state"></div>
     <div class="kpis" id="kpis" style="margin-top:16px"></div>
+    <div id="verify"></div>
+    <div id="count"></div>
     <div id="results"></div>
+    <div id="support"></div>
+    <div id="printSheet" hidden></div>
   </div>
 </div>
 <script>
@@ -69,6 +78,9 @@ function cp(id,btn){
 
 
 function say(t){ $('msg').hidden=false; $('dash').hidden=true; $('msg').textContent=t; }
+const fmtT=s=>s?new Date(utc(s)).toLocaleString('en-GB',{timeZone:'Europe/London',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+const post=(path,body)=>fetch(EP+path,{method:'POST',headers:Object.assign({'Content-Type':'application/json'},H),body:JSON.stringify(body)}).then(r=>r.json());
+let D=null, REG=null, ITEMS=[];
 
 async function load(){
   if(!session){ say('Please sign in on the admin page first, then come back here.'); return; }
@@ -77,6 +89,7 @@ async function load(){
   if(r.status===401||r.status===403){ say('Please sign in on the admin page with a Board account, then come back here.'); return; }
   const d=await r.json();
   if(!d.ok){ say(d.error||'Something went wrong.'); return; }
+  D=d;
   $('msg').hidden=true; $('dash').hidden=false;
   const closes=new Date(utc(d.closes_at)).toLocaleString('en-GB',{timeZone:'Europe/London',weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
   $('kpis').innerHTML=
@@ -84,39 +97,177 @@ async function load(){
     '<div class="kpi"><span>Instructions in</span><b>'+d.instructions+'</b></div>'+
     '<div class="kpi"><span>Withdrawn</span><b>'+d.withdrawn+'</b></div>'+
     '<div class="kpi"><span>Plan to attend</span><b>'+d.plan_to_attend+'</b></div>';
-  if(d.phase==='closed'){
-    $('state').innerHTML='<div class="open">Voting closed at '+esc(closes)+'. The tally and register are below.</div>';
-    await loadResults();
-  } else {
-    $('state').innerHTML='<div class="lock">'+(d.phase==='upcoming'?'Voting has not opened yet. ':'Voting is open. ')+'The tally and register stay locked until it closes at '+esc(closes)+'. Nobody on the Board can see how members have voted before then.</div>';
-    $('results').innerHTML='';
+  $('results').innerHTML=''; $('verify').innerHTML=''; $('count').innerHTML='';
+  if(d.phase!=='closed'){
+    loadSupport();
+    $('state').innerHTML='<div class="lock">'+(d.phase==='upcoming'?'Voting has not opened yet. ':'Voting is open. ')+'It closes at '+esc(closes)+'. Nobody sees how a member has voted. The Membership Officer certifies who may vote, Murray and the independent member count from an anonymised file, and the Board hears the result at the meeting.</div>';
+    return;
   }
+  $('state').innerHTML='<div class="open">Voting closed at '+esc(closes)+'. '+(d.anonymised?'The list is certified and the anonymised file exists.':'Waiting for the Membership Officer to certify the list.')+'</div>';
+  if(d.is_verifier) await loadRegister();
+  if(d.is_counter){ await loadResults(); await loadCount(); }
+  else if(!d.is_verifier) $('results').innerHTML='<div class="panel"><h2>Totals</h2><p>Until the meeting, only the people named to count the votes see the totals. You will hear the result at the meeting, at the same time as everyone else. Nobody sees names with votes.</p></div>';
+  await loadSupport();
+}
+
+function regRows(){
+  const d=REG, locked=d.anonymised&&d.anonymised.link_destroyed;
+  const qv=(($('rq')||{}).value||'').trim().toLowerCase();
+  return d.register.filter(x=>!qv||x.name.toLowerCase().includes(qv)||String(x.member_no).toLowerCase().includes(qv)).map(x=>{
+    const id=esc(x.member_no); let act='';
+    if(!locked && x.flag!=='Withdrawn'){
+      if(x.excluded) act='<button class="small" onclick="exclude(\''+id+'\',\'\')">Put back</button>';
+      else if(x.counts){
+        act='<button class="small" onclick="exclude(\''+id+'\',\'Voted in person\')">Voted in person</button> <input id="r_'+id+'" placeholder="Other reason" style="width:120px;padding:6px;font-size:13px"> <button class="small" onclick="exclude(\''+id+'\',document.getElementById(\'r_'+id+'\').value)">Take out</button>';
+        if(x.overridden) act+=' <button class="small" onclick="include(\''+id+'\',\'\')">Stop counting anyway</button>';
+      } else act='<input id="c_'+id+'" placeholder="Why count it?" style="width:140px;padding:6px;font-size:13px"> <button class="small" onclick="include(\''+id+'\',document.getElementById(\'c_'+id+'\').value)">Count anyway</button>';
+    }
+    const status=x.counts?('Counts'+(x.overridden?' <span class="note">(counted anyway: '+esc(x.override_reason)+')</span>':'')):'<span class="flag">Not counted: '+esc(x.flag.replace(/^Not counted: /,''))+'</span>';
+    return '<tr><td>'+id+'</td><td>'+esc(x.name)+'</td><td>'+esc(fmtT(x.updated_at||x.submitted_at))+'</td><td>'+status+'</td><td>'+act+'</td></tr>';
+  }).join('');
+}
+function filterReg(){ $('regbody').innerHTML=regRows(); }
+
+async function loadRegister(){
+  const r=await fetch(EP+'/agm/admin/register',{headers:H}); const d=await r.json();
+  if(!d.ok){ $('verify').innerHTML='<div class="panel">'+esc(d.error)+'</div>'; return; }
+  REG=d;
+  const done=!!d.anonymised, locked=done&&d.anonymised.link_destroyed;
+  const flagged=d.register.filter(x=>!x.counts&&x.flag!=='Withdrawn');
+  let fin;
+  if(done){
+    fin='<p class="open" style="margin-top:14px">Certified on '+esc(fmtT(d.anonymised.at))+'. The anonymised file is with Murray and the independent member.'+(locked?' The link between names and votes has been deleted.':' You can still take out anyone who voted in person, or count a flagged vote anyway. You never see any choices.')+'</p>';
+  } else {
+    fin='<div style="margin-top:18px;border-top:2px solid var(--line);padding-top:14px"><h2 style="font-size:15px;border:0;padding:0">Certify the list</h2>'+
+      '<p class="note">Check every row above. Certifying creates the anonymised file for Murray and the independent member: a random reference and the choices, with no names. The link between names and choices is then held back for challenges only, and is deleted once the minutes are agreed. You can still take someone out afterwards (for example, they voted in person) and you will see no choices.</p>'+
+      '<label class="f" for="conf">Type CERTIFY to confirm</label><input id="conf" autocomplete="off" style="max-width:240px"> '+
+      '<p style="margin-top:10px"><button onclick="certify()">Certify the list</button> <span id="fmsg" class="note"></span></p></div>';
+  }
+  $('verify').innerHTML='<div class="panel"><h2>Who has voted ('+d.register.length+') &middot; Membership Officer only</h2>'+
+    '<p class="note" style="margin:0 0 8px">Check each name is a paid-up member aged 16 or over and has voted once. This list never shows how anyone voted. Nobody else sees it. The system flags anything unusual; what to do about it is your call.</p>'+
+    (flagged.length?'<p class="note flag" style="margin:0 0 8px">'+flagged.length+' flagged and not counted. Fix the member record (for example a date of birth) and reload, or use &ldquo;Count anyway&rdquo; with a reason.</p>':'')+
+    '<input id="rq" oninput="filterReg()" placeholder="Search by name or member number (door check-in)" style="margin-bottom:10px">'+
+    '<div class="scroll"><table><tr><th>Member no.</th><th>Name</th><th>Last changed</th><th>Status</th><th></th></tr><tbody id="regbody">'+regRows()+'</tbody></table></div>'+
+    '<p style="margin-top:14px"><button onclick="csvVoters()">Download voters list (CSV)</button></p>'+fin+'</div>';
+}
+
+async function include(mn,reason){
+  const d=await post('/agm/admin/include',{member_no:mn,reason:reason});
+  if(!d.ok){ say(d.error||'Failed'); return; }
+  await load();
+}
+
+async function exclude(mn,reason){
+  if(reason!==''&&!reason.trim()){ $('verify').querySelector('.note').textContent='Please give a reason.'; return; }
+  const d=await post('/agm/admin/exclude',{member_no:mn,reason:reason});
+  if(!d.ok){ say(d.error||'Failed'); return; }
+  await load();
+}
+async function certify(){
+  const v=$('conf').value.trim();
+  if(v!=='CERTIFY'){ $('fmsg').textContent='Type CERTIFY exactly to confirm.'; return; }
+  $('fmsg').textContent='Working...';
+  const d=await post('/agm/admin/finalise',{confirm:v});
+  if(!d.ok){ $('fmsg').textContent=d.error||'Failed'; return; }
+  await load();
 }
 
 async function loadResults(){
   const r=await fetch(EP+'/agm/admin/results',{headers:H}); const d=await r.json();
   if(!d.ok){ $('results').innerHTML='<div class="panel">'+esc(d.error)+'</div>'; return; }
-  RES=d;
+  TOT=d;
   const rows=d.items.map((i,k)=>{
     const t=d.tally[i.id];
-    return '<tr><td>'+(k+1)+'</td><td>'+esc(i.kind==='director'?'Elect '+i.label:i.label)+'</td><td class="n">'+t.for+'</td><td class="n">'+t.against+'</td><td class="n">'+t.withhold+'</td><td class="n">'+t.none+'</td></tr>';
+    return '<tr><td>'+(k+1)+'</td><td>'+esc(i.kind==='director'?'Elect '+i.label:i.label)+'</td><td class="n">'+t.for+'</td><td class="n">'+t.against+'</td><td class="n">'+t.withhold+'</td><td class="n">'+t.none+'</td><td class="n"><b>'+t.cast+'</b></td></tr>';
   }).join('');
-  const flagged=d.register.filter(x=>!x.counts);
-  const reg=d.register.map(x=>'<tr><td>'+esc(x.member_no)+'</td><td>'+esc(x.name)+'</td><td>'+(x.counts?'Counted':'<span class="flag">Not counted: '+esc(x.flag)+'</span>')+'</td></tr>').join('');
   $('results').innerHTML=
-    '<div class="panel"><h2>Proxy instructions to the Chair</h2><div class="scroll"><table><tr><th>#</th><th>Item</th><th class="n">For</th><th class="n">Against</th><th class="n">Withhold</th><th class="n">No instruction</th></tr>'+rows+'</table></div>'+
-    '<p class="note">'+d.counted+' instruction'+(d.counted===1?'':'s')+' counted. Each is one member, one vote (rule 46). Where a member has given no instruction the Chair decides how to vote. A member who attends and votes in person replaces their proxy: check the register against the meeting attendance list before declaring any result.</p></div>'+
-    '<div class="panel"><h2>Register of proxies ('+d.register.length+')</h2>'+(flagged.length?'<p class="note flag" style="margin:0 0 8px">'+flagged.length+' not counted. Check these before the meeting.</p>':'')+'<div class="scroll"><table><tr><th>Member no.</th><th>Name</th><th>Status</th></tr>'+reg+'</table></div>'+
-    '<p style="margin-top:14px"><button onclick="csv()">Download register (CSV)</button></p></div>';
+    (d.provisional?'<div class="lock" style="margin-bottom:12px">Provisional. The list has not been certified yet, so these totals may change.</div>':'')+
+    '<div class="panel"><h2>Online instructions to the Chair &middot; totals only</h2><div class="scroll"><table><tr><th>#</th><th>Item</th><th class="n">For</th><th class="n">Against</th><th class="n">Withhold</th><th class="n">No instruction</th><th class="n">Votes cast</th></tr>'+rows+'</table></div>'+
+    '<p style="margin:10px 0 0"><button onclick="printTotals()">Print totals for the Chair</button></p><p class="note">'+d.counted+' instruction'+(d.counted===1?'':'s')+' counted. Votes cast = For + Against: a withhold is not a vote cast. Each director is decided separately by the most For votes (simple majority of votes cast, rule 50); a tie is lost (rule 48). Where a member gave no instruction the Chair decides. A member who attends and votes in person replaces their online instruction.'+(d.stepped_aside?' <b>'+d.stepped_aside+' item'+(d.stepped_aside===1?'':'s')+' hidden from you because you are standing for it.</b>':'')+'</p></div>';
 }
 
-function csv(){
-  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-  const head=['Member no','Name','Counted','Flag','Submitted','Last changed'].concat(RES.items.map((i,k)=>(k+1)+'. '+i.label));
-  const lines=[head.map(q).join(',')];
-  RES.register.forEach(x=>lines.push([x.member_no,x.name,x.counts?'Yes':'No',x.flag,x.submitted_at,x.updated_at].concat(RES.items.map(i=>x.choices[i.id]||'')).map(q).join(',')));
+async function loadCount(){
+  let h='<div class="panel"><h2>Counting &middot; Murray and the independent member</h2>';
+  if(!D.anonymised){ h+='<p class="note">The anonymised file appears here once the Membership Officer has certified the list.</p></div>'; $('count').innerHTML=h; return; }
+  h+='<p><button onclick="csvBallots()">Download the anonymised file (CSV)</button></p>'+
+     '<p class="note">A random reference and the choices, with no names. Use this to count.</p>';
+  if(!D.anonymised.link_destroyed){
+    h+='<div style="margin-top:16px;border-top:2px solid var(--line);padding-top:14px"><h2 style="font-size:15px;border:0;padding:0">Challenged vote</h2>'+
+       '<p class="note">Only if a vote is challenged. This shows the name and choices for one reference. It needs a reason, and the reason, your name and the time are logged where the Board can see them.</p>'+
+       '<label class="f" for="cref">Reference</label><input id="cref" style="max-width:200px;text-transform:uppercase">'+
+       '<label class="f" for="crea">Why is it being checked?</label><textarea id="crea" rows="2"></textarea>'+
+       '<p style="margin-top:10px"><button onclick="challenge()">Show the name for this reference</button></p><div id="cout"></div></div>';
+  }
+  const c=await fetch(EP+'/agm/admin/challenges',{headers:H}).then(r=>r.json());
+  if(c.ok&&c.challenges.length) h+='<h2 style="font-size:15px;border:0;padding:0;margin-top:16px">Challenges so far</h2><table><tr><th>Reference</th><th>By</th><th>Reason</th><th>When</th></tr>'+c.challenges.map(x=>'<tr><td>'+esc(x.ref)+'</td><td>'+esc(x.by_email)+'</td><td>'+esc(x.reason)+'</td><td>'+esc(fmtT(x.at))+'</td></tr>').join('')+'</table>';
+  if(!D.anonymised.link_destroyed){
+    h+='<div style="margin-top:18px;border-top:2px solid var(--line);padding-top:14px"><h2 style="font-size:15px;border:0;padding:0">Delete the link</h2>'+
+       '<p class="note">Do this once the minutes have been agreed. It permanently deletes the only link between names and choices. <b>It cannot be undone.</b> Afterwards no vote can be traced to a name and nothing more can be taken out.</p>'+
+       '<label class="f" for="dconf">Type DELETE LINK to confirm</label><input id="dconf" autocomplete="off" style="max-width:240px"> <p style="margin-top:10px"><button onclick="destroyLink()">Delete the link</button> <span id="dmsg" class="note"></span></p></div>';
+  } else h+='<p class="open" style="margin-top:14px">The link between names and choices has been deleted.</p>';
+  $('count').innerHTML=h+'</div>';
+}
+async function challenge(){
+  const d=await post('/agm/admin/challenge',{ref:$('cref').value,reason:$('crea').value});
+  if(!d.ok){ $('cout').innerHTML='<p class="flag">'+esc(d.error)+'</p>'; return; }
+  const ch=d.items.map((i,k)=>'<tr><td>'+(k+1)+'. '+esc(i.label)+'</td><td>'+esc((d.choices[i.id]||'none'))+'</td></tr>').join('');
+  $('cout').innerHTML='<p><b>'+esc(d.ref)+'</b> is '+esc(d.name)+' ('+esc(d.member_no)+')</p><table>'+ch+'</table>';
+  loadCount();
+}
+async function destroyLink(){
+  const v=$('dconf').value.trim();
+  if(v!=='DELETE LINK'){ $('dmsg').textContent='Type DELETE LINK exactly.'; return; }
+  const d=await post('/agm/admin/destroy-link',{confirm:v});
+  if(!d.ok){ $('dmsg').textContent=d.error||'Failed'; return; }
+  await load();
+}
+
+let TOT=null;
+function printTotals(){
+  const d=TOT; if(!d) return;
+  const rows=d.items.map((i,k)=>{const t=d.tally[i.id];return '<tr><td>'+(k+1)+'</td><td>'+esc(i.kind==='director'?'Elect '+i.label:i.label)+'</td><td>'+t.for+'</td><td>'+t.against+'</td><td>'+t.withhold+'</td><td>'+t.none+'</td><td><b>'+t.cast+'</b></td></tr>';}).join('');
+  $('printSheet').innerHTML='<h1>AGM 2026: online instructions to the Chair</h1><p>Printed '+esc(new Date().toLocaleString('en-GB',{timeZone:'Europe/London'}))+'. '+(d.provisional?'<b>PROVISIONAL: the list has not been certified.</b>':'Certified list. Anyone who voted in person has been taken out.')+' '+d.counted+' instructions counted.</p>'+
+    '<table><tr><th>#</th><th>Item</th><th>For</th><th>Against</th><th>Withhold</th><th>No instruction</th><th>Votes cast</th></tr>'+rows+'</table>'+
+    '<p>Votes cast = For + Against. A withhold is not a vote cast. Most For wins (rule 50). A tie is lost (rule 48). Where there was no instruction the Chair decides.</p>'+
+    '<p><span class="sig">Murray Knight (Secretary)</span> &nbsp; <span class="sig">Independent member</span></p>';
+  $('printSheet').hidden=false; document.body.classList.add('printing'); window.print();
+  setTimeout(()=>{document.body.classList.remove('printing'); $('printSheet').hidden=true;},500);
+}
+
+async function loadSupport(){
+  const d=await fetch(EP+'/agm/admin/support',{headers:H}).then(r=>r.json());
+  if(!d.ok){ $('support').innerHTML=''; return; }
+  const st=d.status;
+  const checks=d.checks.map(c=>'<li>'+(c.ok?'&#10003; ':'<b class="flag">&#10007; </b>')+esc(c.text)+'</li>').join('');
+  const log=d.log.map(x=>'<tr><td>'+esc(fmtT(x.at))+'</td><td>'+esc(x.officer)+'</td><td>'+esc(x.action.replace('agm.',''))+'</td><td>'+esc(x.detail)+'</td></tr>').join('')||'<tr><td colspan="4">Nothing yet.</td></tr>';
+  $('support').innerHTML='<details class="panel"><summary style="cursor:pointer;font-weight:700;color:var(--ink)">Support and access log (no votes shown)</summary>'+
+    '<p class="note">For the Board and technical support. It shows how the process is going and who has done what, and never any choices or names with votes.</p>'+
+    '<div class="kpis" style="margin-top:12px">'+
+    '<div class="kpi"><span>Submissions</span><b>'+st.submissions+'</b></div><div class="kpi"><span>Counted</span><b>'+st.ballots_counted+'</b></div>'+
+    '<div class="kpi"><span>Taken out</span><b>'+st.taken_out+'</b></div><div class="kpi"><span>Counted anyway</span><b>'+st.counted_anyway+'</b></div>'+
+    '<div class="kpi"><span>Challenges</span><b>'+st.challenges+'</b></div></div>'+
+    '<p class="note">Phase: '+esc(st.phase)+'. List certified: '+(st.certified_at?esc(fmtT(st.certified_at)):'not yet')+'. Link: '+(st.link_destroyed?'deleted':(st.certified_at?'held for challenges':'not created yet'))+'.</p>'+
+    '<p class="note">Named to certify: '+esc(d.roles.verifier||'nobody')+'. Named to count: '+esc(d.roles.counters.join(', ')||'nobody')+'.</p>'+
+    '<ul style="margin:8px 0 0 18px;font-size:14px">'+checks+'</ul>'+
+    '<div class="scroll" style="margin-top:12px"><table><tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr>'+log+'</table></div></details>';
+}
+
+function dl(name,lines){
   const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='agm-2026-proxy-register.csv'; a.click();
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click();
+}
+const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+function csvVoters(){
+  const lines=[['Member no','Name','Counted','Flag','Last changed'].map(q).join(',')];
+  REG.register.forEach(x=>lines.push([x.member_no,x.name,x.counts?'Yes':'No',x.flag,x.updated_at||x.submitted_at].map(q).join(',')));
+  dl('agm-2026-voters-list.csv',lines);
+}
+async function csvBallots(){
+  const d=await fetch(EP+'/agm/admin/ballots',{headers:H}).then(r=>r.json());
+  if(!d.ok){ say(d.error||'Failed'); return; }
+  const lines=[['Reference'].concat(d.items.map((i,k)=>(k+1)+'. '+i.label)).map(q).join(',')];
+  d.ballots.forEach(b=>lines.push([b.ref].concat(d.items.map(i=>b.choices[i.id]||'')).map(q).join(',')));
+  dl('agm-2026-anonymised-votes.csv',lines);
 }
 load();
 </script>
