@@ -257,7 +257,7 @@ async function loadSupport(){
 let DOORT=null;
 function renderDoor(){
   $('door').innerHTML='<div class="panel"><h2>Door check-in &middot; Membership Officer only</h2>'+
-    '<p class="note" style="margin:0 0 8px">Search any member as they arrive and mark them as attending. This builds the attendance list (names only). If they will vote in the room, any online vote of theirs is taken out. You never see how anyone voted.</p>'+
+    '<p class="note" style="margin:0 0 8px">Search any member as they arrive and mark them as attending. This builds the attendance list (names only). If they will vote in the room, any online vote of theirs is taken out, and they get a voting card. You never see how anyone voted.</p>'+
     '<input id="dq" oninput="doorFind()" placeholder="Name or member number" autocomplete="off" style="font-size:17px">'+
     '<div id="dres" style="margin-top:10px"></div>'+
     '<p class="note" id="dcount"></p>'+
@@ -293,7 +293,7 @@ async function doorMark(mn,mode){
 }
 async function doorCount(){
   const d=await fetch(EP+'/agm/admin/attendance',{headers:H}).then(r=>r.json());
-  if(d.ok) $('dcount').textContent=d.attendance.length+' marked as attending so far.';
+  if(d.ok){ const v=d.attendance.filter(x=>x.voting_here).length; $('dcount').innerHTML='<b>'+d.attendance.length+'</b> marked as attending. <b>'+v+'</b> voting in the room: that is the number of voting cards that should have been handed out.'; }
 }
 async function csvAttend(){
   const d=await fetch(EP+'/agm/admin/attendance',{headers:H}).then(r=>r.json());
