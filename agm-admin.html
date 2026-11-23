@@ -54,6 +54,7 @@
     <div class="panel" id="noticePanel"><h2>Notice email and post</h2><p>The draft notice email (formatted as members will see it) and the social post are in the Board preview: <a href="agm.html?m=agm-boardpreview">agm.html?m=agm-boardpreview</a></p></div>
     <div id="state"></div>
     <div class="kpis" id="kpis" style="margin-top:16px"></div>
+    <div id="door"></div>
     <div id="verify"></div>
     <div id="count"></div>
     <div id="results"></div>
@@ -104,7 +105,7 @@ async function load(){
     return;
   }
   $('state').innerHTML='<div class="open">Voting closed at '+esc(closes)+'. '+(d.anonymised?'The list is certified and the anonymised file exists.':'Waiting for the Membership Officer to certify the list.')+'</div>';
-  if(d.is_verifier) await loadRegister();
+  if(d.is_verifier){ renderDoor(); await loadRegister(); }
   if(d.is_counter){ await loadResults(); await loadCount(); }
   else if(!d.is_verifier) $('results').innerHTML='<div class="panel"><h2>Totals</h2><p>Until the meeting, only the people named to count the votes see the totals. You will hear the result at the meeting, at the same time as everyone else. Nobody sees names with votes.</p></div>';
   await loadSupport();
@@ -250,6 +251,56 @@ async function loadSupport(){
     '<p class="note">Named to certify: '+esc(d.roles.verifier||'nobody')+'. Named to count: '+esc(d.roles.counters.join(', ')||'nobody')+'.</p>'+
     '<ul style="margin:8px 0 0 18px;font-size:14px">'+checks+'</ul>'+
     '<div class="scroll" style="margin-top:12px"><table><tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr>'+log+'</table></div></details>';
+}
+
+
+let DOORT=null;
+function renderDoor(){
+  $('door').innerHTML='<div class="panel"><h2>Door check-in &middot; Membership Officer only</h2>'+
+    '<p class="note" style="margin:0 0 8px">Search any member as they arrive and mark them as attending. This builds the attendance list (names only). If they will vote in the room, any online vote of theirs is taken out. You never see how anyone voted.</p>'+
+    '<input id="dq" oninput="doorFind()" placeholder="Name or member number" autocomplete="off" style="font-size:17px">'+
+    '<div id="dres" style="margin-top:10px"></div>'+
+    '<p class="note" id="dcount"></p>'+
+    '<p style="margin-top:8px"><button class="small" onclick="csvAttend()">Download attendance list (CSV)</button></p></div>';
+  doorCount();
+}
+function doorFind(){
+  clearTimeout(DOORT);
+  DOORT=setTimeout(async()=>{
+    const q=$('dq').value.trim();
+    if(q.length<2){ $('dres').innerHTML=''; return; }
+    const d=await fetch(EP+'/agm/admin/find?q='+encodeURIComponent(q),{headers:H}).then(r=>r.json());
+    if(!d.ok){ $('dres').innerHTML='<p class="flag">'+esc(d.error)+'</p>'; return; }
+    if(!d.results.length){ $('dres').innerHTML='<p class="note">No current member found. Check the spelling or the member number.</p>'; return; }
+    $('dres').innerHTML=d.results.map(x=>{
+      const id=esc(x.member_no);
+      let st='<b>'+esc(x.name)+'</b> &middot; '+id+' &middot; '+esc(x.membership_type);
+      st+='<br><span class="note">'+(x.can_vote?'Can vote':'<span class="flag">Cannot vote: '+esc(x.reason)+'</span>')+(x.online_vote?' &middot; has an online vote'+(x.taken_out?' (taken out)':''):'')+(x.attended?' &middot; <b style="color:var(--green)">ATTENDING'+(x.voting_here?', voting here':', not voting here')+'</b>':'')+'</span>';
+      let act='';
+      if(x.attended) act='<button class="small" onclick="doorMark(\''+id+'\',\'undo\')">Undo</button>';
+      else if(!x.can_vote) act='<button class="small" onclick="doorMark(\''+id+'\',\'attending\')">Attending (cannot vote)</button>';
+      else if(x.online_vote) act='<button class="small" onclick="doorMark(\''+id+'\',\'voting\')">Attending, voting here</button> <button class="small" style="background:#5B6B86" onclick="doorMark(\''+id+'\',\'keep\')">Attending, keep online vote</button>';
+      else act='<button class="small" onclick="doorMark(\''+id+'\',\'attending\')">Attending</button>';
+      return '<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px">'+st+'<div style="margin-top:8px">'+act+'</div></div>';
+    }).join('');
+  },250);
+}
+async function doorMark(mn,mode){
+  const d=await post('/agm/admin/checkin',{member_no:mn,mode:mode});
+  if(!d.ok){ $('dres').innerHTML='<p class="flag">'+esc(d.error)+'</p>'; return; }
+  if(d.note) alert(d.note);
+  doorFind(); doorCount(); if(typeof loadRegister==='function') loadRegister();
+}
+async function doorCount(){
+  const d=await fetch(EP+'/agm/admin/attendance',{headers:H}).then(r=>r.json());
+  if(d.ok) $('dcount').textContent=d.attendance.length+' marked as attending so far.';
+}
+async function csvAttend(){
+  const d=await fetch(EP+'/agm/admin/attendance',{headers:H}).then(r=>r.json());
+  if(!d.ok){ return; }
+  const lines=[['Member no','Name','Type','Voting in the room','Checked in'].map(q).join(',')];
+  d.attendance.forEach(x=>lines.push([x.member_no,x.name,x.membership_type,x.voting_here?'Yes':'No',x.at].map(q).join(',')));
+  dl('agm-2026-attendance.csv',lines);
 }
 
 function dl(name,lines){
