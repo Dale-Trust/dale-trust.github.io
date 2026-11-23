@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Board decisions | Dale Trust Board</title>
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--royal:#0057A7;--navy:#0E1F3D;--ink:#10203A;--body:#46536B;--wash:#F2F5F9;--line:#DCE3EC;--gold:#E8B84B;--green:#1E8E5A;--red:#C0392B}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Montserrat',system-ui,sans-serif;background:var(--wash);color:var(--body);font-size:15px;line-height:1.55}
+  h1,h2{font-family:'Oswald';text-transform:uppercase;color:var(--ink)}
+  .back{background:#0A1730;padding:8px 20px;font-size:13px}
+  .back a{color:#8FC1FF;text-decoration:none;font-weight:600}
+  .top{background:var(--navy);color:#fff;padding:18px 22px}
+  .top h1{font-size:20px;color:#fff}.top small{color:#8FC1FF;font-size:12px;display:block}
+  .wrap{max-width:900px;margin:0 auto;padding:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .panel h2{font-size:17px;border-left:4px solid var(--royal);padding-left:10px;margin-bottom:12px}
+  .dec{border:1px solid var(--line);border-left:5px solid #9AA9C2;border-radius:0 12px 12px 0;padding:16px 18px;margin-bottom:16px;background:#fff}
+  .dec.passed{border-left-color:var(--green)}
+  .dec h3{font-family:'Oswald';font-size:18px;color:var(--ink);margin-bottom:8px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+  .dec h3 .n{color:var(--royal)}
+  .badge{font:700 11px 'Montserrat';text-transform:uppercase;letter-spacing:.05em;padding:2px 10px;border-radius:100px;background:#FFF1D6;color:#6B4A00}
+  .lbl{font-weight:700;color:var(--ink)}
+  .why{color:#5C6B85;font-size:14px;margin-top:6px}
+  .stat{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0 8px}
+  .pill{font:700 12px 'Montserrat';padding:3px 11px;border-radius:100px;background:#EEF2F7;color:#46536B}
+  .pill.a{background:#E3F4EA;color:#14653F}.pill.m{background:#FFF4D6;color:#6B4A00}.pill.d{background:#FBE4E1;color:#9A2A1E}
+  .verdict{font-weight:700;font-size:13.5px}.verdict.ok{color:#14653F}.verdict.no{color:#7A6A3A}
+  .people{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+  .chip{font-size:12.5px;padding:3px 10px;border-radius:8px;border:1px solid var(--line);background:#FAFBFD}
+  .chip.a{border-color:#9ED7B6;background:#EDF8F1}.chip.m{border-color:#EBCB77;background:#FFF9E6}.chip.d{border-color:#E3A39B;background:#FDF0EE}
+  .chip small{color:#7A8AA5}
+  .note{font-size:13px;color:var(--body);margin-top:8px}
+  .quote{border-left:3px solid var(--line);padding:2px 10px;margin:4px 0;font-size:13.5px;color:#46536B;white-space:pre-wrap}
+  form.resp{background:var(--wash);border-radius:10px;padding:12px 14px;margin-top:12px}
+  form.resp label.r{display:flex;gap:8px;align-items:center;margin:4px 0;font-weight:600;color:var(--ink);cursor:pointer}
+  form.resp select,form.resp input[type=text],form.resp textarea{width:100%;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px;font:inherit;font-size:14px;background:#fff;color:var(--ink);margin-top:4px}
+  form.resp textarea{min-height:70px}
+  form.resp .f{margin-top:10px;font-size:13px;font-weight:600;color:var(--ink)}
+  button.b{background:var(--royal);color:#fff;border:0;border-radius:10px;padding:9px 18px;font:600 13px 'Oswald';text-transform:uppercase;letter-spacing:.06em;cursor:pointer;margin-top:12px}
+  button.b.o{background:#fff;color:var(--body);border:1.5px solid var(--line);margin-top:0}
+  button.b:disabled{opacity:.6;cursor:default}
+  .err{color:var(--red);font-weight:600;font-size:13px;margin-top:8px}
+  .saved{color:#14653F;font-weight:600;font-size:13px;margin-top:8px}
+  details{margin-top:10px;font-size:13px}
+  details summary{cursor:pointer;color:var(--royal);font-weight:600}
+  details table{border-collapse:collapse;width:100%;margin-top:6px}
+  details td,details th{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top;font-size:12.5px}
+  .dirs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .bar{height:10px;background:#EEF2F7;border-radius:6px;overflow:hidden;margin:6px 0}
+  .bar i{display:block;height:100%;background:var(--green)}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  @media print{.back,.noprint,form.resp,details summary{display:none!important}body{background:#fff}.dec{break-inside:avoid}details{display:block}details[open]>*{display:block}}
+</style>
+</head>
+<body>
+<div class="back"><a href="admin.html">&larr; Admin</a></div>
+<div class="top"><h1>Board decisions</h1><small>Directors only &middot; every response is time-stamped and kept</small></div>
+<div class="wrap">
+  <div id="msg" class="panel">Loading&hellip;</div>
+  <div id="dash" hidden>
+    <div class="panel" id="head"></div>
+    <div id="list"></div>
+  </div>
+</div>
+<script>
+const EP='https://join.daletrust.uk';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
+const H={'Content-Type':'application/json','Authorization':'Bearer '+session};
+const utc=s=>Date.parse(String(s).replace(' ','T')+(String(s).endsWith('Z')?'':'Z'));
+const fmt=s=>new Date(utc(s)).toLocaleString('en-GB',{timeZone:'Europe/London',weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const LAB={agree:'Agreed',amend:'Agreed with changes',disagree:'Not agreed'};
+const CLS={agree:'a',amend:'m',disagree:'d'};
+let P=null; const DRAFT={};
+
+function say(t){ $('msg').hidden=false; $('dash').hidden=true; $('msg').textContent=t; }
+
+async function load(){
+  if(!session){ say('Please sign in on the admin page first, then come back here.'); return; }
+  let r;
+  try{ r=await fetch(EP+'/board/paper?slug=agm-2026',{headers:H}); }catch(e){ say('Could not reach the Trust. Please refresh.'); return; }
+  if(r.status===401||r.status===403){ say('Please sign in on the admin page with a Board account, then come back here.'); return; }
+  const d=await r.json();
+  if(!d.ok){ say(d.error||'Something went wrong.'); return; }
+  P=d; $('msg').hidden=true; $('dash').hidden=false; drawHead(); drawList();
+}
+
+function drawHead(){
+  const answeredAll=P.directors.filter(dr=>P.decisions.every(x=>x.current.some(c=>c.email===dr.email)));
+  const done=P.decisions.filter(x=>x.passed).length;
+  $('head').innerHTML=
+    '<h2>'+esc(P.paper.title)+'</h2>'+
+    '<p>'+esc(P.paper.intro||'')+'</p>'+
+    '<p style="margin-top:10px"><span class="lbl">Deadline:</span> '+(P.paper.closes_at?fmt(P.paper.closes_at)+(P.paper.open?'':' (closed)'):'none')+
+      ' &middot; <span class="lbl">Directors:</span> '+P.total+' &middot; <span class="lbl">Majority needed:</span> '+P.threshold+' of '+P.total+' (rule 71)</p>'+
+    '<div class="bar"><i style="width:'+Math.round(done/Math.max(1,P.decisions.length)*100)+'%"></i></div>'+
+    '<p class="note">'+done+' of '+P.decisions.length+' decisions have a majority agreeing. '+answeredAll.length+' of '+P.directors.length+' directors have responded to every decision.</p>'+
+    '<div class="dirs">'+P.directors.map(dr=>{const n=P.decisions.filter(x=>x.current.some(c=>c.email===dr.email)).length;
+      return '<span class="chip '+(n===P.decisions.length?'a':'')+'">'+esc(dr.name)+(dr.role?' <small>'+esc(dr.role)+'</small>':'')+' <small>'+n+'/'+P.decisions.length+'</small></span>';}).join('')+'</div>'+
+    (P.total>P.directors.length?'<p class="note">'+(P.total-P.directors.length)+' director'+(P.total-P.directors.length===1?'':'s')+' without a login are counted in the total but cannot respond here.</p>':'')+
+    '<div class="actions noprint" style="margin-top:12px"><button class="b o" onclick="window.print()">Print the record</button><button class="b o" onclick="copyMinute()">Copy as minute text</button></div>';
+}
+
+function cardHtml(x){
+  const mine=P.me.is_voter?x.current.find(c=>c.email===P.me.email):null;
+  const dr=DRAFT[x.id]||{response:mine?mine.response:'',choice:mine?mine.choice:'',note:mine?(mine.note||''):'',data:mine&&mine.data?mine.data:{}};
+  const need=Math.max(0,P.threshold-x.counts.agree);
+  const waiting=P.directors.filter(d=>!x.current.some(c=>c.email===d.email));
+  let h='<div class="dec'+(x.passed?' passed':'')+'" id="d'+x.id+'"><h3><span class="n">'+x.position+'.</span> '+esc(x.title)+(x.urgent?'<span class="badge">Needed before Tue 17:00</span>':'')+'</h3>'+
+    '<p><span class="lbl">Proposed: </span>'+esc(x.proposed)+'</p>'+(x.why?'<p class="why"><span class="lbl">Why: </span>'+esc(x.why)+'</p>':'')+
+    '<div class="stat"><span class="pill a">Agreed '+x.counts.agree+'</span><span class="pill m">Changes '+x.counts.amend+'</span><span class="pill d">Not agreed '+x.counts.disagree+'</span><span class="pill">Waiting '+x.counts.none+'</span>'+
+      (x.passed?'<span class="verdict ok">Majority agreed</span>':'<span class="verdict no">Needs '+need+' more agreeing</span>')+'</div>';
+  if(x.options.length){
+    h+='<p class="note"><span class="lbl">Choices so far: </span>'+x.options.map(o=>esc(o)+' ('+(x.choice_tally[o]||0)+')').join(' &middot; ')+'</p>';
+  }
+  if(x.fields.length){
+    const lines=x.fields.map(f=>{const v=x.current.filter(c=>c.data&&c.data[f.key]).map(c=>esc(c.data[f.key])+' <small>('+esc(c.name)+')</small>');return v.length?'<p class="note"><span class="lbl">'+esc(f.label)+': </span>'+v.join('; ')+'</p>':'';}).join('');
+    h+=lines;
+  }
+  h+='<div class="people">'+x.current.map(c=>'<span class="chip '+CLS[c.response]+'">'+esc(c.name)+': '+LAB[c.response]+(c.choice?' ('+esc(c.choice.split(':')[0])+')':'')+' <small>'+fmt(c.at)+'</small></span>').join('')+
+    (waiting.length?'<span class="chip">Waiting: '+waiting.map(w=>esc(w.name)).join(', ')+'</span>':'')+'</div>';
+  const notes=x.current.filter(c=>c.note);
+  if(notes.length) h+=notes.map(c=>'<div class="quote"><b>'+esc(c.name)+':</b> '+esc(c.note)+'</div>').join('');
+  if(P.me.is_voter&&P.paper.open){
+    h+='<form class="resp noprint" onsubmit="return save(event,'+x.id+')"><div class="lbl">Your response'+(mine?' <small style="font-weight:500;color:#7A8AA5">(last saved '+fmt(mine.at)+')</small>':'')+'</div>'+
+      ['agree','amend','disagree'].map(v=>'<label class="r"><input type="radio" name="r'+x.id+'" value="'+v+'"'+(dr.response===v?' checked':'')+' onchange="draft('+x.id+')"> '+LAB[v]+'</label>').join('');
+    if(x.options.length) h+='<div class="f">Your choice (if you agree)</div><select id="c'+x.id+'" onchange="draft('+x.id+')"><option value="">Choose&hellip;</option>'+x.options.map(o=>'<option'+(dr.choice===o?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+    x.fields.forEach(f=>{h+='<div class="f">'+esc(f.label)+'</div><input type="text" id="f'+x.id+'_'+f.key+'" maxlength="200" value="'+esc(dr.data[f.key]||'')+'" oninput="draft('+x.id+')">';});
+    h+='<div class="f">Note (needed if you want changes or do not agree)</div><textarea id="n'+x.id+'" oninput="draft('+x.id+')">'+esc(dr.note)+'</textarea>'+
+      '<button class="b" type="submit" id="s'+x.id+'">Save my response</button><div id="e'+x.id+'"></div></form>';
+  } else if(!P.me.is_voter){
+    h+='<p class="note noprint">You can read this but not respond, as you are not on the directors list.</p>';
+  } else {
+    h+='<p class="note">Responses are closed.</p>';
+  }
+  if(x.history.length){
+    h+='<details><summary>History ('+x.history.length+' entr'+(x.history.length===1?'y':'ies')+')</summary><table><tr><th>When</th><th>Director</th><th>Response</th><th>Note</th></tr>'+
+      x.history.slice().reverse().map(r=>'<tr><td>'+fmt(r.at)+'</td><td>'+esc(r.name)+'</td><td>'+LAB[r.response]+(r.choice?' ('+esc(r.choice)+')':'')+'</td><td>'+esc(r.note||'')+(r.data?' '+esc(Object.values(r.data).join('; ')):'')+'</td></tr>').join('')+'</table></details>';
+  }
+  return h+'</div>';
+}
+
+function drawList(){ $('list').innerHTML=P.decisions.map(cardHtml).join(''); }
+
+function draft(id){
+  const sel=document.querySelector('input[name="r'+id+'"]:checked');
+  const x=P.decisions.find(d=>d.id===id); const data={};
+  x.fields.forEach(f=>{const el=$('f'+id+'_'+f.key); if(el) data[f.key]=el.value;});
+  DRAFT[id]={response:sel?sel.value:'',choice:$('c'+id)?$('c'+id).value:'',note:$('n'+id).value,data};
+}
+async function save(ev,id){
+  ev.preventDefault(); draft(id);
+  const x=P.decisions.find(d=>d.id===id), dr=DRAFT[id], e=$('e'+id);
+  if(!dr.response){ e.innerHTML='<div class="err">Please choose Agreed, Agreed with changes or Not agreed.</div>'; return false; }
+  $('s'+id).disabled=true;
+  let d;
+  try{ d=await (await fetch(EP+'/board/respond',{method:'POST',headers:H,body:JSON.stringify({slug:'agm-2026',decision_id:id,response:dr.response,choice:dr.choice,note:dr.note,data:dr.data})})).json(); }
+  catch(err){ d={ok:false,error:'Could not reach the Trust. Please try again.'}; }
+  if(!d.ok){ $('s'+id).disabled=false; e.innerHTML='<div class="err">'+esc(d.error||'Something went wrong.')+'</div>'; return false; }
+  delete DRAFT[id];
+  const r=await fetch(EP+'/board/paper?slug=agm-2026',{headers:H}); const nd=await r.json();
+  if(nd.ok){ P=nd; drawHead(); drawList(); const el=$('e'+id); if(el) el.innerHTML='<div class="saved">Saved. Thank you.</div>'; }
+  return false;
+}
+function copyMinute(){
+  const L=[]; L.push(P.paper.title); L.push('Responses recorded on the Dale Trust site. Majority needed: '+P.threshold+' of '+P.total+' directors (rule 71).'); L.push('');
+  P.decisions.forEach(x=>{
+    L.push(x.position+'. '+x.title+' - '+(x.passed?'AGREED by a majority':'NOT YET agreed by a majority')+' ('+x.counts.agree+' agreed, '+x.counts.amend+' with changes, '+x.counts.disagree+' not agreed, '+x.counts.none+' no response)');
+    x.current.forEach(c=>L.push('   '+c.name+': '+LAB[c.response]+(c.choice?' ['+c.choice+']':'')+' ('+fmt(c.at)+')'+(c.note?' - '+c.note:'')+(c.data?' - '+Object.values(c.data).join('; '):'')));
+    L.push('');
+  });
+  const t=L.join('\n');
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>alert('Copied. Paste it into the minutes.')).catch(()=>{ const w=window.open('','_blank'); if(w){w.document.write('<pre>'+esc(t)+'</pre>');} });
+}
+load();
+</script>
+</body>
+</html>
