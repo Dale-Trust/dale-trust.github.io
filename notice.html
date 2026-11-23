@@ -211,7 +211,7 @@ let session=null; try{session=localStorage.getItem('dt_session');}catch(e){}
 if(!session) location.href='admin.html';
 const H=()=>({'Content-Type':'application/json','Authorization':'Bearer '+session});
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
-let lastCount=0, timer=null, canSend=false, queue=[], editingId=null;
+let lastCount=0, timer=null, canSend=false, queue=[], editingId=null, NAMED=null;   // NAMED: member numbers when a notice is for named people only
 
 function filters(){
   const f={};
@@ -225,6 +225,7 @@ function filters(){
   }
   if($('f_area').value) f.place=$('f_area').value;
   if($('f_news').value) f.newsletter=$('f_news').value;
+  if(NAMED&&NAMED.length) f.member_nos=NAMED;
   return f;
 }
 
@@ -280,7 +281,7 @@ function recount(){
       const d=await (await fetch(EP+'/audience/count',{method:'POST',headers:H(),body:JSON.stringify(filters())})).json();
       if(!d.ok){$('count').textContent=d.error;return;}
       lastCount=d.count;
-      $('count').innerHTML='<b>'+d.count+'</b> will get this<br><span style="color:#7A8AA5;font-size:13.5px">'+esc(d.description)+'</span>';
+      $('count').innerHTML=(NAMED?'<span style="color:#C0392B;font-weight:700">NAMED MEMBERS ONLY ('+NAMED.length+' chosen). The ticks above are ignored.</span><br>':'')+'<b>'+d.count+'</b> will get this<br><span style="color:#7A8AA5;font-size:13.5px">'+esc(d.description)+'</span>';
     }catch(e){$('count').textContent='Could not count just now.';}
   },250);
 }
@@ -401,7 +402,7 @@ async function scrapIt(){
 }
 
 function clearForm(){
-  editingId=null; $('subject').value=''; $('body').value=''; $('pv').innerHTML='';
+  editingId=null; NAMED=null; $('subject').value=''; $('body').value=''; $('pv').innerHTML='';
   document.querySelectorAll('#typeTicks input, #seasonTicks input').forEach(i=>i.checked=false);
   $('f_who').value='current'; whoChanged();
   $('f_area').value=''; $('f_news').value=''; $('f_from').value='info';
@@ -415,6 +416,7 @@ async function openSaved(id){
   if(!d.ok){ say(d.error, true); return; }
   const n=d.notice;
   editingId=n.id; $('subject').value=n.subject||''; $('body').value=n.body||'';
+  NAMED=Array.isArray(n.filters.member_nos)&&n.filters.member_nos.length?n.filters.member_nos:null;
   $('f_who').value = n.filters.who==='lapsed' ? 'lapsed' : 'current';
   whoChanged();
   if(n.filters.who==='lapsed'){
@@ -494,7 +496,7 @@ async function post(extra, okMsg){
     else if(d.carryingOn){
       say('Sent to '+d.sent+' so far. The rest go out by themselves — '+d.remaining+' still to come. You can close this page.');
       // clear it, so there is nothing to press again
-      $('subject').value=''; $('body').value=''; $('pv').innerHTML=''; editingId=null;
+      $('subject').value=''; $('body').value=''; $('pv').innerHTML=''; editingId=null; NAMED=null;
       loadHistory();
     }
     else { say('Sent to '+d.sent+' member'+(d.sent===1?'':'s')+'.'); $('subject').value=''; $('body').value=''; $('pv').innerHTML=''; loadHistory(); }
