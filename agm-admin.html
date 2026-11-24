@@ -184,7 +184,7 @@ async function loadResults(){
   $('results').innerHTML=
     (d.provisional?'<div class="lock" style="margin-bottom:12px">Provisional. The list has not been certified yet, so these totals may change.</div>':'')+
     '<div class="panel"><h2>Online instructions to the Chair &middot; totals only</h2><div class="scroll"><table><tr><th>#</th><th>Item</th><th class="n">For</th><th class="n">Against</th><th class="n">Withhold</th><th class="n">No instruction</th><th class="n">Votes cast</th></tr>'+rows+'</table></div>'+
-    '<p style="margin:10px 0 0"><button onclick="printTotals()">Print totals for the Chair</button></p><p class="note">'+d.counted+' instruction'+(d.counted===1?'':'s')+' counted. Votes cast = For + Against: a withhold is not a vote cast. Each director is decided separately by the most For votes (simple majority of votes cast, rule 50); a tie is lost (rule 48). Where a member gave no instruction the Chair decides. A member who attends and votes in person replaces their online instruction.'+(d.stepped_aside?' <b>'+d.stepped_aside+' item'+(d.stepped_aside===1?'':'s')+' hidden from you because you are standing for it.</b>':'')+'</p></div>';
+    '<p style="margin:10px 0 0"><button onclick="printTotals()">Print totals for the Chair</button></p><p class="note">'+d.counted+' instruction'+(d.counted===1?'':'s')+' counted. Votes cast = For + Against: a withhold is not a vote cast. Each director is elected if more votes are cast For than Against; a tie means not elected (Interim Election Policy, clause 6). Where a member gave no instruction on a director, that is no vote and nobody decides it for them (clause 5). On other items the Chair decides. A member who attends and votes in person replaces their online instruction.'+(d.stepped_aside?' <b>'+d.stepped_aside+' item'+(d.stepped_aside===1?'':'s')+' hidden from you because you are standing for it.</b>':'')+'</p></div>';
 }
 
 async function loadCount(){
@@ -241,7 +241,7 @@ function printTotals(){
   const rows=d.items.map((i,k)=>{const t=d.tally[i.id];return '<tr><td>'+(k+1)+'</td><td>'+esc(i.kind==='director'?'Elect '+i.label:i.label)+'</td><td>'+t.for+'</td><td>'+t.against+'</td><td>'+t.withhold+'</td><td>'+t.none+'</td><td><b>'+t.cast+'</b></td></tr>';}).join('');
   $('printSheet').innerHTML='<h1>AGM 2026: online instructions to the Chair</h1><p>Printed '+esc(new Date().toLocaleString('en-GB',{timeZone:'Europe/London'}))+'. '+(d.provisional?'<b>PROVISIONAL: the list has not been certified.</b>':'Certified list. Anyone who voted in person has been taken out.')+' '+d.counted+' instructions counted.</p>'+
     '<table><tr><th>#</th><th>Item</th><th>For</th><th>Against</th><th>Withhold</th><th>No instruction</th><th>Votes cast</th></tr>'+rows+'</table>'+
-    '<p>Votes cast = For + Against. A withhold is not a vote cast. Most For wins (rule 50). A tie is lost (rule 48). Where there was no instruction the Chair decides.</p>'+
+    '<p>Votes cast = For + Against. A withhold is not a vote cast. A director is elected if more votes are cast For than Against; a tie means not elected (Interim Election Policy, clause 6). No instruction on a director is no vote (clause 5). On other items the Chair decides.</p>'+
     '<p><span class="sig">Murray Knight (Secretary)</span> &nbsp; <span class="sig">Independent member</span></p>';
   $('printSheet').hidden=false; document.body.classList.add('printing'); window.print();
   setTimeout(()=>{document.body.classList.remove('printing'); $('printSheet').hidden=true;},500);
