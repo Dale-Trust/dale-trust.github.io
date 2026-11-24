@@ -137,10 +137,10 @@ async function loadRegister(){
   const flagged=d.register.filter(x=>!x.counts&&x.flag!=='Withdrawn');
   let fin;
   if(done){
-    fin='<p class="open" style="margin-top:14px">Certified on '+esc(fmtT(d.anonymised.at))+'. The anonymised file is with Murray and the independent member.'+(locked?' The link between names and votes has been deleted.':' You can still take out anyone who voted in person, or count a flagged vote anyway. You never see any choices.')+'</p>';
+    fin='<p class="open" style="margin-top:14px">Certified on '+esc(fmtT(d.anonymised.at))+'. The anonymised file is with Murray and the independent member.'+(locked?' The link between names and votes has been exported to the archive and removed from the system.':' You can still take out anyone who voted in person, or count a flagged vote anyway. You never see any choices.')+'</p>';
   } else {
     fin='<div style="margin-top:18px;border-top:2px solid var(--line);padding-top:14px"><h2 style="font-size:15px;border:0;padding:0">Certify the list</h2>'+
-      '<p class="note">Check every row above. Certifying creates the anonymised file for Murray and the independent member: a random reference and the choices, with no names. The link between names and choices is then held back for challenges only, and is deleted once the minutes are agreed. You can still take someone out afterwards (for example, they voted in person) and you will see no choices.</p>'+
+      '<p class="note">Check every row above. Certifying creates the anonymised file for Murray and the independent member: a random reference and the choices, with no names. The link between names and choices is then held back for challenges only. Once the minutes are agreed it is exported to an encrypted archive and removed from the system. You can still take someone out afterwards (for example, they voted in person) and you will see no choices.</p>'+
       '<label class="f" for="conf">Type CERTIFY to confirm</label><input id="conf" autocomplete="off" style="max-width:240px"> '+
       '<p style="margin-top:10px"><button onclick="certify()">Certify the list</button> <span id="fmsg" class="note"></span></p></div>';
   }
@@ -202,10 +202,13 @@ async function loadCount(){
   const c=await fetch(EP+'/agm/admin/challenges',{headers:H}).then(r=>r.json());
   if(c.ok&&c.challenges.length) h+='<h2 style="font-size:15px;border:0;padding:0;margin-top:16px">Challenges so far</h2><table><tr><th>Reference</th><th>By</th><th>Reason</th><th>When</th></tr>'+c.challenges.map(x=>'<tr><td>'+esc(x.ref)+'</td><td>'+esc(x.by_email)+'</td><td>'+esc(x.reason)+'</td><td>'+esc(fmtT(x.at))+'</td></tr>').join('')+'</table>';
   if(!D.anonymised.link_destroyed){
-    h+='<div style="margin-top:18px;border-top:2px solid var(--line);padding-top:14px"><h2 style="font-size:15px;border:0;padding:0">Delete the link</h2>'+
-       '<p class="note">Do this once the minutes have been agreed. It permanently deletes the only link between names and choices. <b>It cannot be undone.</b> Afterwards no vote can be traced to a name and nothing more can be taken out.</p>'+
-       '<label class="f" for="dconf">Type DELETE LINK to confirm</label><input id="dconf" autocomplete="off" style="max-width:240px"> <p style="margin-top:10px"><button onclick="destroyLink()">Delete the link</button> <span id="dmsg" class="note"></span></p></div>';
-  } else h+='<p class="open" style="margin-top:14px">The link between names and choices has been deleted.</p>';
+    const ex=D.anonymised.link_exported;
+    h+='<div style="margin-top:18px;border-top:2px solid var(--line);padding-top:14px"><h2 style="font-size:15px;border:0;padding:0">Archive the link</h2>'+
+       '<p class="note">Do this once the minutes have been agreed. <b>Step 1.</b> Export the link between names and references. The file has every name next to its reference, so keep it safe: encrypt it straight away, delete the unencrypted copy from your computer, and store the encrypted file and its password in separate places. The export is logged with a checksum.</p>'+
+       '<p style="margin-top:10px"><button onclick="exportLink()">Export the link (CSV)</button> <span id="emsg" class="note">'+(ex?'Exported '+esc(fmtT(ex))+'. You can export again if needed.':'')+'</span></p>'+
+       '<p class="note" style="margin-top:14px"><b>Step 2.</b> Only after the file is encrypted and safely stored: remove the link from the system. <b>It cannot be undone.</b> The exported file becomes the only copy. Afterwards no vote can be traced to a name here and nothing more can be taken out.</p>'+
+       '<label class="f" for="dconf">Type REMOVE LINK to confirm</label><input id="dconf" autocomplete="off" style="max-width:240px"> <p style="margin-top:10px"><button onclick="destroyLink()"'+(ex?'':' disabled title="Export the link first"')+'>Remove the link from the system</button> <span id="dmsg" class="note"></span></p></div>';
+  } else h+='<p class="open" style="margin-top:14px">The link between names and choices has been exported to the archive and removed from the system.</p>';
   $('count').innerHTML=h+'</div>';
 }
 async function challenge(){
@@ -215,9 +218,18 @@ async function challenge(){
   $('cout').innerHTML='<p><b>'+esc(d.ref)+'</b> is '+esc(d.name)+' ('+esc(d.member_no)+')</p><table>'+ch+'</table>';
   loadCount();
 }
+async function exportLink(){
+  const d=await post('/agm/admin/export-link',{});
+  if(!d.ok){ $('emsg').textContent=d.error||'Failed'; return; }
+  const blob=new Blob([d.csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=d.filename; document.body.appendChild(a); a.click(); a.remove();
+  $('emsg').textContent='Exported '+d.rows+' rows. Checksum (SHA-256): '+d.sha256+'. Encrypt the file now, then come back for step 2.';
+  D.anonymised.link_exported=new Date().toISOString();
+  const rb=document.querySelector('button[onclick="destroyLink()"]'); if(rb){ rb.disabled=false; rb.removeAttribute('title'); }
+}
 async function destroyLink(){
   const v=$('dconf').value.trim();
-  if(v!=='DELETE LINK'){ $('dmsg').textContent='Type DELETE LINK exactly.'; return; }
+  if(v!=='REMOVE LINK'){ $('dmsg').textContent='Type REMOVE LINK exactly.'; return; }
   const d=await post('/agm/admin/destroy-link',{confirm:v});
   if(!d.ok){ $('dmsg').textContent=d.error||'Failed'; return; }
   await load();
@@ -247,7 +259,7 @@ async function loadSupport(){
     '<div class="kpi"><span>Submissions</span><b>'+st.submissions+'</b></div><div class="kpi"><span>Counted</span><b>'+st.ballots_counted+'</b></div>'+
     '<div class="kpi"><span>Taken out</span><b>'+st.taken_out+'</b></div><div class="kpi"><span>Counted anyway</span><b>'+st.counted_anyway+'</b></div>'+
     '<div class="kpi"><span>Challenges</span><b>'+st.challenges+'</b></div></div>'+
-    '<p class="note">Phase: '+esc(st.phase)+'. List certified: '+(st.certified_at?esc(fmtT(st.certified_at)):'not yet')+'. Link: '+(st.link_destroyed?'deleted':(st.certified_at?'held for challenges':'not created yet'))+'.</p>'+
+    '<p class="note">Phase: '+esc(st.phase)+'. List certified: '+(st.certified_at?esc(fmtT(st.certified_at)):'not yet')+'. Link: '+(st.link_destroyed?'archived and removed from the system':(st.certified_at?(st.link_exported?'held for challenges (exported, not yet removed)':'held for challenges'):'not created yet'))+'.</p>'+
     '<p class="note">Named to certify: '+esc(d.roles.verifier||'nobody')+'. Named to count: '+esc(d.roles.counters.join(', ')||'nobody')+'.</p>'+
     '<ul style="margin:8px 0 0 18px;font-size:14px">'+checks+'</ul>'+
     '<div class="scroll" style="margin-top:12px"><table><tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr>'+log+'</table></div></details>';
